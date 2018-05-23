@@ -1,0 +1,6 @@
+a_mo=mo.a
+b_mo=mo.b
+a_det=det.a
+b_det=det.b
+mix_aoovl=mix_ovl.new
+force_direct_dets

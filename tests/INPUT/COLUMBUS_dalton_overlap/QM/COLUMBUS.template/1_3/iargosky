@@ -1,0 +1,97 @@
+yes
+yes
+1               
+c1  
+add     
+6               
+C  
+  0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
+yes
+&Basis
+  6
+library 
+1               
+yes
+proceed 
+&End
+&SO
+proceed 
+&End
+add     
+14              
+Si 
+  0.000000000000000E+000  0.000000000000000E+000   2.92907700000000     
+yes
+&Basis
+ 14
+library 
+1               
+yes
+proceed 
+&End
+&SO
+proceed 
+&End
+add     
+1               
+H  
+   1.78220500000000       0.000000000000000E+000  -1.02895600000000     
+yes
+&Basis
+  1
+library 
+1               
+yes
+proceed 
+&End
+&SO
+proceed 
+&End
+add     
+1               
+H  
+   1.78220500000000       0.000000000000000E+000   3.95803300000000     
+yes
+&Basis
+  1
+library 
+1               
+yes
+proceed 
+&End
+&SO
+proceed 
+&End
+add     
+1               
+H  
+  -1.78220500000000       0.000000000000000E+000   3.95803300000000     
+yes
+&Basis
+  1
+library 
+1               
+yes
+proceed 
+&End
+&SO
+proceed 
+&End
+add     
+1               
+H  
+  -1.78220500000000       0.000000000000000E+000  -1.02895600000000     
+yes
+&Basis
+  1
+library 
+1               
+yes
+proceed 
+&End
+&SO
+proceed 
+&End
+proceed 
+yes
+yes

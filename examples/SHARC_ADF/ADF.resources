@@ -1,0 +1,162 @@
+    ## This is a commented version of the ADF.resources file 
+    ## for version 2.0 of the SHARC_ADF.py interface.
+
+    ## ======== ADF setup ============
+
+    ## Sets the $ADFHOME variable.
+    ## Shell user (~) and variables ($) can be used.
+adfhome $ADFHOME
+
+    ## Sets the path to the SCM license.
+    ## Shell user (~) and variables ($) can be used.
+scmlicense $SCMLICENSE
+
+    ## Sets the ADF-own scratch directory (usually defined during ADF installation).
+    ## Should be empty/not existing and must not be identical to scratchdir (see below).
+    ## Shell user (~) and variables ($) can be used.
+#scm_tmpdir $TMPDIR/2/
+
+
+
+
+    ## ======== SCRATCH and SAVE ============
+
+    ## Sets the path to the scratch directory employed by the interface.
+    ## There, all ADF and overlap calculations will be launched.
+    ## ADF itself employs the scm_tmpdir (see above).
+scratchdir $TMPDIR
+
+    ## Sets the path to the save directory.
+    ## There, all TAPE21, determinant, MO coefficient, and AO overlap files are stored between time steps.
+    ## Hence, this should be a persistent directory.
+    ## Note that the savedir from QM.in takes precedence over the one here.
+savedir ./SAVEDIR
+
+
+
+
+    ## ======== RESSOURCES ============
+
+    ## Number of CPU cores the interface can use.
+    ## If several ADF jobs need to be done (several multiplicities, several gradients),
+    ## then the interface will distribute the jobs over the cores in a sensible way.
+    ## Note that with ADF>=2017.208, no separate gradient jobs are needed, so each multiplicity spawns at most one ADF run.
+ncpu 4
+
+    ## Fraction of parallelizable work in the ADF calculations.
+    ## With a value close to one, the interface will tend to run multiple jobs one after each other with the maximum number of cores.
+    ## With a value close to zero, the interface will tend to run all jobs at the same time, dividing the cores over the jobs.
+schedule_scaling 0.5
+
+    ## Time delay in seconds between the launch of parallel ADF jobs.
+delay 0.
+
+    ## Memory for the wfoverlaps code (as ADF memory cannot be controlled).
+memory 1000
+
+
+
+
+    ## ======== QM/MM ============
+
+    ## This keyword sets the path to the connection table file.
+    ##     Example file content:
+    ##     1       SO      QM      2
+    ##     2       C       QM      1       3       4
+    ##     3       HP      QM      2
+    ##     4       CT      QM      2       5       6       7
+    ##     5       H1      QM      4
+    ##     6       H1      QM      4
+    ##     7       CT      LI      4       8       9       10
+    ##     8       HC      MM      7
+    ##     9       HC      MM      7
+    ##     10      HC      MM      7
+    ##     11      OW      MM      12      13
+    ##     12      HW      MM      11
+    ##     13      HW      MM      11
+    ##     14      OW      MM      15      16
+    ##     15      HW      MM      14
+    ##     16      HW      MM      14
+    ##     subend
+    ##
+    ##     link_bonds
+    ##     7 - 4 1.4 H H1
+    ## Note the usage of the "subend" and "link_bonds" lines.
+    ## The link_bonds section is only needed if "LI" atoms are in the connection table.
+qmmm_table    ADF.qmmm.table
+
+    ## This keyword sets the path to the force field file.
+    ## The file needs to be in Amber95 format, see also the ADF documentation.
+qmmm_ff_file  ADF.qmmm.ff
+
+
+
+
+    ## ======== OVERLAPS ============
+
+    ## Path to the wfoverlaps program.
+    ## Needed for overlap and Dyson norm calculations.
+wfoverlap $SHARC/wfoverlap_ascii.x
+
+    ## Truncation threshold for the determinant files.
+    ## Note that for non-TDA hybrid TD-DFT, the response vector norm can be larger than 1.0, so give correspondingly larger values.
+wfthres 0.99
+
+    ## Number of frozen core orbitals for overlap and Dyson norm calculations.
+    ## All ADF calculations are done with all-electron settings.
+    ## A value of -1 will set the number of frozen core orbitals automatically (to ADF's small core convention).
+numfrozcore 5
+
+    ## Number of doubly occupied orbitals for Dyson calculations.
+    ## These orbitals are counted from the first nonfrozen orbital.
+numocc 8
+
+    ## Do not store determinant and MO coefficient files in savedir.
+    ## Must not be used for dynamics runs.
+#nooverlap
+
+
+
+
+    ## ======== TheoDORE ============
+
+    ## Path to the TheoDORE installation.
+theodir $THEODORE
+
+    ## This keyword defines the properties to be computed by TheoDORE.
+    ## The properties can either be given as space-separated items (the interface will reformat this for proper TheoDORE input:
+theodore_prop Om POSi POSf PR CT PRNTO S_HE Z_HE RMSeh
+        ## Or as Python-style list of strings (e.g., from dens_ana.in):
+#theodore_prop ['Om', 'POSi', 'POSf', 'PR', 'CT', 'MC', 'LC', 'MLCT', 'LMCT', 'LLCT', 'PRNTO', 'Z_HE', 'S_HE', 'RMSeh']
+
+    ## This keyword defines fragments for the CT population analysis of TheoDORE.
+    ## The fragments can be either specified one by one on separate lines, 
+theodore_fragment 1
+theodore_fragment 2
+theodore_fragment 3 4
+    ## or as Python-style list of integers (e.g., from dens_ana.in):
+#theodore_fragment [[1,2,3],[4,5,6,7,8,9,10]]
+    ## It is strongly advised to not mix these two input styles.
+
+
+
+
+    ## ======== OTHERS ============
+
+    ## Always use the provided initial orbitals, even if starting orbitals are present in the savedir.
+#always_orb_init
+
+    ## Always use an orbital guess, even if starting orbitals are present in the savedir.
+#always_guess
+
+    ## Increase verbosity of the interface and do not delete scratchdir after all jobs are finished.
+debug
+
+    ## Decrease the verbosity of the interface.
+#no_print
+
+
+
+
+
+# kate: syntax python

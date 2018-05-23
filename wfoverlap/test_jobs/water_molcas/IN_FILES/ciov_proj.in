@@ -1,0 +1,7 @@
+a_mo=geo1/MOCOEFS/mocoef_mc.sp
+b_mo=geo1.6-31g/MOCOEFS/mocoef_mc.sp
+a_det=geo1/WORK/dets
+b_det=geo1.6-31g/WORK/dets
+ao_read=1
+nao_a=7
+nao_b=13

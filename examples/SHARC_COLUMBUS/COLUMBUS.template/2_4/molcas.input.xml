@@ -1,0 +1,10 @@
+<MOLCASxml xmlns="http://www.molcas.org/schema">
+<Internal_info>
+  <program>MOLCAS</program>
+  <version>7.9.111</version>
+  <date>Thu May 15 15:13:39 2014</date>
+  <nProc>1</nProc>
+</Internal_info>
+<module value="seward">
+</module>
+</MOLCASxml>

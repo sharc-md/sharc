@@ -1,0 +1,103 @@
+ nsym=  1 
+ciisc,ciisc,cigradient=1,ndrt=
+getvector : 5
+getvector2 : 1, 5,   1 ,  1  
+getvector : 0
+getvector2 : 1, 0,   1 ,  1  
+getvector : 6
+getvector2 : 1, 6,   1 ,  1  
+getvector : 1
+getvector2 : 1, 1,   1 ,  1  
+getvector : 0
+getvector2 : 1, 0,   1 ,  1  
+getvector : 1
+getvector2 : 1, 1,   1 ,1 
+groups of 2 elements,  / frozen core orbitals ,  -1 
+groups of 2 elements,  / frozen virtual orbitals ,  -1 
+groups of 2 elements,  ,  9 
+groups of 2 elements,  ,  1 
+groups of 2 elements,  ,  9 
+groups of 2 elements,  /internal orbitals ,  -1 
+groups of 1 elements, /occminr,  4 
+groups of 1 elements, /occmaxr,  4 
+groups of 1 elements, /bminr,  4 
+groups of 1 elements, /bmaxr,  4 
+groups of 1 elements, /step masks r,  4 
+groups of 1 elements, /occmin,  10 
+groups of 1 elements, /occmax,  10 
+groups of 1 elements, /bmin,  10 
+groups of 1 elements, /bmax,  10 
+groups of 1 elements, /step masks,  10 
+groups of 1 elements, /step vector disp pairs,  9 
+nintern=11,nreforb=6
+groups of 1 elements, /reference occupations vector ,  10 
+groups of 2 elements,  / frozen core orbitals ,  9 
+groups of 2 elements,  / frozen virtual orbitals ,  -1 
+groups of 2 elements,  ,  1 
+groups of 2 elements,  ,  9 
+groups of 2 elements,  /internal orbitals ,  -1 
+groups of 1 elements, /occminr,  4 
+groups of 1 elements, /occmaxr,  4 
+groups of 1 elements, /bminr,  4 
+groups of 1 elements, /bmaxr,  4 
+groups of 1 elements, /step masks r,  4 
+groups of 1 elements, /occmin,  5 
+groups of 1 elements, /occmax,  5 
+groups of 1 elements, /bmin,  5 
+groups of 1 elements, /bmax,  5 
+groups of 1 elements, /step masks,  5 
+groups of 1 elements, /step vector disp pairs,  4 
+nintern=6,nreforb=1
+groups of 1 elements, /reference occupations vector ,  5 
+getvector : 5
+getvector2 : 1, 5,   1 ,  1  
+getvector : 0
+getvector2 : 1, 0,   1 ,  1  
+getvector : 6
+getvector2 : 1, 6,   1 ,  1  
+getvector : 1
+getvector2 : 1, 1,   1 ,  1  
+getvector : 0
+getvector2 : 1, 0,   1 ,  1  
+getvector : 1
+getvector2 : 1, 1,   1 ,1 
+groups of 2 elements,  / frozen core orbitals ,  -1 
+groups of 2 elements,  / frozen virtual orbitals ,  -1 
+groups of 2 elements,  ,  9 
+groups of 2 elements,  ,  1 
+groups of 2 elements,  ,  9 
+groups of 2 elements,  /internal orbitals ,  -1 
+groups of 1 elements, /occminr,  4 
+groups of 1 elements, /occmaxr,  4 
+groups of 1 elements, /bminr,  4 
+groups of 1 elements, /bmaxr,  4 
+groups of 1 elements, /step masks r,  4 
+groups of 1 elements, /occmin,  10 
+groups of 1 elements, /occmax,  10 
+groups of 1 elements, /bmin,  10 
+groups of 1 elements, /bmax,  10 
+groups of 1 elements, /step masks,  10 
+groups of 1 elements, /step vector disp pairs,  9 
+nintern=11,nreforb=6
+groups of 1 elements, /reference occupations vector ,  10 
+groups of 2 elements,  / frozen core orbitals ,  9 
+groups of 2 elements,  / frozen virtual orbitals ,  -1 
+groups of 2 elements,  ,  1 
+groups of 2 elements,  ,  9 
+groups of 2 elements,  /internal orbitals ,  -1 
+groups of 1 elements, /occminr,  4 
+groups of 1 elements, /occmaxr,  4 
+groups of 1 elements, /bminr,  4 
+groups of 1 elements, /bmaxr,  4 
+groups of 1 elements, /step masks r,  4 
+groups of 1 elements, /occmin,  5 
+groups of 1 elements, /occmax,  5 
+groups of 1 elements, /bmin,  5 
+groups of 1 elements, /bmax,  5 
+groups of 1 elements, /step masks,  5 
+groups of 1 elements, /step vector disp pairs,  4 
+nintern=6,nreforb=1
+groups of 1 elements, /reference occupations vector ,  5 
+ndrt,idrt=2 , 1
+ndrt,idrt=2 , 2
+ ondisk= :: $ondisk 

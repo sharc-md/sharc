@@ -1,0 +1,46 @@
+    ## This is a commented version of the MOLCAS.resources file 
+    ## for version 2.1 of the SHARC_MOLCAS.py interface.
+
+    # Path to MOLCAS, TINKER, wfoverlaps
+molcas /usr/license/openmolcas/
+wfoverlap $SHARC/wfoverlap.x
+
+
+# Paths to savedir and scratchdir
+scratchdir $TMPDIR/WORK
+savedir $TMPDIR/SAVE/
+
+
+
+# Ressources
+memory 1000
+ncpu 1
+delay 0.0
+
+
+# Dyson norms
+numfrozcore 5
+numocc 0
+
+
+
+# Initial orbital settings
+#always_orb_init        # always use MOLCAS.%i.JobIph.init or MOLCAS.%i.RasOrb.init
+#always_guess           # always start from GuessOrb
+                        # otherwise: start from savedir, if possible
+
+
+
+
+
+# Increase printlevel of interface a lot
+DEBUG true
+
+
+
+
+
+
+
+
+# kate: syntax python

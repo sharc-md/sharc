@@ -1,0 +1,11 @@
+turbodir $TURBOMOLE
+orcadir  $ORCA
+scratchdir $SCRADIR/WORK
+
+memory 1000
+ncpu 1
+
+wfoverlap $SHARC/wfoverlap.x
+wfthres 0.999
+
+dipolelevel 1

@@ -1,0 +1,16 @@
+columbus $COLUMBUS
+molcas $molcas
+
+scratchdir $SCRADIR/WORK
+wfoverlap $SHARC/wfoverlap.x
+
+memory 1700             # for runc
+
+template COLUMBUS.template/
+
+DIR 1 1_3/
+DIR 3 1_3/
+DIR 2 2/
+
+MOCOEF 1_3/ 1_3/
+MOCOEF 2/ 1_3/

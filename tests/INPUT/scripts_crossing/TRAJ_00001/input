@@ -1,0 +1,22 @@
+geomfile "geom"
+veloc external
+velocfile "veloc"
+
+nstates 2 0 1 
+actstates 2 0 1 
+state 2 mch
+coeff auto
+rngseed 30569
+
+ezero -78.081395
+tmax 100
+stepsize 0.500000
+nsubsteps 25
+
+surf sharc
+coupling ddr
+gradcorrect
+ekincorrect parallel_vel
+decoherence 0.1
+grad_all
+nac_all

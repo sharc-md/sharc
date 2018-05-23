@@ -1,0 +1,22 @@
+ &SEWARD  &END
+ANGMOM
+ 0 0 0
+RELINT
+DOUGLAS-KROLL
+AMFI
+*Molecule
+Basis set
+S.cc-pvdz
+S1   0.00000000   0.00000000   0.00158900 
+End of Basis
+Basis set
+H.cc-pvdz
+H2   0.00000000   1.87989800   2.21652500 
+H3   0.00000000   -5.24361200   2.21652500 
+End of Basis
+End of Input
+
+ &ALASKA  &END
+VERBOSE
+SHOW GRADIENT CONTRIBUTIONS
+End of Input

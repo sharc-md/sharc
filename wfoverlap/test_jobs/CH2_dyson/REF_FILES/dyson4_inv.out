@@ -1,0 +1,221 @@
+Using OpenMP version. Maximum number of threads:     1
+ -------------------------------------------------------------------------------
+ Reading input
+ Reading input from file: dyson4_inv.in
+*** walltime: total -        0.012s, step -        0.012s ***
+ -------------------------------------------------------------------------------
+Number of <bra| electrons:               7
+Number of <bra| alpha el:                3
+Number of <bra| beta el:                 4
+Number of |ket> electrons:               8
+Number of |ket> alpha el:                4
+Number of |ket> beta el:                 4
+ 
+Number of <bra| MOs:                    13
+Number of |ket> MOs:                    13
+Number of discarded core MOs:            0
+ 
+Number of <bra| states:                  5
+Number of |ket> states:                  3
+Number of <bra| determinants:         1922
+Number of |ket> determinants:         1093
+Number of det. pairs:              2100746
+ Joy! I calculate a dyson orbital!
+ -------------------------------------------------------------------------------
+ Sorting determinants and CI vectors for blocking
+*** walltime: total -        0.014s, step -        0.002s ***
+ -------------------------------------------------------------------------------
+Number of <bra| alpha blocks:                130
+Number of |ket> alpha blocks:                155
+Number of <bra|  beta blocks:                155
+Number of |ket>  beta blocks:                155
+Block-determinants to compute:             44175
+ 
+Number of <bra| alpha superblocks:            30
+Number of |ket> alpha superblocks:            40
+Number of <bra|  beta superblocks:            40
+Number of |ket>  beta superblocks:            40
+ -------------------------------------------------------------------------------
+ DEBUGMR: ionization!
+ RP_nspin:                     4
+ RQ_nspin:                     4
+ LP_nspin:                     4
+ LQ_nspin:                     3
+ -------------------------------------------------------------------------------
+  Reordering CI-coefficients
+*** walltime: total -        0.014s, step -        0.000s ***
+ -------------------------------------------------------------------------------
+  Transforming mixed overlap matrix
+    Using matrix inversion for AO overlap matrix
+*** walltime: total -        0.051s, step -        0.008s ***
+ -------------------------------------------------------------------------------
+ Precomputing P determinants using adaptive formalism
+*** walltime: total -        0.023s, step -        0.008s ***
+ --------------------------------------------------------
+Annihilating MO    1 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        0.028s, step -        0.005s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        0.032s, step -        0.005s ***
+ --------------------------------------------------------
+Annihilating MO    2 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        0.035s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        0.039s, step -        0.005s ***
+ --------------------------------------------------------
+Annihilating MO    3 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        0.042s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        0.046s, step -        0.005s ***
+ --------------------------------------------------------
+Annihilating MO    4 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        0.048s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        0.053s, step -        0.005s ***
+ --------------------------------------------------------
+Annihilating MO    5 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        0.054s, step -        0.001s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        0.055s, step -        0.001s ***
+ --------------------------------------------------------
+Annihilating MO    6 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        0.056s, step -        0.001s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        0.057s, step -        0.001s ***
+ --------------------------------------------------------
+Annihilating MO    7 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        0.058s, step -        0.001s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        0.059s, step -        0.001s ***
+ --------------------------------------------------------
+Annihilating MO    8 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        0.060s, step -        0.001s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        0.061s, step -        0.001s ***
+ --------------------------------------------------------
+Annihilating MO    9 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        0.063s, step -        0.001s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        0.063s, step -        0.001s ***
+ --------------------------------------------------------
+Annihilating MO   10 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        0.065s, step -        0.001s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        0.065s, step -        0.001s ***
+ --------------------------------------------------------
+Annihilating MO   11 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        0.067s, step -        0.001s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        0.068s, step -        0.001s ***
+ --------------------------------------------------------
+Annihilating MO   12 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        0.068s, step -        0.000s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        0.068s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   13 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        0.068s, step -        0.000s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        0.068s, step -        0.000s ***
+ -------------------------------------------------------------------------------
+ ALPHA ionization
+ Dyson norm matrix |<PsiA_i|PsiB_j>|^2
+                |PsiB  1>     |PsiB  2>     |PsiB  3>     
+<PsiA  1|    0.8817323437  0.4716319904  0.0680618001
+<PsiA  2|    0.0615587916  0.4657174978  0.8772909828
+<PsiA  3|    0.0000000000  0.0363130811  0.0000000000
+<PsiA  4|    0.9634885049  0.0000000000  0.0017379586
+<PsiA  5|    0.0000000000  0.9261839484  0.0000000000
+  Dyson orbitals in reference |ket> MO basis:
+<PsiA  1|  
+         |PsiB   1>      |PsiB   2>      |PsiB   3>   
+MO     1 -1.24032037E-03  0.00000000E+00  9.98160731E-04
+MO     2 -5.90277699E-02  0.00000000E+00  6.14517859E-02
+MO     3 -1.23295110E-09  0.00000000E+00  3.08416850E-10
+MO     4  0.00000000E+00 -6.86713110E-01  0.00000000E+00
+MO     5  9.31351013E-01  0.00000000E+00 -2.49427166E-01
+MO     6 -3.50106110E-02  0.00000000E+00  4.19935829E-02
+MO     7 -1.83303166E-10  0.00000000E+00 -3.67409953E-12
+MO     8 -1.91183349E-10  0.00000000E+00  9.40768334E-11
+MO     9  9.49404350E-02  0.00000000E+00 -1.42777611E-02
+MO    10  0.00000000E+00 -7.55613522E-03  0.00000000E+00
+MO    11 -2.43390462E-02  0.00000000E+00  1.01614511E-02
+MO    12  0.00000000E+00  0.00000000E+00  0.00000000E+00
+MO    13  0.00000000E+00  0.00000000E+00  0.00000000E+00
+ -------------------------------------
+<PsiA  2|  
+         |PsiB   1>      |PsiB   2>      |PsiB   3>   
+MO     1  0.00000000E+00 -8.91755293E-04  0.00000000E+00
+MO     2  0.00000000E+00 -4.56472825E-02  0.00000000E+00
+MO     3  0.00000000E+00 -9.38685698E-10  0.00000000E+00
+MO     4  2.48001696E-01  0.00000000E+00  9.36398602E-01
+MO     5  0.00000000E+00  6.75352370E-01  0.00000000E+00
+MO     6  0.00000000E+00 -4.67130174E-02  0.00000000E+00
+MO     7  0.00000000E+00 -1.12345427E-10  0.00000000E+00
+MO     8  0.00000000E+00 -8.51055555E-11  0.00000000E+00
+MO     9  0.00000000E+00  6.75999870E-02  0.00000000E+00
+MO    10 -7.34507953E-03  0.00000000E+00  2.11811433E-02
+MO    11  0.00000000E+00 -2.79345716E-02  0.00000000E+00
+MO    12  0.00000000E+00  0.00000000E+00  0.00000000E+00
+MO    13  0.00000000E+00  0.00000000E+00  0.00000000E+00
+ -------------------------------------
+<PsiA  3|  
+         |PsiB   1>      |PsiB   2>      |PsiB   3>   
+MO     1  0.00000000E+00  7.20277978E-13  0.00000000E+00
+MO     2  0.00000000E+00  3.48058721E-12  0.00000000E+00
+MO     3  0.00000000E+00  1.90476161E-01  0.00000000E+00
+MO     4 -5.20141400E-11  0.00000000E+00 -2.77092263E-10
+MO     5  0.00000000E+00  4.95545434E-11  0.00000000E+00
+MO     6  0.00000000E+00 -5.20540896E-11  0.00000000E+00
+MO     7  0.00000000E+00  3.78138791E-03  0.00000000E+00
+MO     8  0.00000000E+00  4.19692274E-03  0.00000000E+00
+MO     9  0.00000000E+00  1.23561126E-11  0.00000000E+00
+MO    10  1.64925630E-11  0.00000000E+00 -1.41267393E-11
+MO    11  0.00000000E+00 -7.93131730E-11  0.00000000E+00
+MO    12  0.00000000E+00  0.00000000E+00  0.00000000E+00
+MO    13  0.00000000E+00  0.00000000E+00  0.00000000E+00
+ -------------------------------------
+<PsiA  4|  
+         |PsiB   1>      |PsiB   2>      |PsiB   3>   
+MO     1  4.76921898E-12  0.00000000E+00 -7.88893210E-13
+MO     2  8.16261613E-11  0.00000000E+00 -4.41573699E-12
+MO     3 -9.81572629E-01  0.00000000E+00 -4.13152415E-02
+MO     4  0.00000000E+00  7.34365158E-11  0.00000000E+00
+MO     5 -1.24091371E-09  0.00000000E+00 -5.06581521E-12
+MO     6  4.32220415E-11  0.00000000E+00 -2.04257898E-11
+MO     7 -7.65342180E-04  0.00000000E+00 -2.16648907E-03
+MO     8 -1.75885746E-03  0.00000000E+00 -5.12988296E-03
+MO     9 -1.18219060E-10  0.00000000E+00 -3.88981919E-11
+MO    10  0.00000000E+00  8.12464851E-12  0.00000000E+00
+MO    11  3.06936508E-11  0.00000000E+00  1.91946817E-11
+MO    12  0.00000000E+00  0.00000000E+00  0.00000000E+00
+MO    13  0.00000000E+00  0.00000000E+00  0.00000000E+00
+ -------------------------------------
+<PsiA  5|  
+         |PsiB   1>      |PsiB   2>      |PsiB   3>   
+MO     1  0.00000000E+00  4.68739753E-12  0.00000000E+00
+MO     2  0.00000000E+00  1.53511919E-11  0.00000000E+00
+MO     3  0.00000000E+00 -9.62202403E-01  0.00000000E+00
+MO     4 -5.09474358E-11  0.00000000E+00 -2.30210691E-10
+MO     5  0.00000000E+00 -1.24492103E-09  0.00000000E+00
+MO     6  0.00000000E+00  1.10190639E-10  0.00000000E+00
+MO     7  0.00000000E+00 -1.78961328E-02  0.00000000E+00
+MO     8  0.00000000E+00  5.49661853E-03  0.00000000E+00
+MO     9  0.00000000E+00 -1.40817393E-10  0.00000000E+00
+MO    10  1.39726210E-11  0.00000000E+00 -1.42437763E-11
+MO    11  0.00000000E+00  8.63692450E-11  0.00000000E+00
+MO    12  0.00000000E+00  0.00000000E+00  0.00000000E+00
+MO    13  0.00000000E+00  0.00000000E+00  0.00000000E+00
+ -------------------------------------

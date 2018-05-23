@@ -1,0 +1,14 @@
+#
+#SHARC: states 4 0 3
+#SHARC: interface LVC
+#SHARC: opt min 2
+
+! ExtOpt
+
+%geom
+  maxstep 0.300000
+  Trust -0.300000
+end
+
+* xyzfile 0 1 geom.xyz
+

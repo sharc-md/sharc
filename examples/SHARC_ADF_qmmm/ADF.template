@@ -1,0 +1,262 @@
+    ## This is a commented version of the ADF.template file 
+    ## for version 2.1 of the SHARC_ADF.py interface.
+
+    ## ======== BASIS SETS ============
+
+    ## This keyword activates the relativistic Hamiltonian of ADF.
+    ## If no keyword is given, a nonrelativistic calculation is done.
+    ## All arguments are written verbatim to ADF input.
+relativistic scalar zora
+
+    ## This keyword defines the basis set for all atoms.
+    ## Specific basis sets per element can be defined with the basis_per_element key below.
+    ## Examples: SZ, DZ, DZP, TZP, TZ2P, QZ4P, ...
+basis SZ
+
+    ## This keyword sets the path to the basis set library of ADF.
+    ## Bash variables and ~ are automatically expanded by the interface.
+#basis_path $ADFRESOURCES
+
+    ## This keyword overwrites the basis set from the "basis" key for a given element.
+    ## The "basis_per_element" key can occur several times in the template.
+    ## Requires two arguments, first the element, then the path to the basis set file (full path necessary)
+    ## Can also define a basis set for an extra fragment (e.g. H.1).
+#basis_per_element S $ADFRESOURCES/ZORA/DZP/S
+#basis_per_element H.1 $ADFRESOURCES/ZORA/DZP/H
+
+    ## Defines an atomic fragment for use in ADF, with labels formatted like "El.i"
+    ## With the "basis_per_element" key, one can then specify basis sets for each defined fragment.
+    ## The format is "define_fragment <label> <list of atom numbers>
+    ## All specified atoms must be of the element given in the label.
+    ## Note that in QM/MM calculations, the force field file must contain extra parameters for the element "El.i".
+# define_fragment  H.1  3 5 6
+
+
+
+    ## ======== CHEMISTRY ============
+
+    ## This keyword defines the XC functional.
+    ## All arguments are written verbatim to ADF input.
+    ## Note that for gradient calculations, only LDA, GGA, and HYBRID work
+    ## See https://www.scm.com/doc/ADF/Input/Density_Functional.html#keyscheme-xc
+    ## Examples for  first argument: LDA, GGA, HYBRID ( METAGGA, METAHYBRID, HartreeFock, LIBXC )
+    ## Examples for second argument: VWN, Xonly, Xalpha;   BP86, PBE, PW91, ...;   B3LYP, PBE0, ...
+functional gga pbe
+
+    ## This keyword activates the XCFUN keyword in ADF, which is a library to evaluate functionals.
+    ## See https://www.scm.com/doc/ADF/Input/Density_Functional.html#keyscheme-xc
+#functional_xcfun
+
+    ## This keyword activates dispersion correction.
+    ## All arguments are written verbatim to ADF input.
+    ## See the ADF manual for possible options.
+#dispersion grimme3 bjdamp
+
+    ## This keyword sets the total charge of the molecule.
+    ## For QM/MM calculations, you have to specify the charge of the QM (with link atoms replaced) only!
+    ## Unlike in the ADF input, this keyword does not allow to set the number of unpaired electrons.
+    ## Instead, the interface automatically sets this number based on the requested multiplicity.
+    ##
+    ## This keyword accepts either a single number, or as many numbers as there are multiplicities.
+    ## If only one charge is given but several multiplicities requested in QM.in, then the interface
+    ## will automatically check and assign the charges based on the nuclear charge (this might not for for QM/MM).
+    ## If after the "charge" keyword one charge is given for each multiplicities, these numbers will used as is.
+    ## 
+    ## (for QM/MM it is advisable to always give more than one charge values to disable automatic assignment)
+charge 0 +1 0 +1 0
+#charge 0
+
+    ## With this keyword, the interface returns total energies instead of bonding energies.
+    ## Note that in ADF bonding energies are more accurate than total energies.
+    ## Total energies are not available for relativistic or QM/MM calculations.
+#totalenergy
+
+    ## With this keyword, the interface requests a COSMO calculation in ADF, with the solvent given as argument.
+    ## COSMO is not compatible with gradient calculations.
+    ## Examples of solvents: see https://www.scm.com/doc/ADF/Input/COSMO.html#keyscheme-solvation
+#cosmo water
+
+    ## This keyword activates nonequilibrium solvation for excited states.
+    ## For vertical excitation calculations, this value should be the square of the refraction index of the solvent.
+    ## If you neglect this keyword, ADF will assume equilibrium solvation (incorrect for vertical excitations).
+cosmo_neql 1.77
+
+
+
+    ## ======== ACCURACY and CONVERGENCE ============
+
+    ## This keyword controls the integration grid.
+    ## One can either use the modern Becke grid (ADF>=2013) or the older Voronoi grid.
+    ## For Becke, use:
+grid beckegrid normal     # Options: basic, normal, good, verygood, excellent
+    ## For Voronoi, use:
+#grid integration 4.0    # Options: 4.0, 5.0, 6.0, ...
+
+    ## This keyword controls the integration grid generation around MM point charges.
+    ## grids are only generated for MM charges closer than this distance to any QM atom.
+    ## It only has any effect in QM/MM runs, but it works for both Becke and Voronoi grids.
+    ## The default is 7.5589 Bohr (equal to 4 Angstrom).
+grid_qpnear 7.5589
+
+    ## With this keyword, the integration grid quality can be controlled per atom.
+    ## This keyword can occur several times, where later lines overwrite earlier lines.
+    ## Atoms which are not mentioned are treated with the quality given with the grid keyword.
+    ## Note that MM point charges cannot be affected with this keyword, use the grid keyword instead.
+    ## Has no effect if the Voronoi grid is used.
+#grid_per_atom good 1 2 3
+#grid_per_atom basic 4 5 6
+
+    ## This keyword sets the Coulomb fitting scheme.
+    ## One can either use the modern ZlmFit (ADF>=2013) or the older STOFit.
+    ## For ZlmFit, use:
+fit zlmfit normal         # Options: basic, normal, good, verygood, excellent
+    ## For STOFit, use:
+#fit stofit
+
+    ## With this keyword, the ZlmFit quality can be controlled per atom.
+    ## This keyword can occur several times, where later lines overwrite earlier lines.
+    ## Atoms which are not mentioned are treated with the quality given with the fit keyword.
+    ## Has no effect if the STOfit is used.
+#fit_per_atom verygood 1
+#fit_per_atom good 2 3
+
+    ## This keyword activates the "exactdensity" keyword in the ADF input.
+    ## ADF will then use the exact electron density for the XC potential.
+    ## See the ADF manual for more details.
+#exactdensity
+
+    ## This keyword activates the use of the new HF exchange scheme (ADF>=2016).
+    ## The default is to not use the new scheme (even when using ADF>=2017, where it is the default).
+    ## The new scheme might be faster and better parallelized, but benchmarking is advisable.
+    ## Note that energies (SCF+Davidson) usually take much longer than gradients (CPKS+integration).
+rihartreefock normal     # Options: basic, normal, good, verygood, excellent
+
+    ## With this keyword, the rihartreefock quality can be controlled per atom.
+    ## This keyword can occur several times, where later lines overwrite earlier lines.
+    ## Atoms which are not mentioned are treated with the quality given with the rihartreefock keyword.
+    ## Has no effect if rihartreefock is not used.
+#rihf_per_atom verygood 1
+#rihf_per_atom good 2 3
+
+    ## This keyword places the occupations keyword (not as block) into the ADF input.
+    ## All arguments are copied verbatim to the input.
+    ## See the ADF manual for more details.
+#occupations keeporbitals=50
+
+    ## This sets the number of SCF cycles (the interface will use 100 by default).
+scf_iterations 200
+
+    ## This activates the "linearscaling" option of ADF.
+    ## By default, this option is not used in the ADF input.
+    ## The argument is a number between 0 and 99, where values <8 are sloppier, >8 are tighter than default.
+#linearscaling 8
+
+    ## This sets the convergence threshold for the CPKS equations (for excited-state gradients)
+cpks_eps 0.0001
+
+
+
+    ## ======== EXCITATIONS ============
+
+    ## This keyword deactivates TDA (which the interface will request by default).
+#no_tda
+
+    ## This keyword increases the number of excited states for the Davidson step.
+    ## These extra states will not be reported in the output, which is controlled by the "states" request in QM.in.
+    ## Like the "charges" key, padding can be specified per multiplicity.
+    ## Note that extra states change how the Davidson procedure converges and thus can slightly affect the results.
+paddingstates 0 0 0 0 0
+
+    ## Sets the number of davidson vectors.
+    ## The default is to let ADF decide on the number of vectors (this gives min(40,nstates+40) ).
+    ## For optimal performance, might be increased to around 5*nstates.
+dvd_vectors 60
+
+    ## Sets the davidson tolerance (difference in excitation energies between iterations).
+    ## Default is 1e-6.
+dvd_tolerance 1e-6
+
+    ## Sets the davidson residual tolerance (norm of the residual vectors).
+    ## Can significantly accelerate the Davidson procedure (if set to ~sqrt(dvd_tolerance) or slightly below ).
+    ## Default is the same value as dvd_tolerance.
+    ## Only works for ADF >=2017.207
+dvd_residu 1e-3
+
+    ## This keyword activates the "MBLOCKSMALL" keyword in the ADF input.
+    ## Without the "MBLOCKSMALL" keyword, ADF's updates multiple states in each iteration, possibly even converged ones.
+    ## With the "MBLOCKSMALL" keyword, states are updated one by one, skipping already converged ones and thus being faster.
+    ## Recommendation: Using "dvd_mblocksmall" will give shorter runtimes, but in some situations convergence might be signalled before all states are actually fully converged.
+#dvd_mblocksmall
+
+    ## This keyword requests that triplet states are calculated in a separate job based on an open-shell triplet ground state.
+    ## The default is that triplets are calculated based on the closed-shell singlet ground state.
+    ## Unrestricted triplets are not compatible with a spin-orbit computation.
+#unrestricted_triplets
+
+    ## This activates the "modifyexcitations" keyword in the ADF input.
+    ## The option can be used to compute core excitation states (e.g., for X-Ray spectra).
+    ## It takes a single argument.
+    ## For example, "modifyexcitations 5" means that excitations are only allowed out of the 5 lowest MOs.
+#modifyexcitations 5
+
+
+
+
+    ## ======== QM/MM ============
+
+    ## This keyword activates a QM/MM calculation, using the NEWQMMM implementation of ADF.
+    ## The default is to not run a QM/MM calculation.
+    ## If activated, the interface will look for two more files:
+    ## - a force field file in Amber95 format
+    ## - connection table file, specifying the "mm_connection_table" and "link_bonds" blocks for the input.
+qmmm
+
+    ## This keyword sets the QM-MM coupling scheme.
+    ## default is 1 (mechanical embedding), option 2 (electrostatic embedding) only works for ADF>=2018.
+qmmm_coupling 2
+
+
+
+
+
+
+
+
+## ===============================================================================================
+## For those familiar with ADF input files, here some infos what the interface does automatically:
+## ===============================================================================================
+##
+## UNITS keyword: always Bohr, input geometry is converted appropriately.
+##
+## SYMMETRY keyword: always uses nosym
+##
+## CHARGE keyword: automatically uses the correct charge per multiplicity and n_alpha-n_beta
+##
+## UNRESTRICTED keyword: placed if necessary (for all but singlet ground state)
+##
+## BASIS block: automatically sets "core none", "createoutput none"
+##
+## EXCITATIONS block: always "davidson", automatically uses "onlysing", "onlytrip", "lowest", and requests different numbers of singlets/triplets for ADF>=2017.207
+##
+## SOPERT keyword: automatic, if SOC requested and triplets present
+##
+## GSCORR keyword: automatic, if singlets and triplets present
+##
+## GRADIENT keyword: Uses this undocumented keyword in place of a GEOMETRY block
+##
+## EXCITEDGO block: Used automatically, cpks eps is always set to 0.0001, sing_grads/trip_grads are used for ADF>=2017.207
+##
+## SAVE keyword: saves TAPE21, and TAPE15 for overlap and Dyson calculations
+##
+## DEPENDENCY keyword: is always added
+##
+## NOPRINT keyword: "logfile", if the interface does not run in debug mode.
+##
+## RESTART keyword: used to restart the MOs from the last/present time step, or from initial MOs
+##
+## QMMM block: always uses NEWQMMM, output_level=1, warning_level=1, optimize(method skip) for gradients
+##
+## SHARCOVERLAP keyword: uses this undocumented kyeword to compute the AO-overlap matrix for neighboring geometries.
+##
+
+# kate: syntax python

@@ -1,0 +1,6 @@
+a_mo=mo_a
+b_mo=mo_b
+a_det=dets_a.ms1
+b_det=dets_b.ms1
+ao_read=0
+mix_aoovl=SAO_mix

@@ -1,0 +1,45 @@
+ N /Spin-Orbit CI Calculation? 
+ 2 / input the spin multiplicity 
+ 23  / input the total number of electrons 
+   1  / input the number of irreps 
+ Y / input symmetry labels 
+ a  / symmetry labels 
+ 52 / orbitals per irrep 
+  1 /input the molecular spatial symmetry 
+     / frozen core orbitals  
+    / frozen virtual orbitals  
+ 1 1 1 2 1 3 1 4 1 5 1 6    
+ 1 7 1 8 1 9 1 10 1 11    
+ 1 12 1 13    
+    /internal orbitals  
+ 11 /input the number of ref-csf doubly occupied orbitals
+ 0 1  /occminr 
+ 1 1  /occmaxr 
+ 0 0  /bminr 
+ 1 1  /bmaxr 
+ 1111 1111  /step masks r 
+ 1 / input the maximum excitation level 
+ 2 4 6 8 10 12 13 15 17 19 21 21 22  /occmin 
+ 23 23 23 23 23 23 23 23 23 23 23 23 23  /occmax 
+ 0 0 0 0 0 0 0 0 0 0 0 0 0  /bmin 
+ 23 23 23 23 23 23 23 23 23 23 23 23 23  /bmax 
+ 1000 1000 1000 1000 1000 1000 1111 1111 1111 1111 1111 1111 1111  /step masks 
+ -1 0 0 /vertices to be removed  
+ N / impose generalized space restrictions 
+  -1 0 0 0 /arcs to be removed  
+  -1  0 / DRT levels to be printed out 
+  1 / allowed reference symmetries 
+ N /keep all of the z-walks as references? 
+ Y /generate walks while applying reference drt restrictions? 
+ N /impose additional orbital-group occupation restrictions? 
+  N /apply primary reference occupation restrictions? 
+ N /manually select individual walks? 
+  -1  4 4 4 4 4 4 4 4 4 4 4 4  /step vector disp pairs 
+   0 /input reference walk number (0 to end)
+ 2 2 2 2 2 2 2 2 2 2 2 0 0  /reference occupations vector  
+ n /
+  0 /input mrsdci walk number (0 to end) 
+ cidrt_title 
+ 
+ y /print drt file 
+ 

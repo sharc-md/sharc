@@ -1,0 +1,22 @@
+geomfile     "geom"
+veloc        external
+velocfile    "veloc"
+
+nstates      4
+actstates    4
+state        2 mch
+coeff        auto
+rngseed      26933
+
+ezero        -1.20
+tmax         1.0
+stepsize     0.5
+nsubsteps    25
+
+surf         sharc
+coupling     overlap
+nogradcorrect
+ekincorrect  parallel_vel
+decoherence_scheme edc
+nograd_select
+select_directly

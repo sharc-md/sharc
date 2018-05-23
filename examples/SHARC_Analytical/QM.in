@@ -1,0 +1,23 @@
+2
+
+I    0.00000   0.0   0.0
+Br   6.10463   0.0   0.0
+    ## Control keywords are ignored:
+    ##cleanup
+
+init
+#samestep
+#restart
+
+    ## Settings:
+unit bohr
+states 3
+
+    ## Quantity requests are ignored.
+    ## The following quantities are always computed:
+    #soc
+    #dm
+    #grad 
+    ##overlap
+
+# kate: syntax python

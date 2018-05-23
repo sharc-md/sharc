@@ -1,0 +1,10 @@
+Singlet_1/                               #Path:  [end] (autocomplete enabled) 
+                                         #Path:  [end] (autocomplete enabled) 
+ref.molden                               #Path:  [ref.xyz] (autocomplete enabled) 
+                                         #Please give the type of coordinate file [molden] (autocomplete enabled) 
+                                         #Do you wish to use mass weighted coordinates? [True] 
+                                         #Number of time steps:  [2001] 
+                                         #Length of time step:  [0.5] 
+                                         #Time step interval:  [0 2000] 
+                                         #Do you want to add another time interval for analysis? [False] 
+                                         #Name for subdirectory? [essdyn] (autocomplete enabled) 

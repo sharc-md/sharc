@@ -1,0 +1,13 @@
+adfhome $ADFHOME
+scmlicense $SCMLICENSE
+scratchdir $SCRADIR/WORK
+wfoverlap $SHARC/wfoverlap.x
+wfthres 0.99
+
+ncpu 1
+memory 1000
+
+theodir $THEODORE
+theodore_prop Om POSi POSf PR CT PRNTO S_HE Z_HE RMSeh
+theodore_fragment 1 3 6
+theodore_fragment 2 4 5

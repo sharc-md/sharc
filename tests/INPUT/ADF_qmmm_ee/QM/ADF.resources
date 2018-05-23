@@ -1,0 +1,11 @@
+adfhome $ADFHOME
+scmlicense $SCMLICENSE
+scratchdir $SCRADIR/WORK
+wfoverlap $SHARC/wfoverlap.x
+wfthres 0.99
+
+ncpu 1
+memory 1000
+
+qmmm_table    ADF.qmmm.table
+qmmm_ff_file  ADF.qmmm.ff

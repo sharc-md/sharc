@@ -1,0 +1,6 @@
+a_mo=GEO1/MOCOEFS/mocoef_scf.sp
+b_mo=GEO2/MOCOEFS/mocoef_scf.sp
+a_det=GEO1/WORK/dets
+b_det=GEO2/WORK/dets
+ao_read=2
+mixing_angles

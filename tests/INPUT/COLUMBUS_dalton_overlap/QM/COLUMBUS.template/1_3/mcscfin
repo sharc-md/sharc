@@ -1,0 +1,18 @@
+ &input 
+  niter=100, 
+  nmiter=50, 
+  nciitr=300, 
+  tol(3)=1.e-6, 
+  tol(2)=1.e-6, 
+  tol(1)=1.e-10, 
+  NSTATE=0, 
+  npath=1,3,9,10,13,17,19,21,-11,12, 2,
+  ncoupl=5,
+  tol(9)=1.e-3,
+  FCIORB=  1,12,20,1,13,20
+  NAVST(1) = 2,
+  WAVST(1,1)=1 ,
+  WAVST(1,2)=1 ,
+  NAVST(2) = 1,
+  WAVST(2,1)=1 ,
+ &end 

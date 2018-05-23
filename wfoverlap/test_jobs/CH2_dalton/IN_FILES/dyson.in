@@ -1,0 +1,7 @@
+a_mo=GEO1/MOCOEFS/mocoef_scf.sp
+b_mo=GEO1.cat/mo_cat
+a_det=GEO1/WORK/dets
+b_det=GEO1.cat/dets_cat
+mix_aoovl=GEO1.cat/aoints
+ao_read=2
+same_aos

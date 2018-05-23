@@ -1,0 +1,604 @@
+Using OpenMP version. Maximum number of threads:     2
+ -------------------------------------------------------------------------------
+ Reading input
+ Reading input from file: dyson.in
+*** walltime: total -        0.065s, step -        0.065s ***
+ -------------------------------------------------------------------------------
+Number of <bra| electrons:              49
+Number of <bra| alpha el:               24
+Number of <bra| beta el:                25
+Number of |ket> electrons:              50
+Number of |ket> alpha el:               25
+Number of |ket> beta el:                25
+ 
+Number of <bra| MOs:                   160
+Number of |ket> MOs:                   160
+Number of discarded core MOs:           10
+ 
+Number of <bra| states:                  5
+Number of |ket> states:                  3
+Number of <bra| determinants:          744
+Number of |ket> determinants:         3637
+Number of det. pairs:              2705928
+ Joy! I calculate a dyson orbital!
+ -------------------------------------------------------------------------------
+ Sorting determinants and CI vectors for blocking
+*** walltime: total -        0.106s, step -        0.042s ***
+ -------------------------------------------------------------------------------
+Number of <bra| alpha blocks:                214
+Number of |ket> alpha blocks:                916
+Number of <bra|  beta blocks:                184
+Number of |ket>  beta blocks:                916
+Block-determinants to compute:            364568
+ 
+Number of <bra| alpha superblocks:            68
+Number of |ket> alpha superblocks:            65
+Number of <bra|  beta superblocks:            54
+Number of |ket>  beta superblocks:            65
+ -------------------------------------------------------------------------------
+ DEBUGMR: ionization!
+ RP_nspin:                    25
+ RQ_nspin:                    25
+ LP_nspin:                    25
+ LQ_nspin:                    24
+ -------------------------------------------------------------------------------
+  Reordering CI-coefficients
+*** walltime: total -        0.107s, step -        0.000s ***
+ -------------------------------------------------------------------------------
+  Transforming mixed overlap matrix
+*** walltime: total -        0.112s, step -        0.005s ***
+ -------------------------------------------------------------------------------
+ Precomputing P determinants using adaptive formalism
+*** walltime: total -        0.643s, step -        0.532s ***
+Exceeding memory limit. (maxmem, mem_used, memu) =(         4,         2,         1) MB
+ Allocation of Q block overlap matrix failed.
+  - Using on-the-fly algorithm for Q determinants.
+ --------------------------------------------------------
+Annihilating MO   26 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        1.362s, step -        0.719s ***
+ --------------------------------------------------------
+Annihilating MO   27 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        2.050s, step -        0.688s ***
+ --------------------------------------------------------
+Annihilating MO   28 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        2.699s, step -        0.650s ***
+ --------------------------------------------------------
+Annihilating MO   29 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        3.359s, step -        0.660s ***
+ --------------------------------------------------------
+Annihilating MO   30 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        4.022s, step -        0.663s ***
+ --------------------------------------------------------
+Annihilating MO   31 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        4.726s, step -        0.705s ***
+ --------------------------------------------------------
+Annihilating MO   32 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        5.435s, step -        0.709s ***
+ --------------------------------------------------------
+Annihilating MO   33 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        6.051s, step -        0.616s ***
+ --------------------------------------------------------
+Annihilating MO   34 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        6.545s, step -        0.494s ***
+ --------------------------------------------------------
+Annihilating MO   35 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.016s, step -        0.470s ***
+ --------------------------------------------------------
+Annihilating MO   36 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.400s, step -        0.384s ***
+ --------------------------------------------------------
+Annihilating MO   37 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.443s, step -        0.043s ***
+ --------------------------------------------------------
+Annihilating MO   38 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.455s, step -        0.012s ***
+ --------------------------------------------------------
+Annihilating MO   39 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.463s, step -        0.008s ***
+ --------------------------------------------------------
+Annihilating MO   40 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.482s, step -        0.020s ***
+ --------------------------------------------------------
+Annihilating MO   41 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.510s, step -        0.028s ***
+ --------------------------------------------------------
+Annihilating MO   42 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.529s, step -        0.019s ***
+ --------------------------------------------------------
+Annihilating MO   43 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.552s, step -        0.023s ***
+ --------------------------------------------------------
+Annihilating MO   44 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.575s, step -        0.023s ***
+ --------------------------------------------------------
+Annihilating MO   45 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.601s, step -        0.026s ***
+ --------------------------------------------------------
+Annihilating MO   46 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.643s, step -        0.042s ***
+ --------------------------------------------------------
+Annihilating MO   47 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.664s, step -        0.021s ***
+ --------------------------------------------------------
+Annihilating MO   48 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.684s, step -        0.020s ***
+ --------------------------------------------------------
+Annihilating MO   49 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.713s, step -        0.029s ***
+ --------------------------------------------------------
+Annihilating MO   50 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.731s, step -        0.018s ***
+ --------------------------------------------------------
+Annihilating MO   51 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.762s, step -        0.031s ***
+ --------------------------------------------------------
+Annihilating MO   52 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.799s, step -        0.037s ***
+ --------------------------------------------------------
+Annihilating MO   53 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.805s, step -        0.007s ***
+ --------------------------------------------------------
+Annihilating MO   54 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.825s, step -        0.019s ***
+ --------------------------------------------------------
+Annihilating MO   55 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.839s, step -        0.014s ***
+ --------------------------------------------------------
+Annihilating MO   56 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.858s, step -        0.019s ***
+ --------------------------------------------------------
+Annihilating MO   57 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.871s, step -        0.013s ***
+ --------------------------------------------------------
+Annihilating MO   58 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.881s, step -        0.010s ***
+ --------------------------------------------------------
+Annihilating MO   59 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.895s, step -        0.014s ***
+ --------------------------------------------------------
+Annihilating MO   60 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.912s, step -        0.016s ***
+ --------------------------------------------------------
+Annihilating MO   61 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.925s, step -        0.013s ***
+ --------------------------------------------------------
+Annihilating MO   62 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.933s, step -        0.008s ***
+ --------------------------------------------------------
+Annihilating MO   63 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.950s, step -        0.016s ***
+ --------------------------------------------------------
+Annihilating MO   64 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.961s, step -        0.011s ***
+ --------------------------------------------------------
+Annihilating MO   65 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.967s, step -        0.007s ***
+ --------------------------------------------------------
+Annihilating MO   66 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.976s, step -        0.008s ***
+ --------------------------------------------------------
+Annihilating MO   67 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        7.987s, step -        0.011s ***
+ --------------------------------------------------------
+Annihilating MO   68 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.000s, step -        0.013s ***
+ --------------------------------------------------------
+Annihilating MO   69 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.010s, step -        0.010s ***
+ --------------------------------------------------------
+Annihilating MO   70 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.021s, step -        0.011s ***
+ --------------------------------------------------------
+Annihilating MO   71 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.029s, step -        0.008s ***
+ --------------------------------------------------------
+Annihilating MO   72 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.034s, step -        0.005s ***
+ --------------------------------------------------------
+Annihilating MO   73 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.034s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   74 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.037s, step -        0.003s ***
+ --------------------------------------------------------
+Annihilating MO   75 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.038s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   76 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.045s, step -        0.007s ***
+ --------------------------------------------------------
+Annihilating MO   77 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.054s, step -        0.010s ***
+ --------------------------------------------------------
+Annihilating MO   78 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.062s, step -        0.008s ***
+ --------------------------------------------------------
+Annihilating MO   79 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.063s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   80 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.069s, step -        0.006s ***
+ --------------------------------------------------------
+Annihilating MO   81 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.071s, step -        0.002s ***
+ --------------------------------------------------------
+Annihilating MO   82 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.079s, step -        0.008s ***
+ --------------------------------------------------------
+Annihilating MO   83 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.079s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   84 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.082s, step -        0.003s ***
+ --------------------------------------------------------
+Annihilating MO   85 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.086s, step -        0.003s ***
+ --------------------------------------------------------
+Annihilating MO   86 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.086s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   87 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.086s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   88 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.089s, step -        0.003s ***
+ --------------------------------------------------------
+Annihilating MO   89 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.096s, step -        0.006s ***
+ --------------------------------------------------------
+Annihilating MO   90 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.096s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   91 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.096s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   92 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.101s, step -        0.005s ***
+ --------------------------------------------------------
+Annihilating MO   93 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.102s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   94 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.102s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   95 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.107s, step -        0.005s ***
+ --------------------------------------------------------
+Annihilating MO   96 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.107s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   97 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.110s, step -        0.003s ***
+ --------------------------------------------------------
+Annihilating MO   98 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.111s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   99 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.111s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  100 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.116s, step -        0.005s ***
+ --------------------------------------------------------
+Annihilating MO  101 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.116s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  102 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.116s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  103 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.116s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  104 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.117s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  105 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.122s, step -        0.005s ***
+ --------------------------------------------------------
+Annihilating MO  106 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.127s, step -        0.005s ***
+ --------------------------------------------------------
+Annihilating MO  107 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.127s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  108 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.127s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  109 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.131s, step -        0.003s ***
+ --------------------------------------------------------
+Annihilating MO  110 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.131s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  111 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.134s, step -        0.003s ***
+ --------------------------------------------------------
+Annihilating MO  112 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.135s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  113 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.138s, step -        0.003s ***
+ --------------------------------------------------------
+Annihilating MO  114 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.138s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  115 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.139s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  116 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.139s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  117 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.142s, step -        0.003s ***
+ --------------------------------------------------------
+Annihilating MO  118 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.146s, step -        0.003s ***
+ --------------------------------------------------------
+Annihilating MO  119 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.146s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  120 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.146s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  121 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.146s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  122 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.147s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  123 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.147s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  124 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.147s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  125 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.147s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  126 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.147s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  127 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.148s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  128 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.153s, step -        0.005s ***
+ --------------------------------------------------------
+Annihilating MO  129 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.153s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  130 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.153s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  131 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.153s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  132 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.154s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  133 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.154s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  134 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.154s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  135 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.154s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  136 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.155s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  137 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.155s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  138 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.155s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  139 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.155s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  140 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.156s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  141 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.156s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  142 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.156s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  143 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.156s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  144 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.157s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  145 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.157s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  146 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.157s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  147 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.157s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  148 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.158s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  149 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.158s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  150 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.158s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  151 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.158s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  152 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.158s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  153 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.159s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  154 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.159s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  155 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.159s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  156 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.159s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  157 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.160s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  158 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.160s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  159 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.160s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  160 in RQ-part of wavefunction
+ Dyson orbital part using semi-direct approach and direct determinant formalism
+*** walltime: total -        8.161s, step -        0.000s ***
+ -------------------------------------------------------------------------------
+ ALPHA ionization
+ Dyson norm matrix |<PsiA_i|PsiB_j>|^2
+                |PsiB  1>     |PsiB  2>     |PsiB  3>     
+<PsiA  1|    0.6486168976  0.4147539591  0.0225368444
+<PsiA  2|    0.8165236449  0.0025006095  0.2215967607
+<PsiA  3|    0.0094981032  0.5641813406  0.0298550083
+<PsiA  4|    0.4222010877  0.1203797184  0.0889660605
+<PsiA  5|    0.1471990979  0.2956484963  0.4242064721

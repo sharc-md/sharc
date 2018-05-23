@@ -1,0 +1,13 @@
+
+basis def2-svp
+dkho 2
+
+gradaccudefault 1e-7
+gradaccumax 1e-5
+
+closed 11
+occ 13
+nelec 24
+roots 1
+
+

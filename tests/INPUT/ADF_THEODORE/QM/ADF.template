@@ -1,0 +1,10 @@
+relativistic scalar zora
+basis SZ
+functional gga pbe
+charge 0 +1 0 +1 0
+grid beckegrid normal
+fit zlmfit normal
+
+#qmmm
+#qmmm_coupling 2
+

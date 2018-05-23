@@ -1,0 +1,267 @@
+   License is going to expire in 229 days  on Saturday February 21st, 2015
+   This copy of MOLCAS is licensed to  Leticia  Gonzalez
+                                                                                                   
+                                              ^^^^^            M O L C A S                         
+                                             ^^^^^^^           version 7.9 patchlevel 111          
+                               ^^^^^         ^^^^^^^                                               
+                              ^^^^^^^        ^^^ ^^^                                               
+                              ^^^^^^^       ^^^^ ^^^                                               
+                              ^^^ ^^^       ^^^^ ^^^                                               
+                              ^^^ ^^^^      ^^^  ^^^                                               
+                              ^^^  ^^ ^^^^^  ^^  ^^^^                                              
+                             ^^^^      ^^^^   ^   ^^^                                              
+                             ^   ^^^   ^^^^   ^^^^  ^                                              
+                            ^   ^^^^    ^^    ^^^^   ^                                             
+                        ^^^^^   ^^^^^   ^^   ^^^^^   ^^^^^                                         
+                     ^^^^^^^^   ^^^^^        ^^^^^    ^^^^^^^                                      
+                 ^^^^^^^^^^^    ^^^^^^      ^^^^^^^   ^^^^^^^^^^^                                  
+               ^^^^^^^^^^^^^   ^^^^^^^^^^^^^^^^^^^^   ^^^^^^^^^^^^^                                
+               ^^^^^^^^^^^^^   ^^^^             ^^^   ^^^      ^^^^                                
+               ^^^^^^^^^^^^^                          ^^^      ^^^^                                
+               ^^^^^^^^^^^^^       ^^^^^^^^^^^^        ^^      ^^^^                                
+               ^^^^^^^^^^^^      ^^^^^^^^^^^^^^^^      ^^      ^^^^                                
+               ^^^^^^^^^^^^    ^^^^^^^^^^^^^^^^^^^^    ^^      ^^^^                                
+               ^^^^^^^^^^^^    ^^^^^^^^^^^^^^^^^^^^    ^^      ^^^^    ^^^^^     ^^^    ^^^^^^     
+               ^^^^^^^^^^^^   ^^^^^^^^^^^^^^^^^^^^^^   ^^      ^^^^   ^^^^^^^    ^^^   ^^^  ^^^    
+               ^^^^^^^^^^^    ^^^^^^^^^^^^^^^^^^^^^^   ^       ^^^^  ^^^    ^^   ^^^   ^^    ^^    
+               ^^^^^^^^^^^     ^^^^^^^^^^^^^^^^^^^^            ^^^^  ^^         ^^ ^^  ^^^^^       
+               ^^^^^^^^^^      ^^^^^^^^^^^^^^^^^^^^        ^   ^^^^  ^^         ^^ ^^   ^^^^^^     
+               ^^^^^^^^          ^^^^^^^^^^^^^^^^          ^   ^^^^  ^^        ^^^^^^^     ^^^^    
+               ^^^^^^      ^^^     ^^^^^^^^^^^^     ^      ^   ^^^^  ^^^   ^^^ ^^^^^^^ ^^    ^^    
+                         ^^^^^^                    ^^      ^   ^^^^   ^^^^^^^  ^^   ^^ ^^^  ^^^    
+                      ^^^^^^^^^^^^             ^^^^^^      ^           ^^^^^  ^^     ^^ ^^^^^^     
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                  
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                      
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                         
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^                                             
+                               ^^^^^^^^^^^^^^^^^^^^                                                
+                                   ^^^^^^^^^^^^                                                    
+                                       ^^^^^^                                                      
+
+                           Copyright, all rights, reserved:                                        
+                         Permission is hereby granted to use                                       
+                but not to reproduce or distribute any part of this                                
+             program. The use is restricted to research purposes only.                             
+                            Lund University Sweden, 2010.                                          
+                                                                                                   
+ For the author list and the recommended citation consult section 1.5 of the MOLCAS user's guide.  
+
+
+
+   -------------------------------------------------------------------
+  |                                                                   
+  |   Project         = molcas
+  |   Submitted from  = /user/mai/Documents/NewSHARC/SHARC_1.5/TESTS-Internal/Test-Molecules/CSiH4/COLUMBUS/COLUMBUS.template
+  |   Scratch area    = /public/cesium/scratch/mai/TMPDIR/10933//molcas.11126
+  |   Save outputs to = /user/mai/Documents/NewSHARC/SHARC_1.5/TESTS-Internal/Test-Molecules/CSiH4/COLUMBUS/COLUMBUS.template
+  |   Molcas          = /usr/remote/molcas/molcas79p111
+  |                                                                   
+  |   Scratch area is empty
+  |                                                                   
+  |                                                                   
+   -------------------------------------------------------------------
+--- Start Module: auto at Mon Jul  7 13:40:11 2014 
+
+++ ---------   Input file   ---------
+
+  &SEWARD  &END
+    ANGMOM
+      0 0 0
+    RELINT
+    DOUGLAS-KROLL
+    AMFI
+    Basis set
+    C.cc-pvdz
+    C1   0.00000000   0.00000000   0.00000000 
+    End of Basis
+    Basis set
+    Si.cc-pvdz
+    Si2   0.00000000   0.00000000   2.92907666 
+    End of Basis
+    Basis set
+    H.cc-pvdz
+    H3   1.78220520   0.00000000   -1.02895628 
+    H4   1.78220520   0.00000000   3.95803295 
+    H5   -1.78220520   0.00000000   3.95803295 
+    H6   -1.78220520   0.00000000   -1.02895628 
+    End of Basis
+    ONEONLY
+
+-- ----------------------------------
+
+--- Start Module: seward at Mon Jul  7 13:40:11 2014 
+ 
+ 
+()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()
+                                  MOLCAS executing module SEWARD with 256 MB of memory
+                                              at 13:40:11 Mon Jul  7 2014
+()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()()
+ 
+ 
+ ###############################################################################
+ ###############################################################################
+ ###                                                                         ###
+ ###                                                                         ###
+ ###    WARNING: you reqested the DK-option for                              ###
+ ###    a non-relativistic basis.                                            ###
+ ###    This request will be ignored                                         ###
+ ###                                                                         ###
+ ###                                                                         ###
+ ###############################################################################
+ ###############################################################################
+               SEWARD will generate:
+                  Multipole Moment integrals up to order  2
+                  Kinetic Energy integrals
+                  Nuclear Attraction integrals (point charge)
+                  One-Electron Hamiltonian integrals
+                  Mass-Velocity integrals
+                  Darwin One-Electron Contact Term integrals
+                  Orbital angular momentum around ( 0.0000  0.0000  0.0000 )
+                  Atomic mean-field integrals
+ 
+                   Integrals are discarded if absolute value <: 0.10E-12
+                   Integral cutoff threshold is set to       <: 0.10E-11
+ 
+ 
+++      Symmetry information:
+        ---------------------
+ 
+ 
+ 
+ 
+                    Character Table for C1 
+ 
+                             E  
+                    a        1  x, y, xy, Rz, z, xz, Ry, yz, Rx, I
+--
+ 
+      Basis set label:C.CC-PVDZ..... 
+ 
+      Valence basis set:
+      ==================
+      Associated Effective Charge  6.000000 au
+      Associated Actual Charge     6.000000 au
+      Nuclear Model: Point charge
+ 
+ 
+      Shell  nPrim  nBasis  Cartesian Spherical Contaminant
+         s       9       3        X                  
+         p       4       2        X                  
+         d       1       1                 X         
+      Basis set label:SI.CC-PVDZ..... 
+ 
+      Valence basis set:
+      ==================
+      Associated Effective Charge 14.000000 au
+      Associated Actual Charge    14.000000 au
+      Nuclear Model: Point charge
+ 
+ 
+      Shell  nPrim  nBasis  Cartesian Spherical Contaminant
+         s      12       4        X                  
+         p       8       3        X                  
+         d       1       1                 X         
+      Basis set label:H.CC-PVDZ..... 
+ 
+      Valence basis set:
+      ==================
+      Associated Effective Charge  1.000000 au
+      Associated Actual Charge     1.000000 au
+      Nuclear Model: Point charge
+ 
+ 
+      Shell  nPrim  nBasis  Cartesian Spherical Contaminant
+         s       4       2        X                  
+         p       1       1        X                  
+ 
+ 
+++       Molecular structure info:
+         -------------------------
+ 
+ 
+                    ************************************************ 
+                    **** Cartesian Coordinates / Bohr, Angstrom **** 
+                    ************************************************ 
+ 
+     Center  Label                x              y              z                     x              y              z
+        1      C1               0.000000       0.000000       0.000000              0.000000       0.000000       0.000000
+        2      SI2              0.000000       0.000000       2.929077              0.000000       0.000000       1.550001
+        3      H3               1.782205       0.000000      -1.028956              0.943102       0.000000      -0.544500
+        4      H4               1.782205       0.000000       3.958033              0.943102       0.000000       2.094501
+        5      H5              -1.782205       0.000000       3.958033             -0.943102       0.000000       2.094501
+        6      H6              -1.782205       0.000000      -1.028956             -0.943102       0.000000      -0.544500
+ 
+                    *************************************** 
+                    *    InterNuclear Distances / Bohr    * 
+                    *************************************** 
+ 
+               1 C1            2 SI2           3 H3            4 H4            5 H5            6 H6    
+    1 C1       0.000000
+    2 SI2      2.929077        0.000000
+    3 H3       2.057913        4.340770        0.000000
+    4 H4       4.340770        2.057913        4.986989        0.000000
+    5 H5       4.340770        2.057913        6.129852        3.564410        0.000000
+    6 H6       2.057913        4.340770        3.564410        6.129852        4.986989        0.000000
+ 
+                    ******************************************* 
+                    *    InterNuclear Distances / Angstrom    * 
+                    ******************************************* 
+ 
+               1 C1            2 SI2           3 H3            4 H4            5 H5            6 H6    
+    1 C1       0.000000
+    2 SI2      1.550001        0.000000
+    3 H3       1.089001        2.297036        0.000000
+    4 H4       2.297036        1.089001        2.639001        0.000000
+    5 H5       2.297036        1.089001        3.243778        1.886205        0.000000
+    6 H6       1.089001        2.297036        1.886205        3.243778        2.639001        0.000000
+ 
+                    ************************************** 
+                    *    Valence Bond Angles / Degree    * 
+                    ************************************** 
+                          Atom centers                 Phi
+                      2 SI2      1 C1       3 H3       120.00
+                      2 SI2      1 C1       6 H6       120.00
+                      3 H3       1 C1       6 H6       120.00
+                      1 C1       2 SI2      4 H4       120.00
+                      1 C1       2 SI2      5 H5       120.00
+                      4 H4       2 SI2      5 H5       120.00
+ 
+           ***************************************************************
+           *              Valence Dihedral Angles / Degree               *
+           ***************************************************************
+                    Atom centers                       Phi1     Phi2     Theta 
+           3 H3       1 C1       2 SI2      4 H4        120.00   120.00     0.00
+           3 H3       1 C1       2 SI2      5 H5        120.00   120.00  -180.00
+           4 H4       2 SI2      1 C1       6 H6        120.00   120.00  -180.00
+           5 H5       2 SI2      1 C1       6 H6        120.00   120.00     0.00
+--
+ 
+ 
+            Nuclear Potential Energy             58.61852016 au
+ 
+ 
+      Basis set specifications :
+      Symmetry species         a  
+      Basis functions           52
+ 
+ 
+ ###############################################################################
+ ###############################################################################
+ ###                                                                         ###
+ ###                                                                         ###
+ ###    There were warnings during the execution                             ###
+ ###    Please, check the output with care!                                  ###
+ ###                                                                         ###
+ ###                                                                         ###
+ ###############################################################################
+ ###############################################################################
+--- Stop Module:  seward at Mon Jul  7 13:40:12 2014 /rc=0 ---
+*** files:   molcas.guessorb.molden molcas.GssOrb molcas.grid xmldump
+    saved to directory /user/mai/Documents/NewSHARC/SHARC_1.5/TESTS-Internal/Test-Molecules/CSiH4/COLUMBUS/COLUMBUS.template
+
+    Timing: Wall=1 User=0.17 System=0.11 
+
+     Happy landing!
+
+--- Stop Module:  auto at Mon Jul  7 13:40:12 2014 /rc=0 ---

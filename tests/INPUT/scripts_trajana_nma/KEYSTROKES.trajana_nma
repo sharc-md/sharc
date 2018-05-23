@@ -1,0 +1,12 @@
+Singlet_1/                               #Path:  [end] (autocomplete enabled) 
+                                         #Path:  [end] (autocomplete enabled) 
+ref.molden                               #Path:  (autocomplete enabled) 
+                                         #Do you wish to use mass weighted normal modes? [True] 
+                                         #Number of time steps:  [2001] 
+                                         #Length of time step:  [0.5] 
+y                                        #Do you want to automatically create plots of your data? [False] 
+                                         #Non-totally symmetric normal modes: [-1] (range comprehension enabled) 
+                                         #Inverted normal modes: [-1] (range comprehension enabled) 
+                                         #Time step interval:  [0 2000] 
+                                         #Do you want to add another time interval for analysis? [False] 
+                                         #Name for subdirectory? [nma] (autocomplete enabled) 

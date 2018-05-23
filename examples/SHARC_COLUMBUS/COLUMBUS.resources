@@ -1,0 +1,75 @@
+    ## This is a commented version of the COLUMBUS.resources file 
+    ## for version 1.1 of the SHARC_COLUMBUS.py interface.
+
+    ## comments can be put at the end of each line
+    ## blank lines can be used freely
+    ## order of keywords does not matter
+    ## only the first instance of every keyword is used
+    ## everything is case-insensitive (except for paths)
+
+    ## ===============================================
+    ## Paths
+    ## ~ ($HOME) and $BASHVARS can be used here
+    ## if columbus or molcas are missing, the environment variables $COLUMBUS and $MOLCAS are used.
+    ## if wfoverlap is missing, $SHARC/wfoverlap.x is used
+
+columbus ~plasserf/programs/Columbus/GIT_devel/Columbus/
+molcas /usr/license/molcas/molcas80/
+wfoverlap $SHARC/wfoverlap.x
+#runc $COLUMBUS/runc
+
+savedir $TMPDIR/SAVE
+scratchdir $TMPDIR/WORK
+
+    ## ===============================================
+    ## Control variables
+
+#nooverlap              # do not save determinant files (except if ION)
+#always_orb_init        # always use the initial provided mocoefs (no effect if alwaysscf)
+#always_guess           # always get orbital guess from an scf calculation
+
+integrals seward        # integral program (either "seward" or "dalton", dalton cannot do SOC)
+#molcas_rasscf          # use MOLCAS rasscf code instead of COLUMBUS mcscf (no gradients)
+
+#debug                  # affects only stdout, QM.out is always written
+#no_print               # affects only stdout, QM.out is always written
+
+
+
+    ## ===============================================
+    ## Variables, Thresholds
+
+memory 1700             # for runc and wfoverlap
+ncpu 1
+wfthres 0.97           # for cioverlaps, default 1e-5
+#numfrozcore 0          # for Dyson and overlap
+#numocc 0               # for Dyson
+
+    ## ===============================================
+    ## COLUMBUS input
+
+template $SHARC/../examples/SHARC_COLUMBUS/COLUMBUS.template
+
+    ## DIR   multiplicity   path (subdirectory of template)
+DIR 1 1_3/      # for singlets, use COLUMBUS input in template/1_3/
+DIR 3 1_3/
+DIR 2 2_4/
+DIR 4 2_4/
+DIR 5 5/
+
+    ## MOCOEF   job   job from which mocoefs are used
+    ## dependency chains can have only length 1
+    ## circular dependency is naturally not allowed
+MOCOEF 1_3/ 1_3/
+MOCOEF 2_4/ 1_3/        # the job in 2_4/ uses the MOCOEFs from job in 1_3/
+MOCOEF 5/ 1_3/
+
+
+
+
+
+
+
+
+
+# kate: syntax python

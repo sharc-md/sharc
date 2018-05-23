@@ -1,0 +1,150 @@
+******************************************
+
+    SHARC Program Suite
+
+    Copyright (c) 2018 University of Vienna
+
+    This file is part of SHARC.
+
+    SHARC is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    SHARC is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with SHARC.  If not, see <http://www.gnu.org/licenses/>.
+
+******************************************
+
+
+Installation Instructions
+*************************
+
+Basic Installation
+==================
+
+1. SHARC binaries
+
+All you need to install sharc on a Linux system is a Fortran90 compatible 
+compiler (this release is tested against gfortran 4.4.7 and ifort 15.0)
+as well as working blas, lapack and fftw3 libraries. The versions which come
+with your Linux distribution should be sufficient. IF you want to use your
+own numerical libraries (like MKL etc), please change the corresponding
+LD variable within the Makefile.
+
+To compile the fortran source code, just unzip and untar the distribution
+
+tar -xzvf sharc.tgz
+
+This should create a new directory called sharc which contains all
+the necessary subdirectories and files. 
+
+Now go to the source directory
+
+cd sharc/source
+
+and edit the Makefile by adjusting the F90 variable to point to the fortran
+compiler of your choice.
+Issuing the command:
+
+make
+
+will compile the source and create all the binaries.
+
+make install
+
+will copy the binary files into the sharc/bin/ directory of the 
+Sharc distribution, which already contains all the python scripts which
+come with sharc.
+
+In oder to use the binaries together with the python scripts,
+set the $SHARC environment variable to the bin directory of the
+sharc distribution, e.g. if you have unpacked sharc into your $HOME directory, 
+just set: 
+
+export SHARC=~/sharc/bin (for bourne shell users)
+
+or
+
+setenv SHARC $HOME/sharc/bin (for c-shell type users)
+
+Note that it is advisable to put this line into your shell's login
+scripts.
+
+It is also advisable to check whether all files in bin/ are flagged as executable. Otherwise, say
+
+chmod +x * 
+
+to make them executable.
+
+
+
+2. WFoverlap binaries
+
+In order to install the wfoverlap program, which is necessary for many functionalities in SHARC, go to the respective source directory
+
+cd sharc/wfoverlap/source
+
+edit the Makefile appropriately, and issue the command:
+
+make wfoverlap_ascii.x
+
+If you have the COLUMBUS-MOLCAS interface installed on your system, set $COLUMBUS and then 
+
+make wfoverlap.x
+
+to compile the full version of wfoverlap.x (only needed for SHARC dynamics with COLUMBUS and Dyson norm computations with MOLCAS).
+Note that if you only compile wfoverlap_ascii.x, then make will create a symbolic link wfoverlap.x pointing to wfoverlap_ascii.x.
+
+
+
+3. Test calculations
+
+Now you are ready to run your first surface hopping trajectory including
+arbitrary couplings!
+
+Maybe at this stage it is a good idea to take a look at the test suite.
+The easiest way to run some basic tests is to execute $SHARC/tests.py, 
+which will test the fundamental functionality of SHARC.
+
+To test the wfoverlap installation, go to sharc/wfoverlap/source and say
+
+make test
+
+
+
+Installation for the experts
+============================
+
+Although the time consuming part of any ab initio molecular dynamics
+simulation are the necessary quantum chemical calculations and thus
+any BLAS/LAPACK version should be fine to link sharc against, adjusting
+the Makefile to use a vendor provided version like MKL can easily be
+done by exchanging the corresponding Makefile line
+
+LD = -lblas -llapack -lfftw3
+
+by something like
+
+LD = -L/path/to/your/library -lmyblas -lmylapack -lmyfftw3
+
+where /path/to/your/library points to the directory where your
+library files are located and myblas, mylapack and myfftw3 
+have to be replace by the actual name of your numerical libraries. 
+
+To link against MKL, using the enviroment variables provided by
+intel, just use
+
+LD =  -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lpthread -lm
+
+Note that since version 10.2, MKL provides FFTW3 interfaces, so there is
+no need to link against fftw3 explicitly when using MKL.
+
+
+
+

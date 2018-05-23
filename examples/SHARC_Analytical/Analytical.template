@@ -1,0 +1,94 @@
+2
+3
+I       y       0       0
+Br      x       0       0
+# At this point, comments can start
+
+# Comments for the above block:
+# The first number is the number of atoms
+# the second line contains the number of states
+# the next natom lines contain an atom label (only used for cross-check with the QM.in)
+# and then three elements, which are either variable names or "0" (zero)
+# for example, the above code associates the first cartesian component of the position of the first atom with the variable name "x"
+# "x" can then be used below to define the matrix elements
+# if a zero is put above, this coordinate is completely ignored, even if the actual coordinate of the atom in QM.in is not zero
+# variable names must not start with an underscore
+
+# all units are atomic units
+
+# the matrix keywords are:
+# - Hamiltonian
+# Derivatives <variable name>           (variable names must be defined above)
+# Dipole <cartesian component>          (cartesian components are 1, 2 or 3)
+# SpinOrbit <Component>                 (component is "R" or "I" for real and imaginary parts)
+
+# all matrices must be given as lower triangle matrices (all matrices are assumed to be Hermitian)
+# all matrices must have the dimension given in the second line
+# outside from matrices, arbitrary blank lines can be put, but matrices must be consecutive
+
+
+# Those variables can only be real numbers, no equations
+# ALL variables throughout the file are read before the matrices
+Variables
+A1      0.067
+g1      0.996
+R1      4.666
+A2      0.01019
+g2      1.271
+R2      5.3479
+E2      0.01679
+A31     2.826
+g31     0.9186
+A32     3.0e7
+g32     4.3
+End
+
+Hamiltonian
+A1*( (1.-math.exp(g1*(R1-x+y)))**2-1.),
+0,   A2*( (1.-math.exp(g2*(R2-x+y)))**2-1.)+E2,
+0,   0.0006834,   A31*math.exp(g31*(y-x))+A32*math.exp(g32*(y-x))
+
+
+Derivatives     x
+-2*A1*g1*math.exp(g1*(R1-x+y))*(math.exp(g1*(R1-x+y))-1.),
+0,   -2*A2*g2*math.exp(g2*(R2-x+y))*(math.exp(g2*(R2-x+y))-1.),
+0,   0,           -A31*g31*math.exp(g31*(y-x))-A32*g32*math.exp(g32*(y-x))
+
+
+Derivatives     y
+2*A1*g1*math.exp(g1*(R1-x+y))*(math.exp(g1*(R1-x+y))-1.),
+0,   2*A2*g2*math.exp(g2*(R2-x+y))*(math.exp(g2*(R2-x+y))-1.),
+0,   0,           A31*g31*math.exp(g31*(y-x))+A32*g32*math.exp(g32*(y-x))
+
+
+Dipole  1
+-0.25,
+0,       0.35,
+0,       0.01,    0.07
+
+Dipole  2
+0,
+0,       0,
+0,       0,       0
+
+Dipole  3
+0,
+0,       0,
+0,       0,       0
+
+SpinOrbit R
+0,
+0,       0,
+0,       0,       0
+
+SpinOrbit I
+0,
+0,       0,
+0,       0,       0
+
+
+
+
+
+
+# kate: syntax python

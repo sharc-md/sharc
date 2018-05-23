@@ -1,0 +1,4 @@
+This is an explicit CISD calculation, which produced the same result as an analogous RAS calculation.
+   -> Therefore it looks like the phase adjustment in read_civfl.py is correct
+
+The results are also consistent with the cioverlap code by J. Pittner

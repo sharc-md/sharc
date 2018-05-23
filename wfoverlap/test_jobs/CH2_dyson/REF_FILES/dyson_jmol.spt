@@ -1,0 +1,21 @@
+ background white
+ mo fill
+ mo cutoff 0.04
+ mo titleformat ""
+ 
+mo [  0.992    5  0.101    9 ]
+write image png 'dyson_001-001_0.882.png'
+mo [ -1.000    4 ]
+write image png 'dyson_001-002_0.472.png'
+mo [  0.236    2 -0.956    5  0.161    6 ]
+write image png 'dyson_001-003_0.068.png'
+mo [  1.000    4 ]
+write image png 'dyson_002-001_0.062.png'
+mo [  0.990    5  0.099    9 ]
+write image png 'dyson_002-002_0.466.png'
+mo [  1.000    4 ]
+write image png 'dyson_002-003_0.877.png'
+mo [ -1.000    3 ]
+write image png 'dyson_004-001_0.963.png'
+mo [ -1.000    3 ]
+write image png 'dyson_005-002_0.926.png'

@@ -1,0 +1,9 @@
+ &input 
+ nmiter= 100, print=0, fresdd=1, 
+ fresaa=1, fresvv=1, 
+ mdir=1, 
+ cdir=1, 
+ rtol=1e-6, dtol=1e-6,
+ wndtol=1e-7,wnatol=1e-7,wnvtol=1e-7 
+ nadcalc=3
+ &end

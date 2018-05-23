@@ -1,0 +1,6 @@
+basis cc-pVDZ
+charge 0
+
+method adc(2)
+scf dscf
+spin-scaling none

@@ -1,0 +1,34 @@
+1
+2
+C       x       0       0
+Si      0 0 0
+H       0 0 0
+H       0 0 0
+H       0 0 0
+H       0 0 0
+
+Variables
+k 2.0
+Re 2.0
+Dge 10.0
+mu 1.0
+End
+
+Hamiltonian
+0.5*k*x**2,
+0,   0.5*k*(x-Re)**2+Dge,
+
+
+Derivatives     x
+k*x,
+0,   k*(x-Re),
+
+
+
+Dipole  1
+0.0,
+mu, 0.0,
+
+
+
+# kate: syntax python

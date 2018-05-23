@@ -1,0 +1,7 @@
+a_mo=mo_cat
+b_mo=mo_ref
+a_det=dets_cat-0.5
+b_det=dets_ref
+ao_read=-1
+same_aos
+moprint=2

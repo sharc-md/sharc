@@ -1,0 +1,97 @@
+
+  ================================================================================
+||                                                                                ||
+||              Diagnostic tool for trajectories from SHARC dynamics              ||
+||                                                                                ||
+||                     Author: Sebastian Mai and Moritz Heindl                    ||
+||                                                                                ||
+||                                   Version:2.0                                  ||
+||                                    01.02.18                                    ||
+||                                                                                ||
+  ================================================================================
+
+
+This script reads output.dat files from SHARC trajectories and checks:
+* missing files
+* normal termination
+* total energy conservation
+* total population conservation
+* discontinuities in potential and kinetic energy
+  
+--------------------Paths to trajectories-------------------
+
+Please enter the paths to all directories containing the "TRAJ_0XXXX" directories.
+E.g. Sing_2/ and Sing_3/. 
+Please enter one path at a time, and type "end" to finish the list.
+Path:  [end] (autocomplete enabled) ['TRAJ_00015']
+Found 1 subdirectories in total.
+
+Path:  [end] (autocomplete enabled) 
+{'paths': ['Singlet_1/']}
+Total number of subdirectories: 1
+
+['nstates', '2', '0', '2']
+---------------------Diagnostic settings--------------------
+
+Please, adjust the diagnostic settings according to your preferences.
+You can use the following commands:
+show		Prints the current settings
+help		Prints explanations for the keys
+end		Save and continue
+<key> <value>	Adjust setting.
+
+Current settings:
+        missing_output : True
+       missing_restart : True
+    normal_termination : True
+         always_update : False
+           etot_window : 0.2
+             etot_step : 0.1
+             epot_step : 0.7
+             ekin_step : 0.7
+            pop_window : 1e-07
+            hop_energy : 1.0
+             intruders : True
+
+?  [end] #########################Full input#########################
+
+paths                      ['Singlet_1/']
+settings                   {'missing_restart': True, 'etot_step': 0.1, 'hop_energy': 1.0, 'epot_step': 0.7, 'ekin_step': 0.7, 'intruders': True, 'pop_window': 1e-07, 'always_update': False, 'missing_output': True, 'normal_termination': True, 'etot_window': 0.2}
+
+Do you want to do the specified analysis? [True] 
+Checking the directories...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Singlet_1/TRAJ_00015 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    Output files:     .lis .. .log .. .dat .. .xyz .. OK
+    Restart files:    ctrl .. traj .. restart/ ..     OK
+    Progress:         [==                       ]     84.5 of 1000.0 fs
+    Status:                                           FINISHED
+    Data extractor...                                 OK
+    Energy:                                           OK
+    Population:                                       OK
+    Intruder states:                                  OK
+
+
+
+
+
+==================================== Summary ===================================
+
+                    Trajectory Files? Status Length  T_use
+                                               (fs)   (fs)
+
+          Singlet_1/TRAJ_00015     OK FINISH   84.5   84.5   [==                       ]
+
+This many trajectories can be used for an analysis up to the given time:
+up to  20.0 fs:      1  trajectories
+up to  40.0 fs:      1  trajectories
+up to  60.0 fs:      1  trajectories
+up to  80.0 fs:      1  trajectories
+up to  100.0 fs:      0  trajectories
+
+-------------------- Trajectory Flagging -------------------
+
+You can now flag the trajectories according to their maximum usable time.
+In this way, you can restrict the analysis tools to the set of trajectories with sufficient simulation time.
+
+Do you want to flag the trajectories? [True] 

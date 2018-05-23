@@ -1,0 +1,95 @@
+    ## This is a commented version of the ADF.template file 
+    ## for version 1.1 of the SHARC_MOLPRO.py interface.
+
+    ## ======== BASIS SETS ============
+
+    ## Basis set for all atoms
+basis def2-svp
+
+    ## Instead of the "basis" keyword, one can also load the basis definitions from a file using the "basis_external" keyword.
+    ## The content of the file will be copied verbatim to the MOLPRO input (inside the basis={} keyword).
+    # 
+    ## if "basis_external" is given, "basis" is ignored.
+basis_external def2-SVP.inp
+
+    ## Relativistic settings
+dkho 2          # use dkho 0 to disable relativistic calculation
+
+
+
+
+# Gradient accuracy setting
+gradaccudefault 1e-7
+gradaccumax 1e-5
+
+
+    ## ======== CASSCF settings ============
+    ## The CASSCF settings can be given in two different styles: simple and complex.
+    ## The simple input can be used if there is only one active space and only one MOLPRO job.
+    ## The complex style can be used if different multiplicities should have different active spaces.
+    ## Examples for both are shown below.
+
+
+
+
+    ## -------- CASSCF settings: simple case (only one CAS) --------
+
+    ## Number of closed-shell orbitals.
+closed 10
+
+    ## Number of occupied orbitals.
+    ## This is the sum of "closed" and the number of active space orbitals.
+occ 13
+
+    ## Total number of electrons.
+    ## For incompatible multiplicities, one electron less is used.
+    ## => if nelec is even, for doublets, quartets, ... one electron less is used.
+    ## => if nelec is odd,  for singlets, triplets, ... one electron less is used.
+nelec 24
+
+    ## Number of roots in the state-averaging
+roots 2 3 2
+
+    ## Number of extra, zero-weight roots in state-averaging
+rootpad 0 0 0
+
+
+
+
+
+    ## -------- CASSCF settings: complicated (multiple CASs) --------
+
+    ## The "jobs" key assigns the multiplicities to different MOLPRO jobs.
+    ## Hence, this keyword is required, if several independent MOLPRO calculations need to be carried out.
+    ## There must be as many arguments as there are multiplicities requested.
+    ## Job numbers should start at 1 and be consecutive.
+    ## Example: "job 1 2 1" assigns singlets and triplets to job 1, and doublets to job 2
+#jobs 1 2 1
+
+    ## The "occ" and "closed" keywords function as in the simple case, but there must be as many arguments as there are jobs.
+#occ 15 14
+#closed 11 10
+
+    ## The "nelec" keyword functions as in the simple case, but can have multiple arguments and can appear several times.
+    ## In particular, the nelec keyword should appear as often as there are jobs.
+    ## The nth appearance of "nelec" corresponds to the nth job.
+    ## For each job, one can control the number of electrons for each multiplicity.
+#nelec           24 23 24
+#nelec           24 23 24
+
+    ## The "roots" keyword functions as in the simple case, but can appear once for each job.
+    ## Note that the state-averaging setting is independent of the job-multiplicity assignment.
+    ## For example, in a job assigned to the doublets, one can compute singlets in addition to the doublets (these singlets will be ignored in the output, because the singlet data will be taken from the job assigned to singlets).
+#roots           4 0 3
+#roots           0 2 0
+
+    ## The same hints as for the "roots" keyword apply also to the "rootpad" keyword.
+##rootpad         1 0 1   # extra states with zero weight, default is zero
+##rootpad         0 1 0
+
+
+
+
+
+
+# kate: syntax python

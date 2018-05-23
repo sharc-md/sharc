@@ -1,0 +1,7 @@
+a_mo=geo1/MOCOEFS/mocoef_mc.sp
+b_mo=geo2/MOCOEFS/mocoef_mc.sp
+a_det=geo1/WORK/dets
+b_det=geo2/WORK/dets
+ao_read=1
+a_active=7
+b_active=7

@@ -1,0 +1,681 @@
+#!/usr/bin/env python2
+
+#******************************************
+#
+#    SHARC Program Suite
+#
+#    Copyright (c) 2018 University of Vienna
+#
+#    This file is part of SHARC.
+#
+#    SHARC is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    SHARC is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    inside the SHARC manual.  If not, see <http://www.gnu.org/licenses/>.
+#
+#******************************************
+
+#!/usr/bin/env python2
+
+import sys
+import os
+import subprocess as sp
+import pprint
+import math
+
+# Periodic Table (symbol->number)
+NUMBERS = {'H':1, 'He':2,
+'Li':3, 'Be':4, 'B':5, 'C':6,  'N':7,  'O':8, 'F':9, 'Ne':10,
+'Na':11, 'Mg':12, 'Al':13, 'Si':14,  'P':15,  'S':16, 'Cl':17, 'Ar':18,
+'K':19, 'Ca':20,
+'Sc':21, 'Ti':22, 'V':23, 'Cr':24, 'Mn':25, 'Fe':26, 'Co':27, 'Ni':28, 'Cu':29, 'Zn':30,
+'Ga':31, 'Ge':32, 'As':33, 'Se':34, 'Br':35, 'Kr':36,
+'Rb':37, 'Sr':38,
+'Y':39,  'Zr':40, 'Nb':41, 'Mo':42, 'Tc':43, 'Ru':44, 'Rh':45, 'Pd':46, 'Ag':47, 'Cd':48,
+'In':49, 'Sn':50, 'Sb':51, 'Te':52,  'I':53, 'Xe':54,
+'Cs':55, 'Ba':56,
+'La':57, 
+'Ce':58, 'Pr':59, 'Nd':60, 'Pm':61, 'Sm':62, 'Eu':63, 'Gd':64, 'Tb':65, 'Dy':66, 'Ho':67, 'Er':68, 'Tm':69, 'Yb':70, 'Lu':71,
+         'Hf':72, 'Ta':73,  'W':74, 'Re':75, 'Os':76, 'Ir':77, 'Pt':78, 'Au':79, 'Hg':80,
+'Tl':81, 'Pb':82, 'Bi':83, 'Po':84, 'At':85, 'Rn':86, 
+'Fr':87, 'Ra':88,
+'Ac':89, 
+'Th':90, 'Pa':91,  'U':92, 'Np':93, 'Pu':94, 'Am':95, 'Cm':96, 'Bk':97, 'Cf':98, 'Es':99,'Fm':100,'Md':101,'No':102,'Lr':103,
+        'Rf':104,'Db':105,'Sg':106,'Bh':107,'Hs':108,'Mt':109,'Ds':110,'Rg':111,'Cn':112,
+'Nh':113,'Fl':114,'Mc':115,'Lv':116,'Ts':117,'Og':118
+}
+
+# Inverse Periodic Table (number->symbol)
+ATOMS = {}
+for i in NUMBERS:
+  ATOMS[NUMBERS[i]]=i
+
+
+
+
+# conversion factors
+au2a=0.529177211
+
+# INTERFACE specs
+INTERFACE={
+  'molpro':      {'script':          'SHARC_MOLPRO.py',
+                  'description':     'MOLPRO (CASSCF)',
+                  'couplings':       [1,3],
+                  'dipolegrad':      False,
+                  'files':           ['MOLPRO.template','MOLPRO.resources']
+     },
+  'columbus':    {'script':          'SHARC_COLUMBUS.py',
+                  'description':     'COLUMBUS (CASSCF, RASSCF and MRCISD), using SEWARD or DALTON integrals',
+                  'couplings':       [3],
+                  'dipolegrad':      False,
+                  'files':           ['COLUMBUS.resources']
+     },
+  'analytical':  {'script':          'SHARC_Analytical.py',
+                  'description':     'Analytical PESs',
+                  'couplings':       [3],
+                  'dipolegrad':      True,
+                  'files':           ['Analytical.template']
+     },
+  'molcas':      {'script':          'SHARC_MOLCAS.py',
+                  'description':     'MOLCAS (CASSCF, CASPT2, MS-CASPT2)',
+                  'couplings':       [1,3],
+                  'dipolegrad':      True,
+                  'files':           ['MOLCAS.template','MOLCAS.resources']
+     },
+  'ricc2':       {'script':          'SHARC_RICC2.py',
+                  'description':     'TURBOMOLE (ricc2 with CC2 and ADC(2))',
+                  'couplings':       [3],
+                  'dipolegrad':      False,
+                  'files':           ['RICC2.template','RICC2.resources']
+     },
+  'adf':         {'script':          'SHARC_ADF.py',
+                  'description':     'ADF (DFT, TD-DFT)',
+                  'couplings':       [3],
+                  'dipolegrad':      False,
+                  'files':           ['ADF.template','ADF.resources']
+     },
+  'gaussian':    {'script':          'SHARC_GAUSSIAN.py',
+                  'description':     'GAUSSIAN (DFT, TD-DFT)',
+                  'couplings':       [3],
+                  'dipolegrad':      False,
+                  'files':           ['GAUSSIAN.template','GAUSSIAN.resources']
+     },
+  'lvc':         {'script':          'SHARC_LVC.py',
+                  'description':     'Analytical linear-vibronic coupling model',
+                  'couplings':       [1,3],
+                  'dipolegrad':      False,
+                  'files':           ['LVC.template','V0.txt']
+     },
+  'orca':        {'script':          'SHARC_ORCA.py',
+                  'description':     'ORCA (HF/CIS, DFT/TDA/TDDFT)',
+                  'couplings':       [3],
+                  'dipolegrad':      False,
+                  'files':           ['ORCA.template','ORCA.resources']
+     }
+  }
+
+
+# ======================================================================= #
+def readfile(filename):
+  try:
+    f=open(filename)
+    out=f.readlines()
+    f.close()
+  except IOError:
+    print 'File %s does not exist!' % (filename)
+    sys.exit(12)
+  return out
+
+# ======================================================================= #
+def writefile(filename,content):
+  # content can be either a string or a list of strings
+  try:
+    f=open(filename,'w')
+    if isinstance(content,list):
+      for line in content:
+        f.write(line)
+    elif isinstance(content,str):
+      f.write(content)
+    else:
+      print 'Content %s cannot be written to file!' % (content)
+    f.close()
+  except IOError:
+    print 'Could not write to file %s!' % (filename)
+    sys.exit(13)
+
+# ======================================================================= #
+def itnmstates(states):
+  for i in range(len(states)):
+    if states[i]<1:
+      continue
+    for k in range(i+1):
+      for j in range(states[i]):
+        yield i+1,j+1,k-i/2.
+  return
+
+# ======================================================================= #
+def read_QMout(path,nstates,natom,request):
+  targets={'h':         {'flag': 1,
+                         'type': complex,
+                         'dim':  (nstates,nstates)},
+           'dm':        {'flag': 2,
+                         'type': complex,
+                         'dim':  (3,nstates,nstates)},
+           'grad':      {'flag': 3,
+                         'type': float,
+                         'dim':  (nstates,natom,3)},
+           'nacdr':      {'flag': 5,
+                         'type': float,
+                         'dim':  (nstates,nstates,natom,3)}
+          }
+
+  # read QM.out
+  lines=readfile(path)
+
+  # obtain all targets
+  QMout={}
+  for t in targets:
+    if t in request:
+      iline=-1
+      while True:
+        iline+=1
+        if iline>=len(lines):
+          print 'Could not find target %s with flag %i in file %s!' % (t,targets[t]['flag'],path)
+          sys.exit(11)
+        line=lines[iline]
+        if '! %i' % (targets[t]['flag']) in line:
+          break
+      values=[]
+      # =========== single matrix
+      if len(targets[t]['dim'])==2:
+        iline+=1
+        for irow in range(targets[t]['dim'][0]):
+          iline+=1
+          line=lines[iline].split()
+          if targets[t]['type']==complex:
+            row=[ complex(float(line[2*i]),float(line[2*i+1])) for i in range(targets[t]['dim'][1]) ]
+          elif targets[t]['type']==float:
+            row=[ float(line[i]) for i in range(targets[t]['dim'][1]) ]
+          values.append(row)
+      # =========== list of matrices
+      elif len(targets[t]['dim'])==3:
+        for iblocks in range(targets[t]['dim'][0]):
+          iline+=1
+          block=[]
+          for irow in range(targets[t]['dim'][1]):
+            iline+=1
+            line=lines[iline].split()
+            if targets[t]['type']==complex:
+              row=[ complex(float(line[2*i]),float(line[2*i+1])) for i in range(targets[t]['dim'][2]) ]
+            elif targets[t]['type']==float:
+              row=[ float(line[i]) for i in range(targets[t]['dim'][2]) ]
+            block.append(row)
+          values.append(block)
+      # =========== matrix of matrices
+      elif len(targets[t]['dim'])==4:
+        for iblocks in range(targets[t]['dim'][0]):
+          sblock=[]
+          for jblocks in range(targets[t]['dim'][1]):
+            iline+=1
+            block=[]
+            for irow in range(targets[t]['dim'][2]):
+              iline+=1
+              line=lines[iline].split()
+              if targets[t]['type']==complex:
+                row=[ complex(float(line[2*i]),float(line[2*i+1])) for i in range(targets[t]['dim'][3]) ]
+              elif targets[t]['type']==float:
+                row=[ float(line[i]) for i in range(targets[t]['dim'][3]) ]
+              block.append(row)
+            sblock.append(block)
+          values.append(sblock)
+      QMout[t]=values
+
+  #pprint.pprint(QMout)
+  return QMout
+
+# ======================================================================= #
+def read_infos( ext_in ):
+  """Parse coordinate file provided by ORCA and convert
+      it to Infos"""
+  INFOS={}
+  orca_in=readfile(ext_in)
+  header=orca_in[0]
+  natoms, calc_type, charge, mult = header.split()
+  INFOS['natom']=int(natoms)
+  INFOS['calc_type']=int(calc_type)
+  if calc_type==2:
+    print 'No Hessian possible!'
+    sys.exit(1)
+  # mult and charge are ignored and the it is asumed that the interface files take care
+
+  # read geometry
+  geom=[]
+  for line in orca_in[1:]:
+    atype, Rx, Ry, Rz, MMcharge = line.split()
+    atom=[ ATOMS[int(atype)],float(Rx)*au2a,float(Ry)*au2a,float(Rz)*au2a ]
+    geom.append(atom)
+  INFOS['geom']=geom
+
+  # get interface and other info from original ORCA input
+  jobname = ext_in.split( '.' )[0]
+  inpfile=jobname+'.inp'
+  if os.path.isfile(inpfile):
+    inp=readfile(inpfile)
+    for line in inp:
+      if '#SHARC:' in line:
+        s=line.split()
+        key=s[1]
+        arg=s[2:]
+        if 'states' in key.lower():
+          INFOS['states']=[ int(i) for i in arg ]
+        if 'opt' in key.lower():
+          INFOS['opt']=[arg[0].lower()] + [ int(i) for i in arg[1:] ]
+        if 'interface' in key.lower():
+          INFOS['interface']=arg[0].lower()
+        if 'param' in key.lower():
+          INFOS['sigma']=float(arg[0])
+          INFOS['alpha']=float(arg[1])
+  if not 'interface' in INFOS:
+    # try to find interface files
+    for i in INTERFACE:
+      filesthere=True
+      for f in INTERFACE[i]['files']:
+        if not os.path.isfile(f):
+          filesthere=False
+      if filesthere:
+        INFOS['interface']=i
+        break
+    if not filesthere:
+      print 'Could not figure out which interface to employ.'
+      sys.exit(1)
+  if not 'states' in INFOS:
+    INFOS['states']=[1]
+  if not 'opt' in INFOS:
+    INFOS['opt']=['min',1]
+  if not 'sigma' in INFOS:
+    INFOS['sigma']=3.5
+  if not 'alpha' in INFOS:
+    INFOS['alpha']=0.02
+
+  # calculate state-related quantities
+  statemap={}
+  i=1
+  for imult,istate,ims in itnmstates(INFOS['states']):
+    statemap[i]=[imult,istate,ims]
+    i+=1
+  INFOS['statemap']=statemap
+  INFOS['nmstates']=len(statemap)
+
+  # process optimization request
+  if INFOS['opt'][0]=='min':
+    a=INFOS['opt'][1]
+    if not a in statemap:
+      print 'State %i not in state specs (%s)!' % (a,INFOS['states'])
+      sys.exit(1)
+    INFOS['opt_mode']=0                 # min opt with grad
+  elif INFOS['opt'][0]=='cross':
+    a=INFOS['opt'][1]
+    b=INFOS['opt'][2]
+    INFOS['opt'][1],INFOS['opt'][2]=min(a,b),max(a,b)
+    if not a in statemap or not b in statemap:
+      print 'States %i or %i not in state specs (%s)!' % (a,b,INFOS['states'])
+      sys.exit(1)
+    mult1=statemap[a][0]
+    mult2=statemap[b][0]
+    if mult1==mult2:
+      if 1 in INTERFACE[INFOS['interface']]['couplings']:
+        INFOS['opt_mode']=1             # CI opt with NAC
+      else:
+        INFOS['opt_mode']=2             # CI opt without NAC
+    else:
+      INFOS['opt_mode']=3               # ISC opt
+
+  if INFOS['opt_mode']==0:
+    involved_states='%i' % (INFOS['opt'][1])
+  else:
+    involved_states='%i %i' % (INFOS['opt'][1],INFOS['opt'][2])
+  string='''################# Input: #################
+  Interface:            %s
+  Number of states:     %s
+  Optimization mode:    %s
+  Involved state(s):    %s
+
+  For all quantum chemistry infos, see these interface files:
+''' % (INTERFACE[INFOS['interface']]['description'],
+       INFOS['states'],
+       ['Minimization','CI optimization with NACs','CI optimization without NACs','MXP optimization'][INFOS['opt_mode']],
+       involved_states
+      )
+  for i in INTERFACE[INFOS['interface']]['files']:
+    string+='    - %s\n' % (i)
+  string+='    - %s\n' % ('QM.log')
+
+  print string
+  return INFOS
+
+# ======================================================================= #
+def prepare_savedir(INFOS):
+  savepath=os.path.join(os.getcwd(),'SAVEDIR')
+  if os.path.isdir(savepath):
+    if os.listdir(savepath)==[]:
+      INFOS['step']=0
+    else:
+      INFOS['step']=1
+  else:
+    INFOS['step']=0
+    os.mkdir(savepath)
+  INFOS['savedir']=savepath
+  return INFOS
+
+# ======================================================================= #
+def write_QMin(INFOS):
+  string='%i\n\n' % (INFOS['natom'])
+  for atom in INFOS['geom']:
+    string+='%2s %14.9f %14.9f %14.9f\n' % tuple(atom)
+  if INFOS['step']==0:
+    string+='init\n'
+  string+='states '
+  for i in INFOS['states']:
+    string+='%i ' % (i)
+  string+='\n'
+  string+='unit angstrom\n'
+  string+='savedir %s\n' % (INFOS['savedir'])
+  string+='H\n'
+  if INFOS['opt_mode']==0:
+    string+='grad %i\n' % (INFOS['opt'][1])
+  elif INFOS['opt_mode'] in [1,2,3]:
+    string+='grad %i %i\n' % (INFOS['opt'][1],INFOS['opt'][2])
+  if INFOS['opt_mode']==1:
+    string+='nacdr select\n%i %i\nend\n' % (INFOS['opt'][1],INFOS['opt'][2])
+  # done
+  #print 'Input:'
+  #print string
+  writefile('QM.in',string)
+  return
+
+# ======================================================================= #
+def run_interface(INFOS):
+  string='$SHARC/%s QM.in >> QM.log 2> QM.err' % (INTERFACE[INFOS['interface']]['script'])
+  print '############## Run section: ##############\nInterface call:'
+  print string
+  error=sp.call(string,shell=True)
+  if error==0:
+    print 'Finished!'
+  else:
+    print '*** Something went wrong! ***'
+    sys.exit(1)
+  return
+
+# ======================================================================= #
+def get_output(INFOS):
+  path='QM.out'
+  if INFOS['opt_mode']==1:
+    QMout=read_QMout(path,INFOS['nmstates'],INFOS['natom'],['h','grad','nacdr'])
+  else:
+    QMout=read_QMout(path,INFOS['nmstates'],INFOS['natom'],['h','grad'])
+  #pprint.pprint(QMout)
+  return QMout
+
+# ======================================================================= #
+# ======================================================================= #
+# ======================================================================= #
+def printgrad(a):
+  string=''
+  for i,atom in enumerate(a):
+    string+='%3i    %16.12f    %16.12f    %16.12f\n' % (i,atom[0],atom[1],atom[2])
+  print string
+#============================================
+def scalarprod(a,b):
+  # vectors are lists(n) of lists(3)
+  # vector elements are real
+  # vectors must be the same length
+  if len(a)!=len(b):
+    print 'Cannot calculate scalar product!'
+    sys.exit(1)
+  s=0.
+  for iatom in range(len(a)):
+    for idir in range(3):
+      s+=a[iatom][idir]*b[iatom][idir]
+  return s
+#============================================
+def norm(a):
+  return scalarprod(a,a)
+#============================================
+def normalize(a):
+  n=norm(a)
+  q=math.sqrt(n)
+  for iatom in range(len(a)):
+    for idir in range(3):
+      a[iatom][idir]/=q
+  return a
+#============================================
+def GramSchmidt(a,b):
+  a=normalize(a)
+  b=normalize(b)
+  print 'Overlap between normalized GD and DC:',scalarprod(a,b)
+  ab=scalarprod(a,b)
+  c=[ [ 0. for x in y] for y in a]
+  for iatom in range(len(a)):
+    for idir in range(3):
+      c[iatom][idir]=b[iatom][idir]-ab*a[iatom][idir]
+  c=normalize(c)
+  print 'Overlap between orthonormalized GD and DC:',scalarprod(a,c)
+  print
+  return a,c
+#============================================
+def GradForCI_withNAC(Gl,Gu,Nac,dE):
+  # only if Nac!=0
+  diff=[ [ 0. for x in y] for y in Gl]
+  deri=[ [ 0. for x in y] for y in Gl]
+  for iatom in range(len(Gu)):
+    for idir in range(3):
+      diff[iatom][idir]=Gu[iatom][idir]-Gl[iatom][idir]
+      deri[iatom][idir]=-dE*Nac[iatom][idir]
+
+  print 'Gradient for lower state'
+  printgrad(Gl)
+  print 'Gradient for upper state'
+  printgrad(Gu)
+  print 'Gradient difference'
+  printgrad(diff)
+  print 'Derivative coupling after scaling'
+  printgrad(deri)
+
+  diff,deri=GramSchmidt(diff,deri)
+  # f=2*dE*diff
+  f=[ [ 0. for x in y] for y in Gl]
+  for iatom in range(len(Gu)):
+    for idir in range(3):
+      f[iatom][idir]=2.*dE*diff[iatom][idir]
+
+  print 'Gradient inside branching plane'
+  printgrad(f)
+
+  # g=P(Gu)
+  Gu_diff=scalarprod(Gu,diff)
+  Gu_deri=scalarprod(Gu,deri)
+  g=[ [ 0. for x in y] for y in Gl]
+  for iatom in range(len(Gu)):
+    for idir in range(3):
+      g[iatom][idir]=Gu[iatom][idir] - Gu_diff*diff[iatom][idir] - Gu_deri*deri[iatom][idir]
+
+  print 'Gradient inside intersection space'
+  printgrad(g)
+
+  # get final gradient
+  for iatom in range(len(Gu)):
+    for idir in range(3):
+      g[iatom][idir]+=f[iatom][idir]
+
+  #print 'Final gradient for step'
+  #printgrad(g)
+
+  return g
+#============================================
+def GradForMXP_noNAC(Gl,Gu,dE):
+  diff=[ [ 0. for x in y] for y in Gl]
+  for iatom in range(len(Gu)):
+    for idir in range(3):
+      diff[iatom][idir]=Gu[iatom][idir]-Gl[iatom][idir]
+
+  print 'Gradient for lower state'
+  printgrad(Gl)
+  print 'Gradient for upper state'
+  printgrad(Gu)
+  print 'Gradient difference'
+  printgrad(diff)
+
+  diff=normalize(diff)
+  # f=2*dE*diff
+  f=[ [ 0. for x in y] for y in Gl]
+  for iatom in range(len(Gu)):
+    for idir in range(3):
+      f[iatom][idir]=2.*dE*diff[iatom][idir]
+
+  print 'Gradient inside branching plane'
+  printgrad(f)
+
+  # g=P(Gu)
+  Gu_diff=scalarprod(Gu,diff)
+  g=[ [ 0. for x in y] for y in Gl]
+  for iatom in range(len(Gu)):
+    for idir in range(3):
+      g[iatom][idir]=Gu[iatom][idir] - Gu_diff*diff[iatom][idir]
+
+  print 'Gradient inside intersection space'
+  printgrad(g)
+
+  # get final gradient
+  for iatom in range(len(Gu)):
+    for idir in range(3):
+      g[iatom][idir]+=f[iatom][idir]
+
+  #print 'Final gradient for step'
+  #printgrad(g)
+
+  return g
+#============================================
+def EForCI_noNAC(El,Eu,  sigma, alpha):
+  return (Eu+El)/2. + sigma*(Eu-El)**2/(Eu-El+alpha)
+#============================================
+def GradForCI_noNAC(Gl,Gu,El,Eu,  sigma, alpha):
+
+  print 'Gradient for lower state'
+  printgrad(Gl)
+  print 'Gradient for upper state'
+  printgrad(Gu)
+
+  diff=[ [ 0. for x in y] for y in Gl]
+  summ=[ [ 0. for x in y] for y in Gl]
+  for iatom in range(len(Gu)):
+    for idir in range(3):
+      diff[iatom][idir]=Gu[iatom][idir]-Gl[iatom][idir]
+      summ[iatom][idir]=(Gu[iatom][idir]+Gl[iatom][idir])/2.
+
+  print 'Gradient difference'
+  printgrad(diff)
+  print 'Gradient average'
+  printgrad(summ)
+
+  g=[ [ 0. for x in y] for y in Gl]
+  k=(Eu-El)/(Eu-El+alpha)
+  k=k-0.5*k**2
+  for iatom in range(len(Gu)):
+    for idir in range(3):
+      g[iatom][idir]=summ[iatom][idir] + 2.*sigma*k*diff[iatom][idir]
+
+  #print 'Final gradient for step'
+  #printgrad(g)
+
+  return g
+
+
+# ======================================================================= #
+def write_to_orca(INFOS,QMout,path):
+  print '############ Gradient section: ###########\nAll data in a.u.\nEnergies:'
+  for i,line in enumerate(QMout['h']):
+    print '    %16.12f %s' % (line[i].real,['','*'][i+1 in INFOS['opt']])
+  print
+  # get E and g
+  if INFOS['opt_mode']==0:
+    state=INFOS['opt'][1]-1
+    E=QMout['h'][state][state].real
+    g=QMout['grad'][state]
+    print '>>>',E
+  elif INFOS['opt_mode']==1:
+    state1=INFOS['opt'][1]-1
+    state2=INFOS['opt'][2]-1
+    El=QMout['h'][state1][state1].real
+    Eu=QMout['h'][state2][state2].real
+    Gl=QMout['grad'][state1]
+    Gu=QMout['grad'][state2]
+    Nac=QMout['nacdr'][state1][state2]
+    E=Eu
+    g=GradForCI_withNAC(Gl,Gu,Nac,Eu-El)
+    print '>>>',El,Eu
+    print 'Energy gap: %16.12f' % (Eu-El)
+  elif INFOS['opt_mode']==2:
+    state1=INFOS['opt'][1]-1
+    state2=INFOS['opt'][2]-1
+    El=QMout['h'][state1][state1].real
+    Eu=QMout['h'][state2][state2].real
+    Gl=QMout['grad'][state1]
+    Gu=QMout['grad'][state2]
+    E=EForCI_noNAC(El,Eu,INFOS['sigma'],INFOS['alpha'])
+    g=GradForCI_noNAC(Gl,Gu,El,Eu,   INFOS['sigma'],INFOS['alpha'])
+    print '>>>',El,Eu
+    print 'Energy gap: %16.12f' % (Eu-El)
+  elif INFOS['opt_mode']==3:
+    state1=INFOS['opt'][1]-1
+    state2=INFOS['opt'][2]-1
+    El=QMout['h'][state1][state1].real
+    Eu=QMout['h'][state2][state2].real
+    Gl=QMout['grad'][state1]
+    Gu=QMout['grad'][state2]
+    E=Eu
+    g=GradForMXP_noNAC(Gl,Gu,Eu-El)
+    print '>>>',El,Eu
+    print 'Energy gap: %16.12f' % (Eu-El)
+
+  print 'Energy to optimize: %16.12f' % (E)
+  print 'Gradient to follow:'
+  printgrad(g)
+
+  string='%20.12e\n' % (E)
+  for atom in g:
+    string+='%20.12e%20.12e%20.12e\n' % tuple(atom)
+  print 'Writing to %s' % (path)
+  writefile(path,string)
+
+#============================================
+if __name__ == "__main__":
+    script, ext_in, ext_out = sys.argv
+    jobname = ext_in.split( '.' )[0]
+    if os.path.isfile(ext_out):
+      os.remove(ext_out)  # remove so if anything goes wrong, ORCA will not continue
+    print ""
+    print "         *************************************************************"
+    print "         *                    EXTERNAL SHARC JOB                     *"
+    print "         *************************************************************"
+    print ""
+    INFOS = read_infos( ext_in )
+    INFOS = prepare_savedir(INFOS)
+    write_QMin(INFOS)
+    run_interface(INFOS)
+    QMout=get_output(INFOS)
+    write_to_orca(INFOS,QMout,ext_out)
+    print ""
+    print "         *************************************************************"
+    print "         *                  EXTERNAL SHARC JOB DONE                   *"
+    print "         *************************************************************"
+    print ""
+
+    #remove = os.system( 'rm gradient' )

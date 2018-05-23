@@ -1,0 +1,87 @@
+    ## This is a commented version of the ADF.template file 
+    ## for version 1.1 of the SHARC_MOLCAS.py interface.
+
+    ## ======== BASIS SETS ============
+
+    ## Basis set for all atoms
+basis cc-pvdz
+
+    ## Location of basis set library (use to create custom basis libs in home dir)
+#baslib ./basisset
+
+
+
+    ## ======== CASSCF settings ============
+    ## RASSCF is not possible with the interface
+
+    ## Number of active electrons
+nactel 2
+
+    ## Number of active orbitals
+ras2 2
+
+    ## Number of doubly occupied orbitals
+inactive 7
+
+    ## Number of averaged states for each multiplicity
+roots 3 2 1
+
+    ## Number of extra state-averaging states with zero weight
+rootpad 0 0 0
+
+
+
+    ## ======== METHOD settings ============
+
+    ## Method to be used.
+    ## can be "casscf", "caspt2" and "ms-caspt2", default "casscf"
+method casscf
+
+    ## use non-relativistic Hamiltonian, default is to use DKH
+#no-douglas-kroll
+
+    ## Sets the IPEA shift for CASPT2, default 0.25
+#ipea 0.00
+
+    ## Sets the imaginary level shift for CASPT2, default 0.0
+#imaginary 0.0
+
+    ## Sets the number of frozen core orbitals for CASPT2.
+    ## Default is -1, which lets MOLCAS decide automatically.
+#frozen 1
+
+    ## Enable Cholesky integrals for faster calculations on large molecules.
+    ## This will enforce numerical gradients, also for CASSCF
+#cholesky
+
+    ## Use this in combination with "cholesky" to use Cholesky-accelerated SA-CASSCF gradients.
+    ## This will only work for very recent MOLCAS versions.
+#cholesky_analytical
+
+    ## Enables electrostatic embeddding QM/MM with TINKER
+qmmm
+
+
+
+
+
+# Gradient accuracty settings
+#gradaccudefault 1.e-04
+#gradaccumax     1.e-02
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# kate: syntax python

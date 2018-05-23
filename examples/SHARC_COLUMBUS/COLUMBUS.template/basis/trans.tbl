@@ -1,0 +1,10 @@
+# $ this file belongs to the Molcas repository $
+# this file defines aliases for basis set files
+# if file with basis set is not found, seward will use alias
+# Format:
+#Basis_name Alias(real file)
+#6-31G*    6-31Gp
+#
+6-31G*  6-31Gp
+6-31G** 6-31Gpp
+

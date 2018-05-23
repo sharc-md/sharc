@@ -1,0 +1,85 @@
+Using OpenMP version. Maximum number of threads:     2
+ -------------------------------------------------------------------------------
+ Reading input
+ Reading input from file: ciov_fc.in
+*** walltime: total -        0.086s, step -        0.086s ***
+ -------------------------------------------------------------------------------
+Number of <bra| electrons:              50
+Number of <bra| alpha el:               25
+Number of <bra| beta el:                25
+Number of |ket> electrons:              50
+Number of |ket> alpha el:               25
+Number of |ket> beta el:                25
+ 
+Number of <bra| MOs:                   160
+Number of |ket> MOs:                   160
+Number of discarded core MOs:           10
+ 
+Number of <bra| states:                  3
+Number of |ket> states:                  3
+Number of <bra| determinants:         3637
+Number of |ket> determinants:         3235
+Number of det. pairs:             11765695
+ -------------------------------------------------------------------------------
+ Sorting determinants and CI vectors for blocking
+*** walltime: total -        0.132s, step -        0.047s ***
+ -------------------------------------------------------------------------------
+Number of <bra| alpha blocks:                916
+Number of |ket> alpha blocks:                886
+Number of <bra|  beta blocks:                916
+Number of |ket>  beta blocks:                886
+Block-determinants to compute:           1623152
+ 
+Number of <bra| alpha superblocks:            65
+Number of |ket> alpha superblocks:            66
+Number of <bra|  beta superblocks:            65
+Number of |ket>  beta superblocks:            66
+ -------------------------------------------------------------------------------
+ More alpha than beta blocks present - will pre-compute beta
+ -------------------------------------------------------------------------------
+  Reordering CI-coefficients
+*** walltime: total -        0.133s, step -        0.000s ***
+ -------------------------------------------------------------------------------
+  Transforming mixed overlap matrix
+*** walltime: total -        0.151s, step -        0.019s ***
+ -------------------------------------------------------------------------------
+ Precomputing P determinants using adaptive formalism
+*** walltime: total -        2.804s, step -        2.653s ***
+Exceeding memory limit. (maxmem, mem_used, memu) =(         9,         7,         6) MB
+ Allocation of Q block overlap matrix failed.
+  - Using on-the-fly algorithm for Q determinants.
+ -------------------------------------------------------------------------------
+ Overlap using semi-direct approach and adaptive determinant formalism
+*** walltime: total -        5.531s, step -        2.727s ***
+ ===============================================================================
+ Overlap matrix <PsiA_i|PsiB_j>
+                |PsiB  1>     |PsiB  2>     |PsiB  3>     
+<PsiA  1|   -0.8087703897 -0.2597650583  0.0538627314
+<PsiA  2|    0.2637574719 -0.8092733373  0.0212203358
+<PsiA  3|   -0.0416047014 -0.0061027687 -0.7793032299
+ 
+ Renormalized overlap matrix <PsiA_i|PsiB_j>
+                |PsiB  1>     |PsiB  2>     |PsiB  3>     
+<PsiA  1|   -0.8251853284 -0.2650354474  0.0549552665
+<PsiA  2|    0.2691098415 -0.8256899843  0.0216506905
+<PsiA  3|   -0.0424489390 -0.0062265620 -0.7951070361
+ 
+ Performing Lowdin orthonormalization by SVD...
+ 
+ Orthonormalized overlap matrix <PsiA_i|PsiB_j>
+                |PsiB  1>     |PsiB  2>     |PsiB  3>     
+<PsiA  1|   -0.9500301723 -0.3066397249  0.0584358701
+<PsiA  2|    0.3076419647 -0.9514616603  0.0087823963
+<PsiA  3|   -0.0529064584 -0.0263208674 -0.9982525325
+  Angle to original matrix  0.0428350016
+ 
+ Computing mixing angles as matrix logarithm...
+  Determinant of the original matrix:     -1.0000000000
+  Determinant of the regularized matrix:   1.0000000000
+   -> Using this matrix
+ 
+ Mixing angles
+                |PsiB  1>     |PsiB  2>     |PsiB  3>     
+<PsiA  1|                  0.3123781104 -0.0566204508
+<PsiA  2|                               -0.0178509166
+<PsiA  3|  

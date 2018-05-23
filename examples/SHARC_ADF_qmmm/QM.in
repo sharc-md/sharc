@@ -1,0 +1,56 @@
+   16
+Comment
+ S     0.000000     0.000000     0.000000
+ C     0.000000     0.000000    -1.587500
+ H     0.952500     0.000000    -2.116700
+ C    -1.267509     0.000000    -2.291716
+ H    -1.834145    -0.889165    -2.019263
+ H    -1.834145     0.889165    -2.019263
+ C    -1.026071     0.000000    -3.721474
+ H    -1.978014     0.000000    -4.250365
+ H    -0.459435     0.889165    -3.993927
+ H    -0.459435    -0.889165    -3.993927
+ O     1.643000     2.377000    -2.631000
+ H     1.124000     1.575000    -2.569000
+ H     1.253000     2.964000    -1.983000
+ O     0.554000    -2.994000    -3.712000
+ H    -0.441000    -2.722000    -3.620000
+ H     1.055000    -2.302000    -3.280000
+    ## The first few lines have to comply with the xyz file format (number of atoms, comment, atoms)
+    ## Comments at the end of these lines cause errors
+
+    ## from here, comments can be put at the end of each line
+    ## blank lines can be used freely
+    ## order of keywords does not matter
+    ## only the first instance of every keyword is used
+    ## everything is case-insensitive
+
+    ## ===============================================
+    ## Control keywords:
+init
+#samestep
+#restart
+
+#cleanup        # delete complete scratchdir and savedir, only keep QM.out
+#backup         # backup content of savedir for this time step
+
+    ## ===============================================
+    # Settings:
+unit angstrom
+states 1 1 1 1 1 
+#savedir ./SAVE         # overrides the savedir in the resources file
+
+    ## ===============================================
+    # Quantity requests:
+#h
+soc
+dm
+grad 
+#overlap
+ion
+theodore
+
+
+
+
+# kate: syntax python

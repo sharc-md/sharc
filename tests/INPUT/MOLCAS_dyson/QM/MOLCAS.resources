@@ -1,0 +1,4 @@
+memory 1000
+molcas $MOLCAS
+scratchdir $SCRADIR/WORK
+wfoverlap $SHARC/wfoverlap.x

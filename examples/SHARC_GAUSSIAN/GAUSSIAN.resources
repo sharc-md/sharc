@@ -1,0 +1,119 @@
+    ## This is a commented version of the GAUSSIAN.resources file 
+
+    ## ======== GAUSSIAN setup ============
+
+    ## Sets the g03root,/g09root/g16root variables.
+    ## Shell user (~) and variables ($) can be used.
+    ## also sets GAUSS_EXEDIR and PATH from that.
+groot /usr/license/gaussian/g09
+
+
+
+
+    ## ======== SCRATCH and SAVE ============
+
+    ## Sets the path to the scratch directory employed by the interface.
+    ## There, all GAUSSIAN and overlap calculations will be launched.
+scratchdir $TMPDIR
+
+    ## Sets the path to the save directory.
+    ## There, all chk, fchk, rwf, determinant, MO coefficient, and AO overlap files are stored between time steps.
+    ## Hence, this should be a persistent directory.
+    ## Note that the savedir from QM.in takes precedence over the one here.
+savedir ./SAVEDIR
+
+
+
+
+    ## ======== RESSOURCES ============
+
+    ## Number of CPU cores the interface can use.
+    ## If several ADF jobs need to be done (several multiplicities, several gradients),
+    ## then the interface will distribute the jobs over the cores in a sensible way.
+    ## Note that with ADF>=2017.208, no separate gradient jobs are needed, so each multiplicity spawns at most one ADF run.
+ncpu 4
+
+    ## Fraction of parallelizable work in the ADF calculations.
+    ## With a value close to one, the interface will tend to run multiple jobs one after each other with the maximum number of cores.
+    ## With a value close to zero, the interface will tend to run all jobs at the same time, dividing the cores over the jobs.
+schedule_scaling 0.5
+
+    ## Time delay in seconds between the launch of parallel ADF jobs.
+delay 0.
+
+    ## Memory for GAUSSIAN and the wfoverlaps code .
+memory 1000
+
+
+
+
+
+
+
+    ## ======== OVERLAPS ============
+
+    ## Path to the wfoverlaps program.
+    ## Needed for overlap and Dyson norm calculations.
+wfoverlap $SHARC/wfoverlap_ascii.x
+
+    ## Truncation threshold for the determinant files.
+    ## Note that for non-TDA hybrid TD-DFT, the response vector norm can be larger than 1.0, so give correspondingly larger values.
+wfthres 0.99999
+
+    ## Number of frozen core orbitals for overlap and Dyson norm calculations.
+    ## All ADF calculations are done with all-electron settings.
+    ## A value of -1 will set the number of frozen core orbitals automatically (to ADF's small core convention).
+numfrozcore 6
+
+    ## Number of doubly occupied orbitals for Dyson calculations.
+    ## These orbitals are counted from the first nonfrozen orbital.
+numocc 0
+
+    ## Do not store determinant and MO coefficient files in savedir.
+    ## Must not be used for dynamics runs.
+#nooverlap
+
+
+
+
+    ## ======== TheoDORE ============
+
+    ## Path to the TheoDORE installation.
+theodir /user/plasserf/programs/TheoDORE/GIT
+
+    ## This keyword defines the properties to be computed by TheoDORE.
+    ## The properties can either be given as space-separated items (the interface will reformat this for proper TheoDORE input:
+theodore_prop Om POSi POSf PR CT PRNTO Z_HE RMSeh
+        ## Or as Python-style list of strings (e.g., from dens_ana.in):
+#theodore_prop ['Om', 'POSi', 'POSf', 'PR', 'CT', 'MC', 'LC', 'MLCT', 'LMCT', 'LLCT', 'PRNTO', 'Z_HE', 'S_HE', 'RMSeh']
+
+    ## This keyword defines fragments for the CT population analysis of TheoDORE.
+    ## The fragments can be either specified one by one on separate lines, 
+theodore_fragment 1 2 3
+theodore_fragment 4 5 6 7 8 9 10
+    ## or as Python-style list of integers (e.g., from dens_ana.in):
+#theodore_fragment [[1,2,3],[4,5,6,7,8,9,10]]
+    ## It is strongly advised to not mix these two input styles.
+
+
+
+
+    ## ======== OTHERS ============
+
+    ## Always use the provided initial orbitals, even if starting orbitals are present in the savedir.
+#always_orb_init
+
+    ## Always use an orbital guess, even if starting orbitals are present in the savedir.
+#always_guess
+
+    ## Increase verbosity of the interface and do not delete scratchdir after all jobs are finished.
+debug
+
+    ## Decrease the verbosity of the interface.
+#no_print
+
+
+
+
+
+# kate: syntax python

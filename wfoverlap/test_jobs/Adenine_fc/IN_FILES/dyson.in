@@ -1,0 +1,8 @@
+a_mo=mo_a.cat
+b_mo=mo_a
+a_det=dets_a.cat
+b_det=dets_a
+ao_read=0
+mix_aoovl=S_a
+ncore=10
+ndocc=25

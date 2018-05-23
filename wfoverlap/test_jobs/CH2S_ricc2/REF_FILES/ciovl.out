@@ -1,0 +1,73 @@
+Using OpenMP version. Maximum number of threads:     4
+ -------------------------------------------------------------------------------
+ Reading input
+ Reading input from file: ciovl.in
+*** walltime: total -        0.006s, step -        0.006s ***
+ -------------------------------------------------------------------------------
+Number of <bra| electrons:              24
+Number of <bra| alpha el:               12
+Number of <bra| beta el:                12
+Number of |ket> electrons:              24
+Number of |ket> alpha el:               12
+Number of |ket> beta el:                12
+ 
+Number of <bra| MOs:                    42
+Number of |ket> MOs:                    42
+Number of discarded core MOs:            0
+ 
+Number of <bra| states:                  3
+Number of |ket> states:                  3
+Number of <bra| determinants:           21
+Number of |ket> determinants:          361
+Number of det. pairs:                 7581
+ -------------------------------------------------------------------------------
+ Sorting determinants and CI vectors for blocking
+*** walltime: total -        0.008s, step -        0.002s ***
+ -------------------------------------------------------------------------------
+Number of <bra| alpha blocks:                 11
+Number of |ket> alpha blocks:                181
+Number of <bra|  beta blocks:                 11
+Number of |ket>  beta blocks:                181
+Block-determinants to compute:              3982
+ 
+Number of <bra| alpha superblocks:             5
+Number of |ket> alpha superblocks:             6
+Number of <bra|  beta superblocks:             5
+Number of |ket>  beta superblocks:             6
+ -------------------------------------------------------------------------------
+ More alpha than beta blocks present - will pre-compute beta
+ -------------------------------------------------------------------------------
+  Reordering CI-coefficients
+*** walltime: total -        0.008s, step -        0.000s ***
+ -------------------------------------------------------------------------------
+  Transforming mixed overlap matrix
+*** walltime: total -        0.041s, step -        0.033s ***
+ -------------------------------------------------------------------------------
+ Precomputing P determinants using adaptive formalism
+*** walltime: total -        0.042s, step -        0.001s ***
+ Precomputing Q determinants using adaptive formalism
+*** walltime: total -        0.043s, step -        0.001s ***
+ -------------------------------------------------------------------------------
+ Overlap using precomputed quantities
+*** walltime: total -        0.043s, step -        0.000s ***
+ ===============================================================================
+ Overlap matrix <PsiA_i|PsiB_j>
+                |PsiB  1>     |PsiB  2>     |PsiB  3>     
+<PsiA  1|    1.0000000000 -0.0000000000 -0.0000000000
+<PsiA  2|   -0.0000000000  0.9642947135  0.0000000000
+<PsiA  3|   -0.0000000000  0.0000000000  0.9720741465
+ 
+ Renormalized overlap matrix <PsiA_i|PsiB_j>
+                |PsiB  1>     |PsiB  2>     |PsiB  3>     
+<PsiA  1|    1.0000000000 -0.0000000000 -0.0000000000
+<PsiA  2|   -0.0000000000  0.9954094640  0.0000000000
+<PsiA  3|   -0.0000000000  0.0000000000  0.9952403307
+ 
+ Performing Lowdin orthonormalization by SVD...
+ 
+ Orthonormalized overlap matrix <PsiA_i|PsiB_j>
+                |PsiB  1>     |PsiB  2>     |PsiB  3>     
+<PsiA  1|    1.0000000000  0.0000000000  0.0000000000
+<PsiA  2|   -0.0000000000  1.0000000000 -0.0000000000
+<PsiA  3|   -0.0000000000  0.0000000000  1.0000000000
+  Angle to original matrix  0.0156615140

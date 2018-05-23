@@ -1,0 +1,10 @@
+relativistic scalar zora
+basis SZ
+functional gga pbe
+charge 0 +1 0 +1 0
+grid beckegrid normal
+fit zlmfit normal
+
+dvd_residu 1e-3
+dvd_tolerance 1e-7
+dvd_vectors 60

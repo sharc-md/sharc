@@ -1,0 +1,20 @@
+Singlet_1/                               #Path:  [end] (autocomplete enabled) 
+                                         #Path:  [end] (autocomplete enabled) 
+0                                        #File path or index: [0] 
+                                         #T column (time): [1] 
+                                         #X columns: [2] (range comprehension enabled) 
+                                         #Y columns: [0] (range comprehension enabled) 
+n                                        #Show possible workflow options? [True] 
+                                         #Do you want to apply smoothing to the individual trajectories? [False] 
+                                         #Do you want to synchronize the data? [True] 
+y                                        #Do you want to apply convolution in X direction? [False] 
+                                         #Choose one of the functions: [1] 
+0.1                                      #Choose width of the smoothing function (in units of the X columns): [1.0] 
+50                                       #Size of the grid along X: [25] 
+                                         #Xrange: [1.5] 
+                                         #Do you want to sum up all Y values? [False] 
+                                         #Do you want to integrate in X direction? [False] 
+                                         #Do you want to apply convolution in T direction? [False] 
+                                         #Do you want to integrate in T direction? [False] 
+                                         #Do you want to output as Type2 dataset? [False] 
+                                         #Do you want to do the specified analysis? [True] 

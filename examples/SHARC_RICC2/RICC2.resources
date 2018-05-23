@@ -1,0 +1,81 @@
+    ## This is a commented version of the RICC2.resources file 
+    ## for version 1.1 of the SHARC_RICC2.py interface.
+
+    ## ======== PATHS ============
+
+    ## Paths to TURBOMOLE and ORCA
+turbodir /usr/license/turbomole/7.0/TURBOMOLE/
+
+orcadir  /usr/license/orca/latest/
+
+    ## Paths to savedir and scratchdir
+scratchdir $TMPDIR/WORK
+savedir $TMPDIR/SAVE/
+
+
+    ## ======== RESOURCES ============
+
+memory 1000
+ncpu 4
+
+
+    ## ========  Initial orbitals ============
+#always_orb_init
+#always_guess
+
+    ## ======== Overlaps ============
+wfoverlap $SHARC/wfoverlap.x
+wfthres 0.999
+numfrozcore -1          # only for overlaps. If -1, use values from template's "frozen" keyword
+#nooverlap
+
+    ## ======== Dipole moments ============
+
+    ## As for single-reference methods, many (transition) dipole moment matrix elements might 
+    ## come with extra computational costs (response equations), the interface can reduce
+    ## the number of matrix elements if desired.
+    ## There are three levels of computation for the dipole moments.
+    ## 0: only free matrix elements (mu_00 and mu_xx if gradient of x is computed)
+    ## 1: additionally, all mu_0x elements (oscillator strengths for excitation from ground state)
+    ## 2: all matrix elements are calculated (mu_00, mu_xx, mu_0x, mu_xx)
+dipolelevel 1
+
+
+
+
+    ## ========  Debug options ============
+
+    ## Increase verbosity of interface stdout
+DEBUG true
+
+    ## Do not use the ricc2 restart feature when doing multiple ricc2 runs (for gradients, TDMs)
+#no_ricc2_restart
+
+
+
+
+    ## ======== TheoDORE ============
+
+    ## Path to the TheoDORE installation.
+theodir /user/plasserf/programs/TheoDORE/GIT
+
+    ## This keyword defines the properties to be computed by TheoDORE.
+    ## The properties can either be given as space-separated items (the interface will reformat this for proper TheoDORE input:
+theodore_prop Om POSi POSf PR CT PRNTO S_HE Z_HE RMSeh
+        ## Or as Python-style list of strings (e.g., from dens_ana.in):
+#theodore_prop ['Om', 'POSi', 'POSf', 'PR', 'CT', 'MC', 'LC', 'MLCT', 'LMCT', 'LLCT', 'PRNTO', 'Z_HE', 'S_HE', 'RMSeh']
+
+    ## This keyword defines fragments for the CT population analysis of TheoDORE.
+    ## The fragments can be either specified one by one on separate lines, 
+theodore_fragment 1
+theodore_fragment 2
+theodore_fragment 3 4
+    ## or as Python-style list of integers (e.g., from dens_ana.in):
+#theodore_fragment [[1,2,3],[4,5,6,7,8,9,10]]
+    ## It is strongly advised to not mix these two input styles.
+
+
+
+
+
+# kate: syntax python

@@ -1,0 +1,27 @@
+printlevel 2
+
+geomfile "geom"
+veloc external
+velocfile "veloc"
+
+nstates 2 0 2 
+actstates 2 0 2 
+state 2 mch
+coeff auto
+rngseed 7590
+
+ezero      -1.0081673520
+tmax 1000.000000
+stepsize 0.500000
+nsubsteps 25
+
+surf sharc
+coupling overlap
+nogradcorrect
+ekincorrect parallel_vel
+decoherence
+decoherence_param 0.1
+grad_select
+eselect 0.300000
+select_directly
+write_overlap

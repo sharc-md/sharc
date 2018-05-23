@@ -1,0 +1,17 @@
+1 ! Number of lasers
+T ! Real-valued field (T) or not (F)
+0. 18. 18001 ! Set starting time, end of time and number of time steps (t0[fs],tEnd[fs],Nt)
+F ! Write additional files for debugging (T) or not (F)
+
+1 0 0 ! Choose polarization vector (e.g. 2.,0.,0. will be normalized)
+1 ! Choose type of envelope (1=Gaussian,2=Sinusoidal)
+3 ! Choose field strength in (1) [GV/m] (2) [TW/cm^2] (3) [a.u.]
+1. ! Enter field strength
+6. 0. 9. 0. 0. ! Set FWHM,begin,center,center2 and end time of pulse (1 + 3 affect Gaussian, 2-5 affect Sinus) [fs]
+3 ! Choose central frequency in (1) [nm] (2) [eV] (3) [a.u.]
+10. ! Enter central frequency
+0. ! Choose phase (as multiple of pi)
+0. ! Choose colored double pulse (b_1[fs]), which is multiplied with abs(omega-omega_0)
+5. ! Choose linear chirp (b_2[fs^2])
+0. ! Choose third-order chirp (b_3[fs^3])
+0. ! Choose fourth-order chirp (b_4[fs^4])

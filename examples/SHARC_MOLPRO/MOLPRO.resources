@@ -1,0 +1,58 @@
+    ## This is a commented version of the MOLPRO.resources file 
+    ## for version 2.1 of the SHARC_MOLPRO.py interface.
+
+    ## Paths to programs
+molpro $MOLPRO/
+wfoverlap $SHARC/wfoverlap.x
+
+
+
+# Paths to save and scratch
+scratchdir $TMPDIR/SCRATCH/
+savedir $TMPDIR/SAVE/
+# note that savedir is taken from QM.in, if present there
+
+
+
+# Resources
+memory 1000            # in MB, per CPU core
+ncpu 1                 # parallelize jobs and gradients
+delay 0                # delay between starting parallel calcs, in sec
+
+
+
+
+
+# Initial orbitals
+#always_orb_init         # always use MOLPRO.%i.init
+#always_guess            # always use atomic density guess
+
+
+
+# Increase printlevel of interface a lot
+DEBUG true
+
+
+
+# Settings for wfoverlap computations
+numfrozcore 6         # for overlap and Dyson
+numocc 6              # for Dyson
+#nooverlap      # don't generate determinant files (don't use in dynamics)
+
+
+
+
+
+
+
+
+# These keywords are deprecated in the new interface
+#checknacs
+#correctnacs
+#checknacs_mrcio
+#checknacs_ediff
+
+
+
+
+# kate: syntax python

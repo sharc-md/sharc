@@ -1,0 +1,73 @@
+    ## This is a commented version of the GAUSSIAN.template file 
+    ## for version 2.1 of the SHARC_GAUSSIAN.py interface.
+
+    ## ======== BASIS SETS ============
+
+
+    ## This keyword defines the basis set for all atoms.
+    ## copied verbatim to input
+basis 6-31G**
+
+
+    ## ======== CHEMISTRY ============
+
+    ## This keyword defines the XC functional.
+    ## copied verbatim to input
+    ## "hf" can also be used and gives TDHF or CIS for excited states
+functional b3lyp
+
+    ## This keyword activates dispersion correction.
+    ## All arguments are written verbatim to input.
+dispersion GD3
+
+    ## This keyword sets the total charge of the molecule.
+    ## Unlike in the Gaussian input, this keyword does not allow to set the multiplicity.
+    ## Instead, the interface automatically sets this number based on the requested multiplicity.
+    ## This keyword accepts either a single number, or as many numbers as there are multiplicities.
+    ## In the second case, the charges are used for the respective multiplicities.
+charge 0 +1 0 +1 0
+
+    ## With this keyword, the interface requests a scrf calculation, with the method and solvent given as arguments.
+#scrf iefpcm solvent=water
+
+
+
+    ## ======== ACCURACY and CONVERGENCE ============
+
+    ## This keyword controls the integration grid.
+    ## 
+grid finegrid     # Options: coarsegrid, SG1Grid, finegrid (default), ultrafine, superfinegrid
+
+
+    ## This keyword sets the density fitting scheme.
+    ## this is off by default and can be activated with:
+denfit 
+
+    ## This sets options for the SCF cycles.
+    ## options: tight, QC
+scf tight
+
+
+
+
+    ## ======== EXCITATIONS ============
+
+    ## This keyword deactivates TDA (which the interface will request by default).
+#no_tda
+
+    ## This keyword requests that triplet states are calculated in a separate job based on an open-shell triplet ground state.
+    ## The default is that triplets are calculated based on the closed-shell singlet ground state.
+#unrestricted_triplets
+
+    ## This keyword increases the number of excited states for the Davidson step.
+    ## These extra states will not be reported in the output, which is controlled by the "states" request in QM.in.
+    ## Like the "charges" key, padding can be specified per multiplicity.
+    ## Note that extra states change how the Davidson procedure converges and thus can slightly affect the results.
+paddingstates 0 0 0 0 0
+
+
+
+
+
+
+# kate: syntax python

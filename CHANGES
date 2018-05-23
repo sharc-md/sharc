@@ -1,0 +1,48 @@
+******************************************
+
+    SHARC Program Suite
+
+    Copyright (c) 2018 University of Vienna
+
+    This file is part of SHARC.
+
+    SHARC is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    SHARC is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with SHARC.  If not, see <http://www.gnu.org/licenses/>.
+
+******************************************
+
+version 1.0
+	Initial Release
+version 1.01 
+	Tutorial pdf now readable
+	HTML Manual now shows the figures directly
+version 1.02
+        test suite: minor bugfixes
+        excite.py: minor bugfix
+        molpro_input.py: minor bugfix, changed atom mass dialog, added SO-CASCI option
+        retrieve.sh: minor bugfix
+version 1.1
+        excite.py: fixed a bug with printing MS values in the dialog, fixed a bug with delta pulse selection
+        molcas_input.py: rewritten, now also writes proper MOLCAS input files in addition to MOLCAS.template files for the interface
+        molpro_input.py: fixed a bug in the check of the CAS size, added check for empty state list, can now write input for EOM-CCSD, CI/MXP-optimization
+        setup_init.py: changed to accomodate the new MOLCAS interface
+        setup_traj.py: changed to accomodate the new MOLCAS interface, changed to accomodate the new cioverlaps code for COLUMBUS
+        SHARC_MOLCAS.py: rewritten, CASPT2 dynamics, dipole/SOC derivatives, parallization
+        SHARC_COLUMBUS.py: bugfixes (gethostname, debug features, error messages, molden files), added check for "socdr" keyword, added "ncpu" keyword, changed to accomodate the new cioverlaps code (Felix Plasser, Sebastian Mai, Matthias Ruckenbauer)
+        SHARC_MOLPRO.py: bugfixes (gethostname,empty gradient list), added support for command line options to MOLPRO, which will be passed through the interface, uses record 1 instead of 9 now for gradient dumps, also works if CPMCSCF converges in one iteration
+        wigner.py: reads molden files with less than 3*N_atom normal modes (but issues a warning in this case)
+        populations.py: bugfixes (detection of timestep)
+        data_extractor.x: added expec_MCH.out output file
+        sharc.x: SHARC fun facts, minor changes (error code in output.log)
+version 2.0
+        major changes

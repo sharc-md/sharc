@@ -1,0 +1,4 @@
+basis 6-31G**
+functional b3lyp
+dispersion GD3
+charge 0 +1 0 +1 0

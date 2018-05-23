@@ -1,0 +1,54 @@
+    ## This is a commented version of the RICC2.template file 
+    ## for version 1.1 of the SHARC_RICC2.py interface.
+
+    ## ======== BASIS SETS ============
+
+    ## Basis set for all atoms
+basis cc-pVDZ
+
+    ## Auxiliary basis set, if not given, Turbomole decides automatically.
+# auxbasis def2-SVP
+
+    ## Path to a custom basis set library. This allows to define new basis sets.
+#basislib /user/davide/newbasis/
+
+
+    ## ======== Charge ============
+
+    ## Total molecular charge
+charge 0
+
+
+    ## ======== General settings ============
+
+    ## Method can be either "adc(2)" (default) or "cc2".
+    ## Note that with CC2, several features are not available (SOC, ex-ex transition DMs)
+method adc(2)
+
+    ## Number of frozen core orbitals for the ricc2 step.
+    ## Use a value of -1 to use the automatic value from define.
+#frozen 6                # default from program (=-1)
+
+    ## Decide which scf program of Turbomole to use. Can be either "dscf" (default) or "ridft".
+    ## Note that dscf has to be called after ridft in any case (but then the MOs are already converged).
+scf dscf
+
+    ## Decide on the flavor of spin-component scaling for the ricc2 step.
+    ## Possible choices are 
+    ## "none" (default), 
+    ## "scs" (a la Grimme), 
+    ## "sos" (a la Head-Gordon), 
+    ## "lt-sos" (Laplace-transformed SOS implementation with N^4 scaling, but with incomplete parallelization, and no SOC or ex-ex transition DMs are available)
+spin-scaling none
+
+    ## Activates the Douglas-Kroll Hamiltonian in Turbomole (off by default).
+    ## Note that this only affects the SCF step, as the ricc2 module does not consider the DKH option.
+#douglas-kroll
+
+
+
+
+
+
+
+# kate: syntax python

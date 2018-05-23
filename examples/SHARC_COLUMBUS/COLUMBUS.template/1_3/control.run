@@ -1,0 +1,11 @@
+niter = 1 
+seward
+ciudgmom
+scf
+mcscf
+ciudgav
+socinr=4:0:3
+scfprop
+mcscfprop
+ciprop
+nadcoupl

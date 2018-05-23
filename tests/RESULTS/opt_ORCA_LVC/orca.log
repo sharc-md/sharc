@@ -1,0 +1,1055 @@
+
+                                 *****************
+                                 * O   R   C   A *
+                                 *****************
+
+           --- An Ab Initio, DFT and Semiempirical electronic structure package ---
+
+                  #######################################################
+                  #                        -***-                        #
+                  #  Department of molecular theory and spectroscopy    #
+                  #              Directorship: Frank Neese              #
+                  # Max Planck Institute for Chemical Energy Conversion #
+                  #                  D-45470 Muelheim/Ruhr              #
+                  #                       Germany                       #
+                  #                                                     #
+                  #                  All rights reserved                #
+                  #                        -***-                        #
+                  #######################################################
+
+
+                         Program Version 4.0.1 -  RELEASE  -
+
+
+ With contributions from (in alphabetic order):
+   Daniel Aravena         : Magnetic Properties
+   Michael Atanasov       : Ab Initio Ligand Field Theory
+   Ute Becker             : Parallelization
+   Martin Brehm           : Molecular dynamics
+   Dmytro Bykov           : SCF Hessian
+   Vijay G. Chilkuri      : MRCI spin determinant printing
+   Dipayan Datta          : RHF DLPNO-CCSD density
+   Achintya Kumar Dutta   : EOM-CC, STEOM-CC
+   Dmitry Ganyushin       : Spin-Orbit,Spin-Spin,Magnetic field MRCI
+   Yang Guo               : DLPNO-NEVPT2, CIM, IAO-localization
+   Andreas Hansen         : Spin unrestricted coupled pair/coupled cluster methods
+   Lee Huntington         : MR-EOM, pCC
+   Robert Izsak           : Overlap fitted RIJCOSX, COSX-SCS-MP3, EOM
+   Christian Kollmar      : KDIIS, OOCD, Brueckner-CCSD(T), CCSD density
+   Simone Kossmann        : Meta GGA functionals, TD-DFT gradient, OOMP2, MP2 Hessian
+   Martin Krupicka        : AUTO-CI
+   Dagmar Lenk            : GEPOL surface
+   Dimitrios Liakos       : Extrapolation schemes; parallel MDCI
+   Dimitrios Manganas     : ROCIS; embedding schemes
+   Dimitrios Pantazis     : SARC Basis sets
+   Taras Petrenko         : DFT Hessian,TD-DFT gradient, ASA, ECA, R-Raman, ABS, FL, XAS/XES, NRVS
+   Peter Pinski           : DLPNO-MP2
+   Christoph Reimann      : Effective Core Potentials
+   Marius Retegan         : Local ZFS, SOC
+   Christoph Riplinger    : Optimizer, TS searches, QM/MM, DLPNO-CCSD(T), (RO)-DLPNO pert. Triples
+   Tobias Risthaus        : Range-separated hybrids, TD-DFT gradient, RPA, STAB
+   Michael Roemelt        : Restricted open shell CIS
+   Masaaki Saitow         : Open-shell DLPNO
+   Barbara Sandhoefer     : DKH picture change effects
+   Kantharuban Sivalingam : CASSCF convergence, NEVPT2, FIC-MRCI
+   Georgi Stoychev        : AutoAux
+   Boris Wezisla          : Elementary symmetry handling
+   Frank Wennmohs         : Technical directorship
+
+
+ We gratefully acknowledge several colleagues who have allowed us to
+ interface, adapt or use parts of their codes:
+   Stefan Grimme, W. Hujo, H. Kruse,             : VdW corrections, initial TS optimization,
+                  C. Bannwarth                     DFT functionals, gCP, sTDA/sTD-DF
+   Ed Valeev                                     : LibInt (2-el integral package), F12 methods
+   Garnet Chan, S. Sharma, J. Yang, R. Olivares  : DMRG
+   Ulf Ekstrom                                   : XCFun DFT Library
+   Mihaly Kallay                                 : mrcc  (arbitrary order and MRCC methods)
+   Andreas Klamt, Michael Diedenhofen            : otool_cosmo (COSMO solvation model)
+   Jiri Pittner, Ondrej Demel                    : Mk-CCSD
+   Frank Weinhold                                : gennbo (NPA and NBO analysis)
+   Christopher J. Cramer and Donald G. Truhlar   : smd solvation model
+
+
+ Your calculation uses the libint2 library for the computation of 2-el integrals
+ For citations please refer to: http://libint.valeyev.net
+
+ This ORCA versions uses:
+   CBLAS   interface :  Fast vector & matrix operations
+   LAPACKE interface :  Fast linear algebra routines
+   SCALAPACK package :  Parallel linear algebra routines
+
+
+
+
+*****************************************
+The coordinations will be read from file: geom.xyz
+*****************************************
+
+
+Your calculation utilizes the basis: def2-SVP
+   F. Weigend and R. Ahlrichs, Phys. Chem. Chem. Phys. 7, 3297 (2005).
+
+================================================================================
+                                        WARNINGS
+                       Please study these warnings very carefully!
+================================================================================
+
+Warning: TCutStore was < 0. Adjusted to Thresh (uncritical)
+
+WARNING: Geometry Optimization
+  ===> : Switching off AutoStart
+         For restart on a previous wavefunction, please use MOREAD
+
+INFO   : the flag for use of LIBINT has been found!
+
+================================================================================
+                                       INPUT FILE
+================================================================================
+NAME = orca.inp
+|  1> #
+|  2> #SHARC: states 4 0 3
+|  3> #SHARC: interface LVC
+|  4> #SHARC: opt min 2
+|  5> 
+|  6> ! ExtOpt
+|  7> 
+|  8> %geom
+|  9>   maxstep 0.300000
+| 10>   Trust -0.300000
+| 11> end
+| 12> 
+| 13> * xyzfile 0 1 geom.xyz
+| 14> 
+| 15> 
+| 16>                          ****END OF INPUT****
+================================================================================
+
+                       *****************************
+                       * Geometry Optimization Run *
+                       *****************************
+
+Geometry optimization settings:
+Update method            Update   .... BFGS
+Choice of coordinates    CoordSys .... Redundant Internals
+Initial Hessian          InHess   .... Almoef's Model
+
+Convergence Tolerances:
+Energy Change            TolE     ....  5.0000e-06 Eh
+Max. Gradient            TolMAXG  ....  3.0000e-04 Eh/bohr
+RMS Gradient             TolRMSG  ....  1.0000e-04 Eh/bohr
+Max. Displacement        TolMAXD  ....  4.0000e-03 bohr
+RMS Displacement         TolRMSD  ....  2.0000e-03 bohr
+
+------------------------------------------------------------------------------
+                        ORCA OPTIMIZATION COORDINATE SETUP
+------------------------------------------------------------------------------
+
+The optimization will be done in new redundant internal coordinates
+Making redundant internal coordinates   ...  (new redundants) done
+Evaluating the initial hessian          ...  (Almloef) done
+Evaluating the coordinates              ...  done
+Calculating the B-matrix                .... done
+Calculating the G-matrix                .... done
+Diagonalizing the G-matrix              .... done
+The first mode is                       ....    0
+The number of degrees of freedom        ....    3
+
+    -----------------------------------------------------------------
+                    Redundant Internal Coordinates
+
+
+    -----------------------------------------------------------------
+         Definition                    Initial Value    Approx d2E/dq
+    -----------------------------------------------------------------
+      1. B(O   1,S   0)                  1.4501         1.209754   
+      2. B(O   2,S   0)                  1.5865         0.733131   
+      3. A(O   1,S   0,O   2)          120.8548         0.559890   
+    -----------------------------------------------------------------
+
+Number of atoms                         .... 3
+Number of degrees of freedom            .... 3
+
+         *************************************************************
+         *                GEOMETRY OPTIMIZATION CYCLE   1            *
+         *************************************************************
+---------------------------------
+CARTESIAN COORDINATES (ANGSTROEM)
+---------------------------------
+  S      0.000000    0.000000    0.000000
+  O      0.000000   -1.270000    0.700000
+  O      0.000000    1.370000    0.800000
+
+----------------------------
+CARTESIAN COORDINATES (A.U.)
+----------------------------
+  NO LB      ZA    FRAG     MASS         X           Y           Z
+   0 S    16.0000    0    32.060    0.000000    0.000000    0.000000
+   1 O     8.0000    0    15.999    0.000000   -2.399952    1.322808
+   2 O     8.0000    0    15.999    0.000000    2.588925    1.511781
+
+We call the external script: orca_External orca.extcomp.inp orca.extcomp.out
+
+         *************************************************************
+         *                    EXTERNAL SHARC JOB                     *
+         *************************************************************
+
+################# Input: #################
+  Interface:            Analytical linear-vibronic coupling model
+  Number of states:     [4, 0, 3]
+  Optimization mode:    Minimization
+  Involved state(s):    2
+
+  For all quantum chemistry infos, see these interface files:
+    - LVC.template
+    - V0.txt
+    - QM.log
+
+############## Run section: ##############
+Interface call:
+python $SHARC/SHARC_LVC.py QM.in >> QM.log 2> QM.err
+Finished!
+############ Gradient section: ###########
+All data in a.u.
+Energies:
+      0.020032018182 
+      0.129636762624 *
+      0.188764356955 
+      0.303472424016 
+      0.128053147144 
+      0.145995189666 
+      0.156276171554 
+      0.128053147144 
+      0.145995189666 
+      0.156276171554 
+      0.128053147144 
+      0.145995189666 
+      0.156276171554 
+
+>>> 0.129636762624
+Energy to optimize:   0.129636762624
+Gradient to follow:
+  0      0.000000000000      0.043342974377      0.050233949045
+  1      0.000000000000     -0.017332455564     -0.012734652214
+  2      0.000000000000     -0.026010103980     -0.037500274638
+
+Writing to orca.extcomp.out
+
+         *************************************************************
+         *                  EXTERNAL SHARC JOB DONE                   *
+         *************************************************************
+
+------------------------------------------------------------------------------
+                         ORCA GEOMETRY RELAXATION STEP
+------------------------------------------------------------------------------
+
+Reading the OPT-File                    .... done
+Getting information on internals        .... done
+Copying old internal coords+grads       .... done
+Making the new internal coordinates     .... (new redundants).... done
+Validating the new internal coordinates .... (new redundants).... done
+Calculating the B-matrix                .... done
+Calculating the G,G- and P matrices     .... done
+Transforming gradient to internals      .... done
+Projecting the internal gradient        .... done
+Number of atoms                         ....   3
+Number of internal coordinates          ....   3
+Current Energy                          ....     0.129636763 Eh
+Current gradient norm                   ....     0.083351332 Eh/bohr
+Maximum allowed component of the step   ....  0.300
+Current trust radius                    ....  0.300
+Evaluating the initial hessian          ....  (Almloef) done
+Projecting the Hessian                  .... done
+Forming the augmented Hessian           .... done
+Diagonalizing the augmented Hessian     .... done
+Last element of RFO vector              ....  0.993718048
+Lowest eigenvalues of augmented Hessian:
+ -0.007767303  0.565237967  0.735486156
+Length of the computed step             ....  0.112620120
+The final length of the internal step   ....  0.112620120
+Converting the step to cartesian space:
+ Initial RMS(Int)=    0.0650212569
+Transforming coordinates:
+ Iter   0:  RMS(Cart)=    0.0436658132 RMS(Int)=    0.0653104741
+ Iter   1:  RMS(Cart)=    0.0016706913 RMS(Int)=    0.0028794672
+ Iter   2:  RMS(Cart)=    0.0000515496 RMS(Int)=    0.0000877714
+ Iter   3:  RMS(Cart)=    0.0000044244 RMS(Int)=    0.0000068589
+ Iter   4:  RMS(Cart)=    0.0000001233 RMS(Int)=    0.0000002585
+ Iter   5:  RMS(Cart)=    0.0000000111 RMS(Int)=    0.0000000157
+done
+Storing new coordinates                 .... done
+
+                                .--------------------.
+          ----------------------|Geometry convergence|-------------------------
+          Item                value                   Tolerance       Converged
+          ---------------------------------------------------------------------
+          RMS gradient        0.0401900314            0.0001000000      NO
+          MAX gradient        0.0554735964            0.0003000000      NO
+          RMS step            0.0650212569            0.0020000000      NO
+          MAX step            0.0977237210            0.0040000000      NO
+          ........................................................
+          Max(Bonds)      0.0294      Max(Angles)    5.60
+          Max(Dihed)        0.00      Max(Improp)    0.00
+          ---------------------------------------------------------------------
+
+The optimization has not yet converged - more geometry cycles are needed
+
+
+    ---------------------------------------------------------------------------
+                         Redundant Internal Coordinates
+                            (Angstroem and degrees)
+
+        Definition                    Value    dE/dq     Step     New-Value
+    ----------------------------------------------------------------------------
+     1. B(O   1,S   0)                1.4501  0.008767 -0.0038    1.4463   
+     2. B(O   2,S   0)                1.5865 -0.041128  0.0294    1.6158   
+     3. A(O   1,S   0,O   2)          120.85  0.055474   -5.60    115.26   
+    ----------------------------------------------------------------------------
+
+         *************************************************************
+         *                GEOMETRY OPTIMIZATION CYCLE   2            *
+         *************************************************************
+---------------------------------
+CARTESIAN COORDINATES (ANGSTROEM)
+---------------------------------
+  S      0.000000   -0.011827   -0.046731
+  O      0.000000   -1.236998    0.721917
+  O      0.000000    1.348826    0.824815
+
+----------------------------
+CARTESIAN COORDINATES (A.U.)
+----------------------------
+  NO LB      ZA    FRAG     MASS         X           Y           Z
+   0 S    16.0000    0    32.060    0.000000   -0.022351   -0.088309
+   1 O     8.0000    0    15.999    0.000000   -2.337588    1.364225
+   2 O     8.0000    0    15.999    0.000000    2.548911    1.558674
+
+We call the external script: orca_External orca.extcomp.inp orca.extcomp.out
+
+         *************************************************************
+         *                    EXTERNAL SHARC JOB                     *
+         *************************************************************
+
+################# Input: #################
+  Interface:            Analytical linear-vibronic coupling model
+  Number of states:     [4, 0, 3]
+  Optimization mode:    Minimization
+  Involved state(s):    2
+
+  For all quantum chemistry infos, see these interface files:
+    - LVC.template
+    - V0.txt
+    - QM.log
+
+############## Run section: ##############
+Interface call:
+python $SHARC/SHARC_LVC.py QM.in >> QM.log 2> QM.err
+Finished!
+############ Gradient section: ###########
+All data in a.u.
+Energies:
+      0.028442019287 
+      0.123975314516 *
+      0.196704349995 
+      0.303568290465 
+      0.135641980825 
+      0.143471683734 
+      0.154411297477 
+      0.135641980825 
+      0.143471683734 
+      0.154411297477 
+      0.135641980825 
+      0.143471683734 
+      0.154411297477 
+
+>>> 0.123975314516
+Energy to optimize:   0.123975314516
+Gradient to follow:
+  0      0.000000000000      0.008296772857      0.024886072896
+  1      0.000000000000     -0.002779448500     -0.010072940489
+  2      0.000000000000     -0.005517244950     -0.014813610618
+
+Writing to orca.extcomp.out
+
+         *************************************************************
+         *                  EXTERNAL SHARC JOB DONE                   *
+         *************************************************************
+
+------------------------------------------------------------------------------
+                         ORCA GEOMETRY RELAXATION STEP
+------------------------------------------------------------------------------
+
+Reading the OPT-File                    .... done
+Getting information on internals        .... done
+Copying old internal coords+grads       .... done
+Making the new internal coordinates     .... (new redundants).... done
+Validating the new internal coordinates .... (new redundants).... done
+Calculating the B-matrix                .... done
+Calculating the G,G- and P matrices     .... done
+Transforming gradient to internals      .... done
+Projecting the internal gradient        .... done
+Number of atoms                         ....   3
+Number of internal coordinates          ....   3
+Current Energy                          ....     0.123975315 Eh
+Current gradient norm                   ....     0.032360865 Eh/bohr
+Maximum allowed component of the step   ....  0.300
+Current trust radius                    ....  0.300
+Updating the Hessian (BFGS)             .... done
+Forming the augmented Hessian           .... done
+Diagonalizing the augmented Hessian     .... done
+Last element of RFO vector              ....  0.995275117
+Lowest eigenvalues of augmented Hessian:
+ -0.003002456  0.313428295  0.734633563
+Length of the computed step             ....  0.097555954
+The final length of the internal step   ....  0.097555954
+Converting the step to cartesian space:
+ Initial RMS(Int)=    0.0563239565
+Transforming coordinates:
+ Iter   0:  RMS(Cart)=    0.0423381995 RMS(Int)=    0.0566294785
+ Iter   1:  RMS(Cart)=    0.0014521815 RMS(Int)=    0.0025318408
+ Iter   2:  RMS(Cart)=    0.0000433641 RMS(Int)=    0.0000701168
+ Iter   3:  RMS(Cart)=    0.0000033428 RMS(Int)=    0.0000053073
+ Iter   4:  RMS(Cart)=    0.0000000887 RMS(Int)=    0.0000001768
+done
+Storing new coordinates                 .... done
+
+                                .--------------------.
+          ----------------------|Geometry convergence|-------------------------
+          Item                value                   Tolerance       Converged
+          ---------------------------------------------------------------------
+          Energy change      -0.0056614481            0.0000050000      NO
+          RMS gradient        0.0178581493            0.0001000000      NO
+          MAX gradient        0.0281054160            0.0003000000      NO
+          RMS step            0.0563239565            0.0020000000      NO
+          MAX step            0.0919792876            0.0040000000      NO
+          ........................................................
+          Max(Bonds)      0.0171      Max(Angles)    5.27
+          Max(Dihed)        0.00      Max(Improp)    0.00
+          ---------------------------------------------------------------------
+
+The optimization has not yet converged - more geometry cycles are needed
+
+
+    ---------------------------------------------------------------------------
+                         Redundant Internal Coordinates
+                            (Angstroem and degrees)
+
+        Definition                    Value    dE/dq     Step     New-Value
+    ----------------------------------------------------------------------------
+     1. B(O   1,S   0)                1.4463 -0.003110  0.0023    1.4486   
+     2. B(O   2,S   0)                1.6158 -0.012536  0.0171    1.6329   
+     3. A(O   1,S   0,O   2)          115.26  0.028105   -5.27    109.99   
+    ----------------------------------------------------------------------------
+
+         *************************************************************
+         *                GEOMETRY OPTIMIZATION CYCLE   3            *
+         *************************************************************
+---------------------------------
+CARTESIAN COORDINATES (ANGSTROEM)
+---------------------------------
+  S      0.000000   -0.017849   -0.089190
+  O      0.000000   -1.203150    0.743575
+  O      0.000000    1.320999    0.845614
+
+----------------------------
+CARTESIAN COORDINATES (A.U.)
+----------------------------
+  NO LB      ZA    FRAG     MASS         X           Y           Z
+   0 S    16.0000    0    32.060    0.000000   -0.033730   -0.168544
+   1 O     8.0000    0    15.999    0.000000   -2.273623    1.405154
+   2 O     8.0000    0    15.999    0.000000    2.496326    1.597979
+
+We call the external script: orca_External orca.extcomp.inp orca.extcomp.out
+
+         *************************************************************
+         *                    EXTERNAL SHARC JOB                     *
+         *************************************************************
+
+################# Input: #################
+  Interface:            Analytical linear-vibronic coupling model
+  Number of states:     [4, 0, 3]
+  Optimization mode:    Minimization
+  Involved state(s):    2
+
+  For all quantum chemistry infos, see these interface files:
+    - LVC.template
+    - V0.txt
+    - QM.log
+
+############## Run section: ##############
+Interface call:
+python $SHARC/SHARC_LVC.py QM.in >> QM.log 2> QM.err
+Finished!
+############ Gradient section: ###########
+All data in a.u.
+Energies:
+      0.036403736975 
+      0.122567984732 *
+      0.203589709110 
+      0.305152900003 
+      0.139196190249 
+      0.143267929841 
+      0.158977175696 
+      0.139196190249 
+      0.143267929841 
+      0.158977175696 
+      0.139196190249 
+      0.143267929841 
+      0.158977175696 
+
+>>> 0.122567984732
+Energy to optimize:   0.122567984732
+Gradient to follow:
+  0      0.000000000000     -0.012926798644      0.004898524678
+  1      0.000000000000      0.011398258304     -0.006142431815
+  2      0.000000000000      0.001528416618      0.001243775961
+
+Writing to orca.extcomp.out
+
+         *************************************************************
+         *                  EXTERNAL SHARC JOB DONE                   *
+         *************************************************************
+
+------------------------------------------------------------------------------
+                         ORCA GEOMETRY RELAXATION STEP
+------------------------------------------------------------------------------
+
+Reading the OPT-File                    .... done
+Getting information on internals        .... done
+Copying old internal coords+grads       .... done
+Making the new internal coordinates     .... (new redundants).... done
+Validating the new internal coordinates .... (new redundants).... done
+Calculating the B-matrix                .... done
+Calculating the G,G- and P matrices     .... done
+Transforming gradient to internals      .... done
+Projecting the internal gradient        .... done
+Number of atoms                         ....   3
+Number of internal coordinates          ....   3
+Current Energy                          ....     0.122567985 Eh
+Current gradient norm                   ....     0.019042859 Eh/bohr
+Maximum allowed component of the step   ....  0.300
+Current trust radius                    ....  0.300
+Updating the Hessian (BFGS)             .... done
+Forming the augmented Hessian           .... done
+Diagonalizing the augmented Hessian     .... done
+Last element of RFO vector              ....  0.999942046
+Lowest eigenvalues of augmented Hessian:
+ -0.000143674  0.323832072  0.735422694
+Length of the computed step             ....  0.010766509
+The final length of the internal step   ....  0.010766509
+Converting the step to cartesian space:
+ Initial RMS(Int)=    0.0062160468
+Transforming coordinates:
+ Iter   0:  RMS(Cart)=    0.0034675221 RMS(Int)=    0.0062200335
+ Iter   1:  RMS(Cart)=    0.0000047053 RMS(Int)=    0.0000086898
+ Iter   2:  RMS(Cart)=    0.0000000107 RMS(Int)=    0.0000000224
+done
+Storing new coordinates                 .... done
+
+                                .--------------------.
+          ----------------------|Geometry convergence|-------------------------
+          Item                value                   Tolerance       Converged
+          ---------------------------------------------------------------------
+          Energy change      -0.0014073298            0.0000050000      NO
+          RMS gradient        0.0078213439            0.0001000000      NO
+          MAX gradient        0.0131295705            0.0003000000      NO
+          RMS step            0.0062160468            0.0020000000      NO
+          MAX step            0.0098586889            0.0040000000      NO
+          ........................................................
+          Max(Bonds)      0.0052      Max(Angles)    0.21
+          Max(Dihed)        0.00      Max(Improp)    0.00
+          ---------------------------------------------------------------------
+
+The optimization has not yet converged - more geometry cycles are needed
+
+
+    ---------------------------------------------------------------------------
+                         Redundant Internal Coordinates
+                            (Angstroem and degrees)
+
+        Definition                    Value    dE/dq     Step     New-Value
+    ----------------------------------------------------------------------------
+     1. B(O   1,S   0)                1.4486 -0.013130  0.0052    1.4538   
+     2. B(O   2,S   0)                1.6329  0.002206 -0.0012    1.6317   
+     3. A(O   1,S   0,O   2)          109.99 -0.002503    0.21    110.20   
+    ----------------------------------------------------------------------------
+
+         *************************************************************
+         *                GEOMETRY OPTIMIZATION CYCLE   4            *
+         *************************************************************
+---------------------------------
+CARTESIAN COORDINATES (ANGSTROEM)
+---------------------------------
+  S      0.000000   -0.015541   -0.088460
+  O      0.000000   -1.207518    0.743866
+  O      0.000000    1.323060    0.844593
+
+----------------------------
+CARTESIAN COORDINATES (A.U.)
+----------------------------
+  NO LB      ZA    FRAG     MASS         X           Y           Z
+   0 S    16.0000    0    32.060    0.000000   -0.029369   -0.167165
+   1 O     8.0000    0    15.999    0.000000   -2.281879    1.405704
+   2 O     8.0000    0    15.999    0.000000    2.500221    1.596050
+
+We call the external script: orca_External orca.extcomp.inp orca.extcomp.out
+
+         *************************************************************
+         *                    EXTERNAL SHARC JOB                     *
+         *************************************************************
+
+################# Input: #################
+  Interface:            Analytical linear-vibronic coupling model
+  Number of states:     [4, 0, 3]
+  Optimization mode:    Minimization
+  Involved state(s):    2
+
+  For all quantum chemistry infos, see these interface files:
+    - LVC.template
+    - V0.txt
+    - QM.log
+
+############## Run section: ##############
+Interface call:
+python $SHARC/SHARC_LVC.py QM.in >> QM.log 2> QM.err
+Finished!
+############ Gradient section: ###########
+All data in a.u.
+Energies:
+      0.036085753907 
+      0.122465747961 *
+      0.200652991634 
+      0.303047413561 
+      0.138082591700 
+      0.141632986026 
+      0.157216962003 
+      0.138082591700 
+      0.141632986026 
+      0.157216962003 
+      0.138082591700 
+      0.141632986026 
+      0.157216962003 
+
+>>> 0.122465747961
+Energy to optimize:   0.122465747961
+Gradient to follow:
+  0      0.000000000000     -0.005725109159      0.003300906277
+  1      0.000000000000      0.005024231033     -0.003286119871
+  2      0.000000000000      0.000700823331     -0.000014865560
+
+Writing to orca.extcomp.out
+
+         *************************************************************
+         *                  EXTERNAL SHARC JOB DONE                   *
+         *************************************************************
+
+------------------------------------------------------------------------------
+                         ORCA GEOMETRY RELAXATION STEP
+------------------------------------------------------------------------------
+
+Reading the OPT-File                    .... done
+Getting information on internals        .... done
+Copying old internal coords+grads       .... done
+Making the new internal coordinates     .... (new redundants).... done
+Validating the new internal coordinates .... (new redundants).... done
+Calculating the B-matrix                .... done
+Calculating the G,G- and P matrices     .... done
+Transforming gradient to internals      .... done
+Projecting the internal gradient        .... done
+Number of atoms                         ....   3
+Number of internal coordinates          ....   3
+Current Energy                          ....     0.122465748 Eh
+Current gradient norm                   ....     0.008955764 Eh/bohr
+Maximum allowed component of the step   ....  0.300
+Current trust radius                    ....  0.300
+Updating the Hessian (BFGS)             .... done
+Forming the augmented Hessian           .... done
+Diagonalizing the augmented Hessian     .... done
+Last element of RFO vector              ....  0.999937904
+Lowest eigenvalues of augmented Hessian:
+ -0.000064685  0.336952285  0.708873843
+Length of the computed step             ....  0.011144626
+The final length of the internal step   ....  0.011144626
+Converting the step to cartesian space:
+ Initial RMS(Int)=    0.0064343527
+Transforming coordinates:
+ Iter   0:  RMS(Cart)=    0.0027273711 RMS(Int)=    0.0064347416
+ Iter   1:  RMS(Cart)=    0.0000051195 RMS(Int)=    0.0000072915
+ Iter   2:  RMS(Cart)=    0.0000000073 RMS(Int)=    0.0000000155
+done
+Storing new coordinates                 .... done
+
+                                .--------------------.
+          ----------------------|Geometry convergence|-------------------------
+          Item                value                   Tolerance       Converged
+          ---------------------------------------------------------------------
+          Energy change      -0.0001022368            0.0000050000      NO
+          RMS gradient        0.0035646284            0.0001000000      NO
+          MAX gradient        0.0061291481            0.0003000000      NO
+          RMS step            0.0064343527            0.0020000000      NO
+          MAX step            0.0103197755            0.0040000000      NO
+          ........................................................
+          Max(Bonds)      0.0055      Max(Angles)    0.24
+          Max(Dihed)        0.00      Max(Improp)    0.00
+          ---------------------------------------------------------------------
+
+The optimization has not yet converged - more geometry cycles are needed
+
+
+    ---------------------------------------------------------------------------
+                         Redundant Internal Coordinates
+                            (Angstroem and degrees)
+
+        Definition                    Value    dE/dq     Step     New-Value
+    ----------------------------------------------------------------------------
+     1. B(O   1,S   0)                1.4538 -0.006129  0.0055    1.4593   
+     2. B(O   2,S   0)                1.6317  0.000681 -0.0001    1.6316   
+     3. A(O   1,S   0,O   2)          110.20  0.000299   -0.24    109.96   
+    ----------------------------------------------------------------------------
+
+         *************************************************************
+         *                GEOMETRY OPTIMIZATION CYCLE   5            *
+         *************************************************************
+---------------------------------
+CARTESIAN COORDINATES (ANGSTROEM)
+---------------------------------
+  S      0.000000   -0.013611   -0.091275
+  O      0.000000   -1.208779    0.746017
+  O      0.000000    1.322390    0.845258
+
+----------------------------
+CARTESIAN COORDINATES (A.U.)
+----------------------------
+  NO LB      ZA    FRAG     MASS         X           Y           Z
+   0 S    16.0000    0    32.060    0.000000   -0.025721   -0.172485
+   1 O     8.0000    0    15.999    0.000000   -2.284261    1.409768
+   2 O     8.0000    0    15.999    0.000000    2.498955    1.597306
+
+We call the external script: orca_External orca.extcomp.inp orca.extcomp.out
+
+         *************************************************************
+         *                    EXTERNAL SHARC JOB                     *
+         *************************************************************
+
+################# Input: #################
+  Interface:            Analytical linear-vibronic coupling model
+  Number of states:     [4, 0, 3]
+  Optimization mode:    Minimization
+  Involved state(s):    2
+
+  For all quantum chemistry infos, see these interface files:
+    - LVC.template
+    - V0.txt
+    - QM.log
+
+############## Run section: ##############
+Interface call:
+python $SHARC/SHARC_LVC.py QM.in >> QM.log 2> QM.err
+Finished!
+############ Gradient section: ###########
+All data in a.u.
+Energies:
+      0.036483906453 
+      0.122431843375 *
+      0.198397754885 
+      0.301227374604 
+      0.137162906926 
+      0.140148523721 
+      0.156206251423 
+      0.137162906926 
+      0.140148523721 
+      0.156206251423 
+      0.137162906926 
+      0.140148523721 
+      0.156206251423 
+
+>>> 0.122431843375
+Energy to optimize:   0.122431843375
+Gradient to follow:
+  0      0.000000000000     -0.000093856284      0.000335964058
+  1      0.000000000000      0.000082066778     -0.000194799464
+  2      0.000000000000      0.000011788608     -0.000141171182
+
+Writing to orca.extcomp.out
+
+         *************************************************************
+         *                  EXTERNAL SHARC JOB DONE                   *
+         *************************************************************
+
+------------------------------------------------------------------------------
+                         ORCA GEOMETRY RELAXATION STEP
+------------------------------------------------------------------------------
+
+Reading the OPT-File                    .... done
+Getting information on internals        .... done
+Copying old internal coords+grads       .... done
+Making the new internal coordinates     .... (new redundants).... done
+Validating the new internal coordinates .... (new redundants).... done
+Calculating the B-matrix                .... done
+Calculating the G,G- and P matrices     .... done
+Transforming gradient to internals      .... done
+Projecting the internal gradient        .... done
+Number of atoms                         ....   3
+Number of internal coordinates          ....   3
+Current Energy                          ....     0.122431843 Eh
+Current gradient norm                   ....     0.000431776 Eh/bohr
+Maximum allowed component of the step   ....  0.300
+Current trust radius                    ....  0.300
+Updating the Hessian (BFGS)             .... done
+Forming the augmented Hessian           .... done
+Diagonalizing the augmented Hessian     .... done
+Last element of RFO vector              ....  0.999999197
+Lowest eigenvalues of augmented Hessian:
+ -0.000000498  0.309795453  0.723611265
+Length of the computed step             ....  0.001267630
+The final length of the internal step   ....  0.001267630
+Converting the step to cartesian space:
+ Initial RMS(Int)=    0.0007318666
+Transforming coordinates:
+ Iter   0:  RMS(Cart)=    0.0005060829 RMS(Int)=    0.0007319514
+ Iter   1:  RMS(Cart)=    0.0000002333 RMS(Int)=    0.0000003703
+ Iter   2:  RMS(Cart)=    0.0000000001 RMS(Int)=    0.0000000001
+done
+Storing new coordinates                 .... done
+
+                                .--------------------.
+          ----------------------|Geometry convergence|-------------------------
+          Item                value                   Tolerance       Converged
+          ---------------------------------------------------------------------
+          Energy change      -0.0000339046            0.0000050000      NO
+          RMS gradient        0.0002267384            0.0001000000      NO
+          MAX gradient        0.0003404972            0.0003000000      NO
+          RMS step            0.0007318666            0.0020000000      YES
+          MAX step            0.0010981385            0.0040000000      YES
+          ........................................................
+          Max(Bonds)      0.0003      Max(Angles)    0.06
+          Max(Dihed)        0.00      Max(Improp)    0.00
+          ---------------------------------------------------------------------
+
+The optimization has not yet converged - more geometry cycles are needed
+
+
+    ---------------------------------------------------------------------------
+                         Redundant Internal Coordinates
+                            (Angstroem and degrees)
+
+        Definition                    Value    dE/dq     Step     New-Value
+    ----------------------------------------------------------------------------
+     1. B(O   1,S   0)                1.4593 -0.000184  0.0003    1.4596   
+     2. B(O   2,S   0)                1.6316 -0.000067  0.0001    1.6317   
+     3. A(O   1,S   0,O   2)          109.96  0.000340   -0.06    109.89   
+    ----------------------------------------------------------------------------
+
+         *************************************************************
+         *                GEOMETRY OPTIMIZATION CYCLE   6            *
+         *************************************************************
+---------------------------------
+CARTESIAN COORDINATES (ANGSTROEM)
+---------------------------------
+  S      0.000000   -0.013554   -0.091820
+  O      0.000000   -1.208498    0.746337
+  O      0.000000    1.322052    0.845483
+
+----------------------------
+CARTESIAN COORDINATES (A.U.)
+----------------------------
+  NO LB      ZA    FRAG     MASS         X           Y           Z
+   0 S    16.0000    0    32.060    0.000000   -0.025613   -0.173515
+   1 O     8.0000    0    15.999    0.000000   -2.283731    1.410373
+   2 O     8.0000    0    15.999    0.000000    2.498316    1.597731
+
+We call the external script: orca_External orca.extcomp.inp orca.extcomp.out
+
+         *************************************************************
+         *                    EXTERNAL SHARC JOB                     *
+         *************************************************************
+
+################# Input: #################
+  Interface:            Analytical linear-vibronic coupling model
+  Number of states:     [4, 0, 3]
+  Optimization mode:    Minimization
+  Involved state(s):    2
+
+  For all quantum chemistry infos, see these interface files:
+    - LVC.template
+    - V0.txt
+    - QM.log
+
+############## Run section: ##############
+Interface call:
+python $SHARC/SHARC_LVC.py QM.in >> QM.log 2> QM.err
+Finished!
+############ Gradient section: ###########
+All data in a.u.
+Energies:
+      0.036582049744 
+      0.122431574778 *
+      0.198352958717 
+      0.301158418700 
+      0.137128529032 
+      0.140082893120 
+      0.156236237058 
+      0.137128529032 
+      0.140082893120 
+      0.156236237058 
+      0.137128529032 
+      0.140082893120 
+      0.156236237058 
+
+>>> 0.122431574778
+Energy to optimize:   0.122431574778
+Gradient to follow:
+  0      0.000000000000      0.000018528969      0.000023391355
+  1      0.000000000000     -0.000015538730     -0.000006402264
+  2      0.000000000000     -0.000002990061     -0.000016989480
+
+Writing to orca.extcomp.out
+
+         *************************************************************
+         *                  EXTERNAL SHARC JOB DONE                   *
+         *************************************************************
+
+------------------------------------------------------------------------------
+                         ORCA GEOMETRY RELAXATION STEP
+------------------------------------------------------------------------------
+
+Reading the OPT-File                    .... done
+Getting information on internals        .... done
+Copying old internal coords+grads       .... done
+Making the new internal coordinates     .... (new redundants).... done
+Validating the new internal coordinates .... (new redundants).... done
+Calculating the B-matrix                .... done
+Calculating the G,G- and P matrices     .... done
+Transforming gradient to internals      .... done
+Projecting the internal gradient        .... done
+Number of atoms                         ....   3
+Number of internal coordinates          ....   3
+Current Energy                          ....     0.122431575 Eh
+Current gradient norm                   ....     0.000038347 Eh/bohr
+Maximum allowed component of the step   ....  0.300
+Current trust radius                    ....  0.300
+Updating the Hessian (BFGS)             .... done
+Forming the augmented Hessian           .... done
+Diagonalizing the augmented Hessian     .... done
+Last element of RFO vector              ....  0.999999993
+Lowest eigenvalues of augmented Hessian:
+ -0.000000005  0.284149727  0.725103849
+Length of the computed step             ....  0.000119294
+The final length of the internal step   ....  0.000119294
+Converting the step to cartesian space:
+ Initial RMS(Int)=    0.0000688743
+Transforming coordinates:
+ Iter   0:  RMS(Cart)=    0.0000539943 RMS(Int)=    0.0000688749
+ Iter   1:  RMS(Cart)=    0.0000000022 RMS(Int)=    0.0000000039
+done
+Storing new coordinates                 .... done
+
+                                .--------------------.
+          ----------------------|Geometry convergence|-------------------------
+          Item                value                   Tolerance       Converged
+          ---------------------------------------------------------------------
+          Energy change      -0.0000002686            0.0000050000      YES
+          RMS gradient        0.0000238707            0.0001000000      YES
+          MAX gradient        0.0000383966            0.0003000000      YES
+          RMS step            0.0000688743            0.0020000000      YES
+          MAX step            0.0001138972            0.0040000000      YES
+          ........................................................
+          Max(Bonds)      0.0000      Max(Angles)    0.01
+          Max(Dihed)        0.00      Max(Improp)    0.00
+          ---------------------------------------------------------------------
+
+                    ***********************HURRAY********************
+                    ***        THE OPTIMIZATION HAS CONVERGED     ***
+                    *************************************************
+
+
+    ---------------------------------------------------------------------------
+                         Redundant Internal Coordinates
+
+                          --- Optimized Parameters ---  
+                            (Angstroem and degrees)
+
+        Definition                    OldVal   dE/dq     Step     FinalVal
+    ----------------------------------------------------------------------------
+     1. B(O   1,S   0)                1.4596  0.000009  0.0000    1.4596   
+     2. B(O   2,S   0)                1.6317 -0.000012  0.0000    1.6317   
+     3. A(O   1,S   0,O   2)          109.89  0.000038   -0.01    109.89   
+    ----------------------------------------------------------------------------
+                 *******************************************************
+                 *** FINAL ENERGY EVALUATION AT THE STATIONARY POINT ***
+                 ***               (AFTER    6 CYCLES)               ***
+                 *******************************************************
+---------------------------------
+CARTESIAN COORDINATES (ANGSTROEM)
+---------------------------------
+  S      0.000000   -0.013557   -0.091873
+  O      0.000000   -1.208457    0.746365
+  O      0.000000    1.322014    0.845508
+
+----------------------------
+CARTESIAN COORDINATES (A.U.)
+----------------------------
+  NO LB      ZA    FRAG     MASS         X           Y           Z
+   0 S    16.0000    0    32.060    0.000000   -0.025620   -0.173614
+   1 O     8.0000    0    15.999    0.000000   -2.283652    1.410426
+   2 O     8.0000    0    15.999    0.000000    2.498245    1.597778
+
+We call the external script: orca_External orca.extcomp.inp orca.extcomp.out
+
+         *************************************************************
+         *                    EXTERNAL SHARC JOB                     *
+         *************************************************************
+
+################# Input: #################
+  Interface:            Analytical linear-vibronic coupling model
+  Number of states:     [4, 0, 3]
+  Optimization mode:    Minimization
+  Involved state(s):    2
+
+  For all quantum chemistry infos, see these interface files:
+    - LVC.template
+    - V0.txt
+    - QM.log
+
+############## Run section: ##############
+Interface call:
+python $SHARC/SHARC_LVC.py QM.in >> QM.log 2> QM.err
+Finished!
+############ Gradient section: ###########
+All data in a.u.
+Energies:
+      0.036592234991 
+      0.122431572459 *
+      0.198359816425 
+      0.301159744450 
+      0.137129315819 
+      0.140082765795 
+      0.156245462463 
+      0.137129315819 
+      0.140082765795 
+      0.156245462463 
+      0.137129315819 
+      0.140082765795 
+      0.156245462463 
+
+>>> 0.122431572459
+Energy to optimize:   0.122431572459
+Gradient to follow:
+  0      0.000000000000      0.000001222664     -0.000000056453
+  1      0.000000000000     -0.000000917793      0.000000377535
+  2      0.000000000000     -0.000000304859     -0.000000321079
+
+Writing to orca.extcomp.out
+
+         *************************************************************
+         *                  EXTERNAL SHARC JOB DONE                   *
+         *************************************************************
+
+                                *** OPTIMIZATION RUN DONE ***
+
+Timings for individual modules:
+
+Sum of individual times         ...        0.142 sec (=   0.002 min)
+Geometry relaxation             ...        0.142 sec (=   0.002 min) 100.0 %
+                             ****ORCA TERMINATED NORMALLY****
+TOTAL RUN TIME: 0 days 0 hours 0 minutes 2 seconds 687 msec

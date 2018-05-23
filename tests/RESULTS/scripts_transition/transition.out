@@ -1,0 +1,90 @@
+Script for hop counting started...
+
+
+  ================================================================================
+||                                                                                ||
+||                   Counting hopping events from SHARC dynamics                  ||
+||                                                                                ||
+||                              Author: Sebastian Mai                             ||
+||                                                                                ||
+||                                   Version:2.0                                  ||
+||                                    01.02.18                                    ||
+||                                                                                ||
+  ================================================================================
+
+
+This script reads output.lis files files and counts all hopping events
+to produce a matrix with the transition counts.
+  
+--------------------Paths to trajectories-------------------
+
+Please enter the paths to all directories containing the "TRAJ_0XXXX" directories.
+E.g. S_2 and S_3. 
+Please enter one path at a time, and type "end" to finish the list.
+Path:  [end] (autocomplete enabled) ['KEYSTROKES.transition', 'KEYSTROKES.tmp', 'TRAJ_00001', 'run.out', 'run.sh', 'run.err', 'transition.out']
+Found 1 subdirectories in total.
+
+Path:  [end] (autocomplete enabled) 
+Total number of subdirectories: 1
+
+------------------------Analyze Mode------------------------
+
+This script finds the transition matrix:
+1        In MCH basis                                                    from output.lis
+2        In MCH basis (ignoring hops within one multiplet)               from output.lis
+
+This script can also print the transition matrix for each timestep:
+3        In MCH basis                                                    from output.lis
+4        In MCH basis (ignoring hops within one multiplet)               from output.lis
+
+Analyze mode: 
+----------------------Number of states----------------------
+
+Please enter the number of states as a list of integers
+e.g. 3 0 3 for three singlets, zero doublets and three triplets.
+Number of states: [2 0 1] 
+-----------------------Simulation time----------------------
+
+Up to which simulation time should the analysis be performed?
+Simulation time (in fs):  [1000.0] 
+
+#########################Full input#########################
+
+paths                      ['.']
+run_extractor              False
+states                     [2, 0, 1]
+mode                       2
+maxtime                    1000.0
+nstates                    3
+nmstates                   5
+
+Do you want to do the specified analysis? [True] 
+Checking the directories...
+./TRAJ_00001                  OK
+Number of trajectories: 1
+Number of steps: 2001
+
+
+***************************Results**************************
+Full transition matrix:
+        |      S0      S1      T1
+--------+------------------------
+  S0    |       0       0       0
+  S1    |       0      20       0
+  T1    |       0       0       0
+
+Sum transition matrix:
+        |      S0      S1      T1
+--------+------------------------
+  S0    |       0       0       0
+  S1    |       0      20       0
+  T1    |       0       0       0
+
+Difference transition matrix:
+        |      S0      S1      T1     Sum
+--------+--------------------------------
+  S0    |       0       0       0       0
+  S1    |       0       0       0       0
+  T1    |       0       0       0       0
+  Sum   |       0       0       0       0
+

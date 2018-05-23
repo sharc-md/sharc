@@ -1,0 +1,69 @@
+   17
+Comment: QM.in file for QM/MM example
+ C    -0.003964     0.001908    -0.156142
+ N    -0.000365    -0.000663     1.113850
+ H     0.902632     0.089416    -0.643089
+ H     0.894613    -0.036465     1.680713
+ H    -0.922881    -0.096784    -0.691781
+ O    -0.184200     1.893335    -0.151802
+ H    -0.997877     2.131929     0.269874
+ H     0.269852     2.679482    -0.431641
+ O    -2.029335     0.079422     0.393279
+ H    -2.885209     0.003474    -0.011952
+ H    -1.854935     0.990901     0.596479
+ O     2.070440     0.225785     0.587952
+ H     2.379755    -0.639699     0.828290
+ H     2.811442     0.813673     0.499620
+ O    -0.119369    -2.217984     0.514411
+ H    -0.145543    -2.756511     1.296590
+ H     0.249244    -2.719602    -0.203226
+    ## The first few lines have to comply with the xyz file format (number of atoms, comment, atoms)
+    ## Comments at the end of these lines cause errors
+
+    ## from here, comments can be put at the end of each line
+    ## blank lines can be used freely
+    ## order of keywords does not matter
+    ## only the first instance of every keyword is used
+    ## everything is case-insensitive
+
+    ## ===============================================
+    ## Control keywords:
+Init                    # use for very first calculation
+#Samestep               # additional calculation at same geometry
+#Restart                # additional calculation at same geometry, but with unclear status of the savedir
+                        # for calculations at a new geometry, use neither keyword
+
+#Backup                 # keep savedir content from this timestep
+#Cleanup                # delete complete scratchdir and savedir, only keep QM.out
+
+    ## ===============================================
+    ## Settings:
+
+States 2 0 1            # number of states per multiplicity (singlets, doublets, triplets, ...)
+Unit Angstrom           # in which units to interpret the above geometry
+#Step 0                 # Optional, used only to name the backup directories
+#savedir ./SAVE         # overrides the savedir in the resources file
+
+    ## ===============================================
+    ## Quantity requests:
+    ## only those properties are reported in QM.out
+    ## (e.g., if no SOC or H is given, the energies are calculated, but not reported)
+#H
+SOC
+DM
+GRAD 1 2 3
+#OVERLAP
+#ION
+#SOCDR
+#DMDR
+#MOLDEN
+
+    ## Not implemented:
+    ## NACDR
+
+# ===============================================
+# For GRAD particular states can be requested
+
+#GRAD 1 2 3 5 6 7 14 15 19 31 32
+
+# kate: syntax python

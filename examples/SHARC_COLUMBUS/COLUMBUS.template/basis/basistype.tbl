@@ -1,0 +1,73 @@
+# $ this file belongs to the Molcas repository $
+#                 1     2     3     4
+# ------------   ---   ---   ---   ---
+3-21G            SEG   AE_   NRH
+4-31G            SEG   AE_   NRH
+6-31G            SEG   AE_   NRH
+6-31Gp           SEG   AE_   NRH
+6-31Gpp          SEG   AE_   NRH
+ANO-DK3          RAF   AE_   RH_
+ANO-L            ANO   AE_   NRH
+ANO-RCC          ANO   AE_   RH_
+ANO-XS           ANO   AE_   RH_
+ANO-MB           ANO   AE_   RH_
+ANO-S            ANO   AE_   NRH
+AUG-CC-PVDZ      CCC   AE_   NRH
+AUG-CC-PVTZ      CCC   AE_   NRH
+AUG-CC-PVQZ      CCC   AE_   NRH
+AUG-CC-PV5Z      CCC   AE_   NRH
+CC-PVDZ          CCC   AE_   NRH
+CC-PVTZ          CCC   AE_   NRH
+CC-PVQZ          CCC   AE_   NRH
+CC-PV5Z          CCC   AE_   NRH
+ECP              RAF   NAE   RCP
+ECP.DOLG         SEG   NAE   RCP
+ECP.HAY-WADT     SEG   NAE   RCP
+ECP.HW           SEG   NAE   RCP
+ECP.PAUL         RAF   NAE   RCP
+ECP.STOLL        RAF   NAE   RCP
+ECP.TSUC         RAF   NAE   RCP
+ECP.PETERSON     RAF   NAE   RCP
+POL              SEG   AE_   NRH
+RAF-R            RAF   AE_   RH_
+STO-3G           SEG   AE_   NRH
+ECP.TOUL         UNK   UNK   UNK
+EGP              UNK   UNK   UNK
+QRPLIB           UNK   UNK   UNK
+TOULBAS          UNK   UNK   UNK
+DEF-SVP          SEG   AE_   NRH
+SVP              SEG   AE_   NRH
+DZP              SEG   AE_   NRH
+TZP              SEG   AE_   NRH
+TZVP             SEG   AE_   NRH
+UNCREL           UNC   AE_   RH_
+UNC              UNC   AE_   NRH
+PC-0             SEG   AE_   NRH
+PC-1             SEG   AE_   NRH
+PC-2             SEG   AE_   NRH
+PC-3             SEG   AE_   NRH
+PC-4             SEG   AE_   NRH
+AUG-PC-0         SEG   AE_   NRH
+AUG-PC-1         SEG   AE_   NRH
+AUG-PC-2         SEG   AE_   NRH
+AUG-PC-3         SEG   AE_   NRH
+AUG-PC-4         SEG   AE_   NRH
+ANO-ORCA         ANO   AE_   NRH
+RYDBERG          ANO   AE_   RYD
+# *************************************
+# 1: Contraction type
+#  - SEG: Segmented
+#  - ANO: ANO
+#  - RAF: Raffenetti
+#  - CCC: CC contraction
+#  - UNC: uncontracted
+# 2: All electron
+#  - AE:  All electron
+#  - NAE: Not all electron
+# 3: Relativity
+#  - RH:  Relativistic hamiltonian
+#  - NRH: Non relativistic hamiltonian
+#  - RCP: Relativistic core potential
+#  - RYD: Rydberg
+# 4: Reserved
+

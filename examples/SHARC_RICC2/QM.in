@@ -1,0 +1,59 @@
+4
+Comment
+ C          0.0000000000        0.0000000000        0.0307618822
+ S         -0.0000000000        0.2000000000        1.6448608630
+ H          0.9290545107        0.0000000000       -0.5573113726
+ H         -0.9290545107        0.0000000000       -0.5573113726
+    ## The first few lines have to comply with the xyz file format (number of atoms, comment, atoms)
+    ## Comments at the end of these lines cause errors
+
+    ## from here, comments can be put at the end of each line
+    ## blank lines can be used freely
+    ## order of keywords does not matter
+    ## only the first instance of every keyword is used
+    ## everything is case-insensitive
+
+    ## ===============================================
+    ## Control keywords:
+Init                    # use for very first calculation
+#Samestep               # additional calculation at same geometry
+#Restart                # additional calculation at same geometry, but with unclear status of the savedir
+                        # for calculations at a new geometry, use neither keyword
+
+#Backup                 # keep savedir content from this timestep
+#Cleanup                # delete complete scratchdir and savedir, only keep QM.out
+#savedir ./SAVE         # overrides the savedir in the resources file
+
+    ## ===============================================
+    ## Settings:
+
+States 4 0 1            # number of states per multiplicity (singlets, doublets, triplets, ...)
+Unit Angstrom           # in which units to interpret the above geometry
+#Step 0                 # Optional, used only to name the backup directories
+
+    ## ===============================================
+    ## Quantity requests:
+    ## only those properties are reported in QM.out
+    ## (e.g., if no SOC or H is given, the energies are calculated, but not reported)
+#H
+SOC
+DM
+GRAD
+#OVERLAP
+MOLDEN
+THEODORE               # as in ADF interface. If MOLDEN is also active, also generates the NTO files and copies them to the MOLDEN directory
+
+    ## Not possible:
+    ## ION
+    ## NACDR
+    ## DMDR
+    ## SOCDR
+
+# ===============================================
+# For GRAD particular states can be requested
+
+#GRAD 1 2 3 5 6 7 14 15 19 31 32
+
+
+
+# kate: syntax python

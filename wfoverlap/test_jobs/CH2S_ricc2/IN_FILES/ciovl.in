@@ -1,0 +1,7 @@
+mix_aoovl=ao_ovl
+a_mo=mos.old
+b_mo=mos
+a_det=dets.1.old
+b_det=dets.1
+a_mo_read=2
+b_mo_read=2

@@ -1,0 +1,871 @@
+Using OpenMP version. Maximum number of threads:     4
+ -------------------------------------------------------------------------------
+ Reading input
+ Reading input from file: dyson.in
+*** walltime: total -        0.065s, step -        0.065s ***
+ -------------------------------------------------------------------------------
+Number of <bra| electrons:              49
+Number of <bra| alpha el:               24
+Number of <bra| beta el:                25
+Number of |ket> electrons:              50
+Number of |ket> alpha el:               25
+Number of |ket> beta el:                25
+ 
+Number of <bra| MOs:                   160
+Number of |ket> MOs:                   160
+Number of discarded core MOs:           10
+ 
+Number of <bra| states:                  5
+Number of |ket> states:                  3
+Number of <bra| determinants:          744
+Number of |ket> determinants:         3637
+Number of det. pairs:              2705928
+ Joy! I calculate a dyson orbital!
+ -------------------------------------------------------------------------------
+ Sorting determinants and CI vectors for blocking
+*** walltime: total -        0.098s, step -        0.033s ***
+ -------------------------------------------------------------------------------
+Number of <bra| alpha blocks:                214
+Number of |ket> alpha blocks:                916
+Number of <bra|  beta blocks:                184
+Number of |ket>  beta blocks:                916
+Block-determinants to compute:            364568
+ 
+Number of <bra| alpha superblocks:            68
+Number of |ket> alpha superblocks:            65
+Number of <bra|  beta superblocks:            54
+Number of |ket>  beta superblocks:            65
+ -------------------------------------------------------------------------------
+ DEBUGMR: ionization!
+ RP_nspin:                    25
+ RQ_nspin:                    25
+ LP_nspin:                    25
+ LQ_nspin:                    24
+ -------------------------------------------------------------------------------
+  Reordering CI-coefficients
+*** walltime: total -        0.098s, step -        0.000s ***
+ -------------------------------------------------------------------------------
+  Transforming mixed overlap matrix
+*** walltime: total -        0.111s, step -        0.013s ***
+ -------------------------------------------------------------------------------
+ Precomputing P determinants using adaptive formalism
+*** walltime: total -        0.467s, step -        0.355s ***
+ --------------------------------------------------------
+Annihilating MO   26 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        0.840s, step -        0.374s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        0.845s, step -        0.005s ***
+ --------------------------------------------------------
+Annihilating MO   27 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        1.198s, step -        0.353s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        1.202s, step -        0.005s ***
+ --------------------------------------------------------
+Annihilating MO   28 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        1.552s, step -        0.350s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        1.560s, step -        0.008s ***
+ --------------------------------------------------------
+Annihilating MO   29 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        1.999s, step -        0.439s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        2.003s, step -        0.005s ***
+ --------------------------------------------------------
+Annihilating MO   30 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        2.342s, step -        0.338s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        2.346s, step -        0.004s ***
+ --------------------------------------------------------
+Annihilating MO   31 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        2.694s, step -        0.348s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        2.699s, step -        0.005s ***
+ --------------------------------------------------------
+Annihilating MO   32 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        3.061s, step -        0.362s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        3.066s, step -        0.005s ***
+ --------------------------------------------------------
+Annihilating MO   33 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        3.382s, step -        0.316s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        3.386s, step -        0.004s ***
+ --------------------------------------------------------
+Annihilating MO   34 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        3.636s, step -        0.250s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        3.640s, step -        0.004s ***
+ --------------------------------------------------------
+Annihilating MO   35 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        3.877s, step -        0.237s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        3.880s, step -        0.004s ***
+ --------------------------------------------------------
+Annihilating MO   36 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.078s, step -        0.198s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.081s, step -        0.002s ***
+ --------------------------------------------------------
+Annihilating MO   37 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.105s, step -        0.024s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.105s, step -        0.001s ***
+ --------------------------------------------------------
+Annihilating MO   38 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.113s, step -        0.008s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.114s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   39 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.119s, step -        0.006s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.120s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   40 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.132s, step -        0.012s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.132s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   41 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.148s, step -        0.016s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.149s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   42 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.160s, step -        0.011s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.161s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   43 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.174s, step -        0.014s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.175s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   44 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.188s, step -        0.013s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.188s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   45 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.204s, step -        0.016s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.204s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   46 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.229s, step -        0.025s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.230s, step -        0.001s ***
+ --------------------------------------------------------
+Annihilating MO   47 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.241s, step -        0.011s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.242s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   48 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.253s, step -        0.012s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.254s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   49 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.270s, step -        0.016s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.271s, step -        0.001s ***
+ --------------------------------------------------------
+Annihilating MO   50 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.281s, step -        0.011s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.282s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   51 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.299s, step -        0.017s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.299s, step -        0.001s ***
+ --------------------------------------------------------
+Annihilating MO   52 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.319s, step -        0.020s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.320s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   53 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.325s, step -        0.005s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.326s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   54 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.337s, step -        0.012s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.338s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   55 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.347s, step -        0.009s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.347s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   56 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.359s, step -        0.011s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.359s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   57 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.367s, step -        0.008s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.368s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   58 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.374s, step -        0.007s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.375s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   59 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.384s, step -        0.009s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.384s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   60 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.393s, step -        0.009s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.394s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   61 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.402s, step -        0.008s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.403s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   62 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.409s, step -        0.006s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.409s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   63 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.419s, step -        0.010s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.420s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   64 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.427s, step -        0.007s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.427s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   65 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.432s, step -        0.005s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.432s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   66 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.439s, step -        0.006s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.439s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   67 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.447s, step -        0.008s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.447s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   68 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.455s, step -        0.008s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.456s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   69 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.462s, step -        0.006s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.462s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   70 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.469s, step -        0.007s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.469s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   71 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.474s, step -        0.005s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.475s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   72 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.478s, step -        0.004s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.479s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   73 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.481s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.481s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   74 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.484s, step -        0.003s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.485s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   75 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.487s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.487s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   76 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.492s, step -        0.005s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.492s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   77 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.498s, step -        0.006s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.499s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   78 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.504s, step -        0.006s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.505s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   79 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.507s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.507s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   80 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.512s, step -        0.005s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.513s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   81 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.515s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.516s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   82 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.522s, step -        0.006s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.522s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   83 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.524s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.525s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   84 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.528s, step -        0.003s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.528s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   85 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.531s, step -        0.003s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.532s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   86 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.534s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.534s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   87 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.536s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.537s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   88 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.540s, step -        0.003s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.540s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   89 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.545s, step -        0.005s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.545s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   90 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.547s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.548s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   91 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.550s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.550s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   92 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.554s, step -        0.004s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.555s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   93 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.557s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.557s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   94 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.559s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.559s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   95 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.563s, step -        0.004s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.564s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   96 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.566s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.566s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   97 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.569s, step -        0.003s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.570s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   98 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.572s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.572s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO   99 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.574s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.574s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  100 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.578s, step -        0.004s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.579s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  101 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.581s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.581s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  102 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.583s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.583s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  103 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.585s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.586s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  104 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.588s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.588s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  105 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.592s, step -        0.004s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.593s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  106 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.597s, step -        0.004s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.597s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  107 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.599s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.599s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  108 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.602s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.602s, step -        0.001s ***
+ --------------------------------------------------------
+Annihilating MO  109 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.605s, step -        0.003s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.606s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  110 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.608s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.609s, step -        0.001s ***
+ --------------------------------------------------------
+Annihilating MO  111 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.612s, step -        0.003s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.612s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  112 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.614s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.615s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  113 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.618s, step -        0.003s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.619s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  114 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.621s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.621s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  115 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.623s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.623s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  116 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.625s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.626s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  117 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.629s, step -        0.003s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.629s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  118 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.633s, step -        0.003s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.633s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  119 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.635s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.635s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  120 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.637s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.638s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  121 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.640s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.640s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  122 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.642s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.643s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  123 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.645s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.645s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  124 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.647s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.647s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  125 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.649s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.650s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  126 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.652s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.652s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  127 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.654s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.655s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  128 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.659s, step -        0.004s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.659s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  129 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.661s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.662s, step -        0.001s ***
+ --------------------------------------------------------
+Annihilating MO  130 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.664s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.664s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  131 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.666s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.666s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  132 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.668s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.669s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  133 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.671s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.671s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  134 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.673s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.673s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  135 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.675s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.676s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  136 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.678s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.678s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  137 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.680s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.681s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  138 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.683s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.683s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  139 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.685s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.686s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  140 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.687s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.688s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  141 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.690s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.690s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  142 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.692s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.692s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  143 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.694s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.695s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  144 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.697s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.697s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  145 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.699s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.700s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  146 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.702s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.702s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  147 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.704s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.705s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  148 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.707s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.707s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  149 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.709s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.709s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  150 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.711s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.712s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  151 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.714s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.714s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  152 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.716s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.717s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  153 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.719s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.719s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  154 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.721s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.721s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  155 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.723s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.724s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  156 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.726s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.726s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  157 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.728s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.729s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  158 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.731s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.731s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  159 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.733s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.733s, step -        0.000s ***
+ --------------------------------------------------------
+Annihilating MO  160 in RQ-part of wavefunction
+ Precomputing Q determinants using direct formalism
+*** walltime: total -        4.735s, step -        0.002s ***
+ Dyson orbital part using precomputed quantities
+*** walltime: total -        4.736s, step -        0.000s ***
+ -------------------------------------------------------------------------------
+ ALPHA ionization
+ Dyson norm matrix |<PsiA_i|PsiB_j>|^2
+                |PsiB  1>     |PsiB  2>     |PsiB  3>     
+<PsiA  1|    0.6486168976  0.4147539591  0.0225368444
+<PsiA  2|    0.8165236449  0.0025006095  0.2215967607
+<PsiA  3|    0.0094981032  0.5641813406  0.0298550083
+<PsiA  4|    0.4222010877  0.1203797184  0.0889660605
+<PsiA  5|    0.1471990979  0.2956484963  0.4242064721
