@@ -3100,6 +3100,10 @@ def get_AO_OVL(path,QMin):
   add_option_to_control_section(controlfile,'$closed shells','a 1-2')
   add_section_to_control(controlfile,'$scfmo none')
 
+  # write geometry again because define tries to be too clever with the double geometry
+  tofile=os.path.join(path,'coord')
+  writefile(tofile,string)
+
   # call dscf
   string='dscf &> dscf.out'
   runerror=runProgram(string,path)
