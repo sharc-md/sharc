@@ -3621,10 +3621,10 @@ def run_wfoverlap(QMin,errorcodes):
       job=QMin['multmap'][m]
       WORKDIR=os.path.join(QMin['scratchdir'],'WFOVL_%i_%i' % (m,job))
       files={'aoovl':'aoovl_double', 
-             'det.a': 'det_ci.%i' % m,
-             'det.b': 'det_ci.%i.old' % m,
-             'mo.a':  'mo.%i' % job,
-             'mo.b':  'mo.%i.old' % job }
+             'det.a': 'det_ci.%i.old' % m,
+             'det.b': 'det_ci.%i' % m,
+             'mo.a':  'mo.%i.old' % job,
+             'mo.b':  'mo.%i' % job }
       setupWORKDIR_WF(WORKDIR,QMin,files)
       errorcodes['WFOVL_%i_%i' % (m,job)]=runWFOVERLAP(WORKDIR,QMin['wfoverlap'],memory=QMin['memory'],ncpu=QMin['ncpu'])
 
