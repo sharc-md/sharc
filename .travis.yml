@@ -10,4 +10,4 @@ before_install:
 script:
   - cd source
   - make
-- ls -l
+  - ls -l
