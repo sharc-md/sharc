@@ -1,0 +1,12 @@
+language: c
+sudo: required
+before_install:
+  - sudo apt-get install gfortran
+  - sudo apt-get install libblas-dev liblapack-dev
+  - sudo apt-get install libatlas-base-dev
+  - sudo apt-get install libopenblas-dev libopenblas-base
+
+script:
+  - cd source
+  - make
+- ls -l
