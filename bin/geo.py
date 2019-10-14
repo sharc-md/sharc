@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -53,8 +53,8 @@ if sys.version_info[1]<5:
         return False
     return True
 
-version='2.0'
-versiondate=datetime.date(2018,2,1)
+version='2.1'
+versiondate=datetime.date(2019,9,1)
 
 allowedreq=['a','d','r','p','q','x','y','z','5','6','c','i','j','k','l']
 
@@ -751,6 +751,7 @@ J. Cryst. Mol. Struct., 1977, 8, 317-320.
   parser.add_option('-r', dest='r', action='store_true',help="switch to radians (default is degrees)")
   parser.add_option('-g', dest='g', type="string", nargs=1, default="output.xyz",help="geometry file in xyz format (default=output.xyz)")
   parser.add_option('-t', dest='t', type=float, nargs=1, default=1.0,help="timestep between successive geometries is fs (default=1.0 fs)")
+  parser.add_option('-T', dest='T', type=int, nargs=1, default=0,help="start counting the timesteps at T (default=0)")
   (options, args) = parser.parse_args()
   global p,f,Bohrs,Radians
   if options.f>=20:
@@ -764,6 +765,7 @@ J. Cryst. Mol. Struct., 1977, 8, 317-320.
   Bohrs=options.b
   Radians=options.r
   dt=options.t
+  Tshift=options.T
 
   geofilename=options.g
   try:
@@ -830,7 +832,7 @@ J. Cryst. Mol. Struct., 1977, 8, 317-320.
 
     formatstring='%%%i.%if ' % (f,p)
     s=calculate(g,req,comm)
-    print formatstring % (t*dt) +s
+    print formatstring % ((t+Tshift)*dt) +s
     t+=1
     sys.stderr.write('\rNumber of geometries: % 6i' % (t))
 

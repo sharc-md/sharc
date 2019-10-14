@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -40,6 +40,7 @@ import datetime
 from optparse import OptionParser
 import readline
 import time
+from socket import gethostname
 
 # =========================================================0
 # compatibility stuff
@@ -72,8 +73,8 @@ U_TO_AMU = 1.            # MOLCAS works with g/mol
 BOHR_TO_ANG=0.529177211
 PI = math.pi
 
-version='2.0'
-versiondate=datetime.date(2018,2,1)
+version='2.1'
+versiondate=datetime.date(2019,9,1)
 
 
 NUMBERS = {'H':1, 'He':2,
@@ -922,7 +923,7 @@ MAXITER    = 120
 
   s+='\n\n'
   s+='*     Infos:\n'
-  s+='*     %s at %s\n' % (os.environ['USER'],os.environ['HOSTNAME'])
+  s+='*     %s at %s\n' % (os.environ['USER'],gethostname())
   s+='*     Date: %s\n' % (datetime.datetime.now())
   s+='*     Current directory: %s\n\n' % (os.getcwd())
 

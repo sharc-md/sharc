@@ -1,0 +1,92 @@
+    ## This is a commented version of the BAGEL.template file 
+    ## for version 1.0 of the SHARC_BAGEL.py interface.
+
+    ## ======== BASIS SETS ============
+
+    ## Basis set for all atoms. 
+    ## Can be a basis set name (from BAGEL's library),
+    ## a relative path to a BAGEL basis set file (will be copied to scratch),
+    ## or an absolute path to a BAGEL basis set file (recommended).
+basis cc-pvdz.json
+
+
+    ## Auxiliary basis set for all atoms. 
+    ## Usage is like the "basis" keyword
+df_basis cc-pvdz-jkfit.json
+
+
+    ##dkh actiavtes the (scalar-relativistic) Douglas-Kroll-Hess Hamiltonian
+dkh
+
+
+
+
+    ## ======== CASSCF settings ============
+
+    ## Number of active orbitals
+nact 6
+
+
+    ## Number of doubly occupied orbitals
+nclosed 5
+
+
+    ## Number of averaged states for each multiplicity
+nstate 5 2 2
+
+
+
+
+    ## ======== METHOD settings ============
+
+    ## Method to be used.
+    ## can be "casscf", "caspt2", "ms-caspt2", or "xms-caspt2"
+method casscf
+
+
+    ## Sets the level shift for CASPT2, default 0.0. 
+#shift 0.20
+
+
+    ## If "shift_imag", imaginary shift is used instead of real shift.
+    ## The value from the "shift" keyword" is then used as imaginary shift.
+#shift_imag 
+
+
+    ## "orthogonal_basis" sets an additional orthogonalization step
+    ## automatically activated for "shift_imag"
+#orthogonal_basis
+
+
+    ## "msmr" sets the contraction scheme in CASPT2 to 
+    ## multi-state-multi-reference (MS-MR), which is more accurate but rather expensive.
+    ## If "msmr" is not given, SS-SR is used per default.
+#msmr 
+
+
+    ## Iteration limit for energy calculations (CASSCF, CASPT2)
+    ## A too high value can slow down the calculation unnecessarily.
+#maxiter 500
+
+    ## Iteration limit for Z-vector calculations (grad, nacdr).
+    ## A too high value can slow down the calculation unnecessarily.
+#maxziter 100
+
+
+    ## This keyword sets the total charge of the molecule.
+    ## The interface automatically sets this number based on the requested multiplicity.
+    ##
+    ## This keyword accepts either a single number, or as many numbers as there are multiplicities.
+    ## If only one charge is given but several multiplicities requested in QM.in, then the interface
+    ## will automatically check and assign the charges based on the nuclear charge.
+    ## If after the "charge" keyword one charge is given for each multiplicities, these numbers will used as is.
+charge 0
+
+
+
+    ## number of frozen orbitals in the CASPT2 step. 
+    ## The default is -1 which takes the default nr of orbitals as suggested by BAGEL
+frozen -1
+
+
+# kate: syntax python

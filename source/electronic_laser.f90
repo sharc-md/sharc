@@ -2,7 +2,7 @@
 !
 !    SHARC Program Suite
 !
-!    Copyright (c) 2018 University of Vienna
+!    Copyright (c) 2019 University of Vienna
 !
 !    This file is part of SHARC.
 !
@@ -173,6 +173,7 @@ subroutine propagate_laser(traj,ctrl)
           call matwrite(ctrl%nstates,traj%U_ss,0,'U Matrix','F12.9')
     endselect
     call matwrite(ctrl%nstates,traj%Rtotal_ss,0,'Propagator Matrix','F12.9')
+    stop 1
   endif
 
   ! propagate the coefficients
@@ -187,7 +188,7 @@ subroutine propagate_laser(traj,ctrl)
   traj%state_MCH=state_diag_to_MCH(ctrl%nstates,traj%state_diag,traj%U_ss)
 
   if (printlevel>2) then
-    write(u_log,*) 'Old and new coefficients:'
+    write(u_log,*) 'Old and new diagonal coefficients:'
     do istate=1,ctrl%nstates
       write(u_log,'(2(F7.4,1X),4X,2(F7.4,1X))') traj%coeff_diag_old_s(istate),traj%coeff_diag_s(istate)
     enddo
@@ -299,30 +300,30 @@ subroutine LD_propagator_laser(n, SOin, SOold, U, Uold, overlap, DMin, DMold, la
   real*8,parameter :: intr_thrs=1.d-1
   complex*16,parameter :: ii=dcmplx(0.d0,1.d0)
 
-  ! Intruder state check
-  do i=1,n
-    sums=0.d0
-    do j=1,n
-      sums=sums+abs(overlap(i,j))**2
-      sums=sums+abs(overlap(j,i))**2
-    enddo
-    sums=sums-abs(overlap(i,i))**2
-
-    if (sums < intr_thrs) then
-      write(u_log,'(A)') '! ======== INTRUDER STATE PROBLEM ======== !'
-      write(u_log,'(A,I4)') 'State: ',i
-      do k=1,n
-        write(u_log,'(1000(F8.5,1X))') (overlap(k,j),j=1,n)
-      enddo
-
-      overlap(i,:)=dcmplx(0.d0,0.d0)
-      overlap(:,i)=dcmplx(0.d0,0.d0)
-      overlap(i,i)=dcmplx(1.d0,0.d0)
-    endif
-  enddo
-
-  ! Löwdin orthogonalisation
-  call lowdin(n,overlap)
+! ! Intruder state check
+! do i=1,n
+!   sums=0.d0
+!   do j=1,n
+!     sums=sums+abs(overlap(i,j))**2
+!     sums=sums+abs(overlap(j,i))**2
+!   enddo
+!   sums=sums-abs(overlap(i,i))**2
+! 
+!   if (sums < intr_thrs) then
+!     write(u_log,'(A)') '! ======== INTRUDER STATE PROBLEM ======== !'
+!     write(u_log,'(A,I4)') 'State: ',i
+!     do k=1,n
+!       write(u_log,'(1000(F8.5,1X))') (overlap(k,j),j=1,n)
+!     enddo
+! 
+!     overlap(i,:)=dcmplx(0.d0,0.d0)
+!     overlap(:,i)=dcmplx(0.d0,0.d0)
+!     overlap(i,i)=dcmplx(1.d0,0.d0)
+!   endif
+! enddo
+! 
+! ! Löwdin orthogonalisation
+! call lowdin(n,overlap)
 
   ! Initialize Rtotal
   call matmultiply(n,Uold,Rtotal,Rprod,'nn')

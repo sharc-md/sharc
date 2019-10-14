@@ -1,0 +1,30 @@
+SHARC_version   2.1
+ maxmult           3
+ nstates_m           4           0           3
+ natom           3
+ dtstep   20.6706868947804     
+ nsteps          60
+ nsubsteps          25
+ ezero  0.000000000000000E+000
+ write_overlap           1
+ write_grad           0
+ write_nacdr           0
+ write_property1d           0
+ write_property2d           0
+ n_property1d           1
+ n_property2d           1
+ laser           0
+************************************* End of settings *************************************
+! Atomic numbers
+ 0.1600000000000E+002
+ 0.8000000000000E+001
+ 0.8000000000000E+001
+! Elements
+ S 
+ O 
+ O 
+! Atomic masses
+ 0.5828151824448E+005
+ 0.2915693725754E+005
+ 0.2915693725754E+005
+********************************* End of header array data ********************************

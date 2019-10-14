@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -93,8 +93,8 @@ IToMult={
 
 # ======================================================================= #
 
-version='2.0'
-versiondate=datetime.date(2018,2,1)
+version='2.1'
+versiondate=datetime.date(2019,9,1)
 
 # ======================================================================================================================
 # ======================================================================================================================
@@ -333,11 +333,13 @@ def get_general():
 This script can also print the transition matrix for each timestep:
 3        In MCH basis                                                    from output.lis
 4        In MCH basis (ignoring hops within one multiplet)               from output.lis
+5        In MCH basis [cumulative]                                       from output.lis
+6        In MCH basis [cumulative] (ignoring hops within one multiplet)  from output.lis
 '''
   while True:
     num=question('Analyze mode:',int)[0]
-    if not 1<=num<=4:
-      print 'Please enter an integer between 1 and 2!'
+    if not 1<=num<=6:
+      print 'Please enter an integer between 1 and 6!'
       continue
     break
   INFOS['mode']=num
@@ -354,7 +356,7 @@ This script can also print the transition matrix for each timestep:
 
 
   # Number of states
-  if INFOS['mode'] in [1,2,3,4]:
+  if INFOS['mode'] in [1,2,3,4,5,6]:
     print centerstring('Number of states',60,'-')
     print '\nPlease enter the number of states as a list of integers\ne.g. 3 0 3 for three singlets, zero doublets and three triplets.'
     while True:
@@ -383,7 +385,7 @@ This script can also print the transition matrix for each timestep:
     INFOS['statemap']=statemap
 
   # Simulation time
-  if INFOS['mode'] in [1,2,3,4]:
+  if INFOS['mode'] in [1,2,3,4,5,6]:
     print centerstring('Simulation time',60,'-')
     print '\nUp to which simulation time should the analysis be performed?'
     while True:
@@ -535,7 +537,7 @@ def do_calc(INFOS):
         continue
       path=idir+'/'+itraj
       s=path+' '*(width-len(path))
-      if INFOS['mode'] in [1,2,3,4]:
+      if INFOS['mode'] in [1,2,3,4,5,6]:
         pathfile=path+'/output.lis'
       if not os.path.isfile(pathfile):
         s+='%s NOT FOUND' % (pathfile)
@@ -561,7 +563,7 @@ def do_calc(INFOS):
     sys.exit(0)
 
   # get timestep
-  if INFOS['mode'] in [1,2,3,4]:
+  if INFOS['mode'] in [1,2,3,4,5,6]:
     for ifile in files:
       lisf=open(ifile)
       file_valid=True
@@ -613,17 +615,21 @@ def do_calc(INFOS):
     transition=[ [ [ 0 for i in range(INFOS['nmstates']) ] for j in range(INFOS['nmstates']) ] for t in range(nsteps) ]
   elif INFOS['mode']==4:
     transition=[ [ [ 0 for i in range(INFOS['nstates']) ] for j in range(INFOS['nstates']) ] for t in range(nsteps) ]
+  elif INFOS['mode']==5:
+    transition=[ [ [ 0 for i in range(INFOS['nmstates']) ] for j in range(INFOS['nmstates']) ] for t in range(nsteps) ]
+  elif INFOS['mode']==6:
+    transition=[ [ [ 0 for i in range(INFOS['nstates']) ] for j in range(INFOS['nstates']) ] for t in range(nsteps) ]
 
   # make state mapping and labels
   mapping={}
   labels={}
-  if INFOS['mode'] in [1,3]:
+  if INFOS['mode'] in [1,3,5]:
     for i in range(INFOS['nmstates']):
       mapping[i]=i
       mult,state,ms=tuple(INFOS['statemap'][i+1][0:3])
       label='%1s%i%+3.1f' % (IToMult[mult][0:1],state-(mult<=2),ms)
       labels[i]=label
-  elif INFOS['mode'] in [2,4]:
+  elif INFOS['mode'] in [2,4,6]:
     for i in range(INFOS['nmstates']):
       mult,state,ms,j=tuple(INFOS['statemap'][i+1])
       mapping[i]=j-1
@@ -652,7 +658,7 @@ def do_calc(INFOS):
         istep+=1
         if istep>nsteps:
           break
-      elif INFOS['mode'] in [3,4]:
+      elif INFOS['mode'] in [3,4,5,6]:
         transition[istep][mapping[state-1]][mapping[oldstate-1]]+=1
         istep+=1
         if istep==len(transition) or istep>nsteps:
@@ -695,7 +701,7 @@ def do_calc(INFOS):
     print 'Difference transition matrix:'
     print string
 
-  elif INFOS['mode'] in [3,4]:
+  elif INFOS['mode'] in [3,4,5,6]:
     print '\n'
     print centerstring('Results',60,'*')
     print '\n'
@@ -714,15 +720,28 @@ def do_calc(INFOS):
         s+='%2s-%2s ' % (labels[i][:2],labels[j][:2])
     s+='\n'
 
-    for istep,tran in enumerate(transition):
-      s+='%8.1f ' % (dt*istep)
-      for row in tran:
-        for col in row:
-          s+='%+5i ' % (col)
-      s+='\n'
+    if INFOS['mode'] in [3,4]:
+      for istep,tran in enumerate(transition):
+        s+='%8.1f ' % (dt*istep)
+        for row in tran:
+          for col in row:
+            s+='%+5i ' % (col)
+        s+='\n'
+    elif INFOS['mode'] in [5,6]:
+      cumulative=[ [ 0 for i in range(len(transition[0]))] for j in range(len(transition[0]))] 
+      for istep,tran in enumerate(transition):
+        s+='%8.1f ' % (dt*istep)
+        for irow,row in enumerate(tran):
+          for icol,col in enumerate(row):
+            cumulative[irow][icol]+=col
+            s+='%+5i ' % (cumulative[irow][icol])
+        s+='\n'
 
     # write to file
-    outfilename='transition_full.out'
+    if INFOS['mode'] in [3,4]:
+      outfilename='transition_full.out'
+    elif INFOS['mode'] in [5,6]:
+      outfilename='transition_full_cumu.out'
     if os.path.isfile(outfilename):
       overw=question('Overwrite %s? ' % (outfilename),bool,False)
       print ''

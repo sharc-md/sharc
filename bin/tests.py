@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -84,13 +84,13 @@ Essential dynamics analysis not possible.'''+'*'*80+'\n')
 
 
 
-version='2.0'
-versiondate=datetime.date(2018,2,1)
+version='2.1'
+versiondate=datetime.date(2019,8,14)
 
 
 
-INTERFACES=set(['MOLPRO','MOLCAS','COLUMBUS','Analytical','ADF','TURBOMOLE','GAUSSIAN','LVC','scripts'])
-OTHERENVS=set(['THEODORE','ORCA','TINKER','molcas'])
+INTERFACES=set(['MOLPRO','MOLCAS','COLUMBUS','Analytical','ADF','TURBOMOLE','GAUSSIAN','LVC','scripts','BAGEL','ORCA'])
+OTHERENVS=set(['THEODORE','orca','TINKER','molcas','PYQUANTE'])
 
 INTERFACES={'MOLPRO':'MOLPRO',
             'MOLCAS':'MOLCAS',
@@ -100,7 +100,9 @@ INTERFACES={'MOLPRO':'MOLPRO',
             'TURBOMOLE':'RICC2',
             'GAUSSIAN':'GAUSSIAN',
             'LVC':'LVC',
-            'scripts':'scripts'
+            'scripts':'scripts',
+            'BAGEL':'BAGEL',
+            'ORCA':'ORCA'
             }
 
 # ======================================================================================================================

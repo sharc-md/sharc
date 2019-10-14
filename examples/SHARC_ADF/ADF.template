@@ -81,6 +81,10 @@ charge 0 +1 0 +1 0
     ## If you neglect this keyword, ADF will assume equilibrium solvation (incorrect for vertical excitations).
 cosmo_neql 1.77
 
+    ## use the full adiabatic XC kernel for excited states. Default is to use ALDA.
+    ## Cannot be combined with gradients
+#fullkernel
+
 
 
     ## ======== ACCURACY and CONVERGENCE ============

@@ -2,7 +2,7 @@
 !
 !    SHARC Program Suite
 !
-!    Copyright (c) 2018 University of Vienna
+!    Copyright (c) 2019 University of Vienna
 !
 !    This file is part of SHARC.
 !
@@ -75,6 +75,7 @@ subroutine write_logheader(u,version)
   write(u,*) 'Build host: ',trim(build_host)
   write(u,*) 'Build directory: ',trim(build_dir)
   write(u,*) 'Compiler: ',trim(build_compiler)
+  write(u,*) 'PYSHARC activated: ',trim(use_pysharc)
   write(u,*)
 
   write(u,'(A)')      '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
@@ -323,6 +324,10 @@ subroutine write_list_line(u, traj, ctrl)
       write(u,'(A,1X,A,1X,I4,1X,A,1X,I4,1X,A,1X,F12.9)') &
       &'#','Surface Hop: new state=',traj%state_diag,'old state=',traj%state_diag_old,'randnum=',traj%randnum
       write(u,'(A)') '# Transition resonant to laser.'
+    case (4)
+      write(u,'(A)') '# Forced jump to ground state.'
+      write(u,'(A,1X,A,1X,I4,1X,A,1X,I4,1X,A,1X,F12.9)') &
+      &'#','Surface Hop: new state=',traj%state_diag,'old state=',traj%state_diag_old,'randnum=',traj%randnum
   endselect
 
   write(u,'(1X,I9,3X,F12.5,3X,2(I5,3X),6(F12.6,3X),I10)') &
@@ -425,77 +430,89 @@ subroutine write_dat(u, traj, ctrl)
   integer :: u, i, j
   character(8000) :: string
 
-  integer :: nstates, natom
+  integer :: nstates, natom, stride
 
-  nstates=ctrl%nstates
-  natom=ctrl%natom
-
-  write(u,'(A)') '! 0 Step'
-  write(u,'(I12)') traj%step
-  call matwrite(nstates, traj%H_MCH_ss, u, '! 1 Hamiltonian (MCH) in a.u.', 'E21.13e3')
-  call matwrite(nstates, traj%U_ss, u, '! 2 U matrix', 'E21.13e3')
-  call matwrite(nstates, traj%DM_print_ssd(:,:,1), u, '! 3 Dipole moments X (MCH) in a.u.', 'E21.13e3')
-  call matwrite(nstates, traj%DM_print_ssd(:,:,2), u, '! 3 Dipole moments Y (MCH) in a.u.', 'E21.13e3')
-  call matwrite(nstates, traj%DM_print_ssd(:,:,3), u, '! 3 Dipole moments Z (MCH) in a.u.', 'E21.13e3')
-
-  if (ctrl%write_overlap==1) then
-    call matwrite(nstates, traj%overlaps_ss, u, '! 4 Overlap matrix (MCH)', 'E21.13e3')
+  ! check if writing
+  stride=ctrl%output_steps_stride(1)
+  if (traj%step>=ctrl%output_steps_limits(2)) then
+    stride=ctrl%output_steps_stride(2)
   endif
+  if (traj%step>=ctrl%output_steps_limits(3)) then
+    stride=ctrl%output_steps_stride(3)
+  endif
+  if (modulo(traj%step,stride)==0) then
 
-  call vecwrite(nstates, traj%coeff_diag_s, u, '! 5 Coefficients (diag)','E21.13e3')
-  call vecwrite(nstates, traj%hopprob_s, u, '! 6 Hopping Probabilities (diag)','E21.13e3')
+    nstates=ctrl%nstates
+    natom=ctrl%natom
 
-  write(u,'(A)') '! 7 Ekin (a.u.)'
-  write(u,'(E21.13e3)') traj%Ekin
-  write(u,'(A)') '! 8 states (diag, MCH)'
-  write(u,'(I12,1X,I12)') traj%state_diag, traj%state_MCH
-  write(u,'(A)') '! 9 Random number'
-  write(u,'(E21.13e3)') traj%randnum
-  write(u,'(A)') '! 10 Runtime (sec)'
-  write(u,'(I12)') traj%time_step
+    write(u,'(A)') '! 0 Step'
+    write(u,'(I12)') traj%step
+    call matwrite(nstates, traj%H_MCH_ss, u, '! 1 Hamiltonian (MCH) in a.u.', 'E21.13e3')
+    call matwrite(nstates, traj%U_ss, u, '! 2 U matrix', 'E21.13e3')
+    call matwrite(nstates, traj%DM_print_ssd(:,:,1), u, '! 3 Dipole moments X (MCH) in a.u.', 'E21.13e3')
+    call matwrite(nstates, traj%DM_print_ssd(:,:,2), u, '! 3 Dipole moments Y (MCH) in a.u.', 'E21.13e3')
+    call matwrite(nstates, traj%DM_print_ssd(:,:,3), u, '! 3 Dipole moments Z (MCH) in a.u.', 'E21.13e3')
 
-  call vec3write(natom, traj%geom_ad, u, '! 11 Geometry in a.u.','E21.13e3')
-  call vec3write(natom, traj%veloc_ad, u, '! 12 Velocities in a.u.','E21.13e3')
+    if (ctrl%write_overlap==1) then
+      call matwrite(nstates, traj%overlaps_ss, u, '! 4 Overlap matrix (MCH)', 'E21.13e3')
+    endif
+
+    call vecwrite(nstates, traj%coeff_diag_s, u, '! 5 Coefficients (diag)','E21.13e3')
+    call vecwrite(nstates, traj%hopprob_s, u, '! 6 Hopping Probabilities (diag)','E21.13e3')
+
+    write(u,'(A)') '! 7 Ekin (a.u.)'
+    write(u,'(E21.13e3)') traj%Ekin
+    write(u,'(A)') '! 8 states (diag, MCH)'
+    write(u,'(I12,1X,I12)') traj%state_diag, traj%state_MCH
+    write(u,'(A)') '! 9 Random number'
+    write(u,'(E21.13e3)') traj%randnum
+    write(u,'(A)') '! 10 Runtime (sec)'
+    write(u,'(I12)') traj%time_step
+
+    call vec3write(natom, traj%geom_ad, u, '! 11 Geometry in a.u.','E21.13e3')
+    call vec3write(natom, traj%veloc_ad, u, '! 12 Velocities in a.u.','E21.13e3')
 
 
-  if (ctrl%output_version <= 1.0) then
-    call matwrite(nstates, traj%Property2d_xss(1,:,:), u, '! 13 Property matrix (MCH)', 'E21.13e3')
-  elseif (ctrl%output_version >= 2.0) then
-    if (ctrl%write_property2d==1) then
-!       write(u,'(A)') '! 13 Property matrices (MCH)'
-      do i=1,ctrl%n_property2d
-        write(string,'(A26,I3,A3,A)') '! 13 Property matrix (MCH)',i,' : ',traj%Property2d_labels_x(i)
-        call matwrite(nstates, traj%Property2d_xss(i,:,:), u, string, 'E21.13e3')
+    if (ctrl%output_version <= 1.0) then
+      call matwrite(nstates, traj%Property2d_xss(1,:,:), u, '! 13 Property matrix (MCH)', 'E21.13e3')
+    elseif (ctrl%output_version >= 2.0) then
+      if (ctrl%write_property2d==1) then
+  !       write(u,'(A)') '! 13 Property matrices (MCH)'
+        do i=1,ctrl%n_property2d
+          write(string,'(A26,I3,A3,A)') '! 13 Property matrix (MCH)',i,' : ',traj%Property2d_labels_x(i)
+          call matwrite(nstates, traj%Property2d_xss(i,:,:), u, string, 'E21.13e3')
+        enddo
+      endif
+      if (ctrl%write_property1d==1) then
+  !       write(u,'(A)') '! 14 Property vectors (MCH)'
+        do i=1,ctrl%n_property1d
+          write(string,'(A26,I3,A3,A)') '! 14 Property vector (MCH)',i,' : ',traj%Property1d_labels_y(i)
+          call vecwrite(nstates, traj%Property1d_ys(i,:), u, string, 'E21.13e3')
+        enddo
+      endif
+    endif
+
+
+    if (ctrl%write_grad == 1) then
+  !     write(u,'(A)') '! 15 Gradient matrix (MCH) as x,y,z (per line) for each atom (per newline)'
+      do i=1,ctrl%nstates
+        write(string,'(A26,I3)') '! 15 Gradients (MCH) State',i
+        call vec3write(ctrl%natom,traj%grad_mch_sad(i,:,:),u,trim(string),'E21.13e3')
       enddo
     endif
-    if (ctrl%write_property1d==1) then
-!       write(u,'(A)') '! 14 Property vectors (MCH)'
-      do i=1,ctrl%n_property1d
-        write(string,'(A26,I3,A3,A)') '! 14 Property vector (MCH)',i,' : ',traj%Property1d_labels_y(i)
-        call vecwrite(nstates, traj%Property1d_ys(i,:), u, string, 'E21.13e3')
+
+
+    if (ctrl%write_NACdr == 1) then
+  !     write(u,'(A)') '! 16 NAC matrix (MCH) as x,y,z (per line) for each atom (per newline)'
+      do i=1,ctrl%nstates
+        do j=1,ctrl%nstates
+          write(string,'(A31,I3,1X,I3)') '! 16 NACdr matrix element (MCH)',i,j
+          call vec3write(ctrl%natom,traj%NACdr_ssad(i,j,:,:),u,trim(string),'E21.13e3')
+        enddo
       enddo
     endif
-  endif
 
-
-  if (ctrl%write_grad == 1) then
-!     write(u,'(A)') '! 15 Gradient matrix (MCH) as x,y,z (per line) for each atom (per newline)'
-    do i=1,ctrl%nstates
-      write(string,'(A26,I3)') '! 15 Gradients (MCH) State',i
-      call vec3write(ctrl%natom,traj%grad_mch_sad(i,:,:),u,trim(string),'E21.13e3')
-    enddo
-  endif
-
-
-  if (ctrl%write_NACdr == 1) then
-!     write(u,'(A)') '! 16 NAC matrix (MCH) as x,y,z (per line) for each atom (per newline)'
-    do i=1,ctrl%nstates
-      do j=1,ctrl%nstates
-        write(string,'(A31,I3,1X,I3)') '! 16 NACdr matrix element (MCH)',i,j
-        call vec3write(ctrl%natom,traj%NACdr_ssad(i,j,:,:),u,trim(string),'E21.13e3')
-      enddo
-    enddo
-   endif
+  endif  ! <-- end of stride check
 
 endsubroutine
 

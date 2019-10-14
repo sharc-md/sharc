@@ -17,6 +17,10 @@ memory 1000
 ncpu 1
 delay 0.0
 
+## run MOLCAS in parallel mode.
+## For the master jobs, scheduling is dynamic, but for gradients, the same number of cores as in the master is used.
+#mpi_parallel
+
 
 # Dyson norms
 numfrozcore 5

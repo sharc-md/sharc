@@ -1,6 +1,6 @@
 #/bin/bash
 
-CWD=/user/mai/Documents/NewSHARC/SHARC_2.0/tests_suite/RUNNING_TESTS/scripts_setup_init
+CWD=/user/mai/Documents/NewSHARC/SHARC_2.1/TESTS/pysharc/RUNNING_TESTS/scripts_setup_init
 
 cd $CWD/ICOND_00000//
 bash run.sh

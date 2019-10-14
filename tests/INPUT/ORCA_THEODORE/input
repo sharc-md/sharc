@@ -1,0 +1,28 @@
+geomfile     "geom"
+veloc        external
+velocfile    "veloc"
+
+nstates      4
+actstates    2
+state        2 mch
+coeff        auto
+rngseed      26933
+
+ezero        -330.0
+tmax         1.0
+stepsize     0.5
+nsubsteps    25
+
+surf         sharc
+coupling     overlap
+nogradcorrect
+ekincorrect  parallel_vel
+decoherence_scheme edc
+grad_select
+nac_select
+eselect      0.5
+select_directly
+theodore
+n_property1d 13
+write_property1d
+nospinorbit

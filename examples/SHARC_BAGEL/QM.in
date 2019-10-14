@@ -1,0 +1,68 @@
+3
+Comment: 
+ S     0.000000     0.000000     0.100841
+ H    -0.000000     0.974799     1.182934
+ H    -0.000000    -0.974799     1.182934
+    ## The first few lines have to comply with the xyz file format (number of atoms, comment, atoms)
+    ## Comments at the end of these lines cause errors
+
+    ## from here, comments can be put at the end of each line
+    ## blank lines can be used freely
+    ## order of keywords does not matter
+    ## only the first instance of every keyword is used
+    ## everything is case-insensitive
+
+    ## ===============================================
+    ## Control keywords:
+Init                    # use for very first calculation
+#Samestep               # additional calculation at same geometry
+#Restart                # additional calculation at same geometry, but with unclear status of the savedir
+                        # for calculations at a new geometry, use neither keyword
+
+#Backup                 # keep savedir content from this timestep
+#Cleanup                # delete complete scratchdir and savedir, only keep QM.out
+
+    ## ===============================================
+    ## Settings:
+
+States 5 2 2            # number of states per multiplicity (singlets, doublets, triplets, ...)
+Unit Angstrom           # in which units to interpret the above geometry
+#Step 0                 # Optional, used only to name the backup directories
+#savedir ./SAVE         # overrides the savedir in the resources file
+
+    ## ===============================================
+    ## Quantity requests:
+    ## only those properties are reported in QM.out
+    ## (e.g., if no SOC or H is given, the energies are calculated, but not reported)
+H
+#SOC
+DM
+#GRAD 
+#OVERLAP
+ION
+#MOLDEN
+#NACDR
+
+
+    ## Not implemented:
+    ## DMDR 
+    ## SOCDR 
+    ## SOC
+    ## NACDT
+
+# ===============================================
+# For GRAD and NACDR, particular (pairs of) states can be requested
+
+#GRAD 1 2 3 5 6 7 14 15 19 31 32
+#NACDR select
+#  1 2
+#  1 3
+#  1 5
+#  6 7
+#  14 15
+#  14 19
+#  31 32
+#  end
+
+
+# kate: syntax python

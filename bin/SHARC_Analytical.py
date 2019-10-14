@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -81,8 +81,8 @@ U_TO_AMU = 1./5.4857990943e-4
 BOHR_TO_ANG=0.529177211
 PI = math.pi
 
-version='2.0'
-versiondate=datetime.date(2018,2,1)
+version='2.1'
+versiondate=datetime.date(2019,9,1)
 
 
 # hash table for conversion of multiplicity to the keywords used in MOLPRO
@@ -962,7 +962,7 @@ def read_QMin():
       geom[i][j+1]/=factor
 
   # find init, samestep, restart
-  for line in qmin:
+  for line in qmin[2:]:
     line=line.split('#')[0]
     s=line.split()
     if len(s)==0:

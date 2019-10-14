@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -40,6 +40,7 @@ import datetime
 from optparse import OptionParser
 import readline
 import time
+import socket
 
 # =========================================================0
 # compatibility stuff
@@ -71,8 +72,8 @@ U_TO_AMU = 1./5.4857990943e-4            # conversion from g/mol to amu
 BOHR_TO_ANG=0.529177211
 PI = math.pi
 
-version='2.0'
-versiondate=datetime.date(2018,2,1)
+version='2.1'
+versiondate=datetime.date(2019,9,1)
 
 
 NUMBERS = {'H':1, 'He':2,
@@ -790,7 +791,7 @@ def setup_input(INFOS):
     s=get_template(INFOS)
     s+='\n\n---\n'
     s+='#Infos:\n'
-    s+='#%s@%s\n' % (os.environ['USER'],os.environ['HOSTNAME'])
+    s+='#%s@%s\n' % (os.environ['USER'],socket.gethostname())
     s+='#Date: %s\n' % (datetime.datetime.now())
     s+='#Current directory: %s\n\n' % (os.getcwd())
     inp.write(s)
@@ -952,7 +953,7 @@ def setup_input(INFOS):
 
   s+='\n\n---\n'
   s+='!Infos:\n'
-  s+='!%s@%s\n' % (os.environ['USER'],os.environ['HOSTNAME'])
+  s+='!%s@%s\n' % (os.environ['USER'],socket.gethostname())
   s+='!Date: %s\n' % (datetime.datetime.now())
   s+='!Current directory: %s\n\n' % (os.getcwd())
 

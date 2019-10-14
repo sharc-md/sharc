@@ -71,6 +71,19 @@ cholesky_accu 1e-4
 #qmmm
 
 
+    ## if present, activates PCM (leads to numerical gradients in all cases)
+    ## first argument is the solvent (see list in MOLCAS manual), second is AARE, third is R-MIN
+pcmset water 0.4 1.0
+    ## state used for the steady-state PCM calculation, "1 1" is S0
+pcmstate 1 1
+
+
+    ##
+rasscf_thrs_e 1e-8
+rasscf_thrs_rot 1e-4
+rasscf_thrs_egrd 1e-4
+
+
 
 
 

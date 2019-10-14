@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -81,8 +81,8 @@ BOHR_TO_ANG=0.529177211
 AU_TO_FS=0.024188843
 PI = math.pi
 
-version='2.0'
-versiondate=datetime.date(2018,2,1)
+version='2.1'
+versiondate=datetime.date(2019,9,1)
 
 
 IToMult={
@@ -348,8 +348,8 @@ class lognormal:
     # instead, the function is normalized such that its maximum will have a value of A (at x<=x0)
     return A*x0/x*math.exp( -c/(4.*math.log(2.)) -math.log(2.)*(math.log(x)-math.log(x0))**2/c)
 
-kernels={1: {'f': gauss,       'description': 'Gaussian function',          'factor':1.5},
-         2: {'f': lorentz,     'description': 'Lorentzian function',        'factor':2.5},
+kernels={1: {'f': gauss,       'description': 'Gaussian function',          'factor':1.0},
+         2: {'f': lorentz,     'description': 'Lorentzian function',        'factor':2.0},
          3: {'f': boxfunction, 'description': 'Rectangular window function','factor':0.6},
          4: {'f': lognormal,   'description': 'Log-normal function',        'factor':1.5}}
 
@@ -639,7 +639,12 @@ def get_general():
            'QM/MOLCAS\.resources',
            'QM/RICC2\.template',
            'QM/RICC2\.resources',
+           'QM/ORCA\.template',
+           'QM/ORCA\.resources',
+           'QM/BAGEL\.template',
+           'QM/BAGEL\.resources',
            'QM/.*init',
+           'QM/.*qmmm.*',
            'QM/SCRATCH',
            'QM/SAVE',
            'QM/runQM\.sh',
@@ -648,6 +653,7 @@ def get_general():
            'QM/QM\.log',
            'QM/QM\.err',
            '\./output\.dat',
+           '\./output\.dat\.nc',
            '\./output\.log',
            '\./output\.xyz',
            '\./output\.dat\.ext',
@@ -655,6 +661,8 @@ def get_general():
            '\./geom',
            '\./veloc',
            '\./coeff',
+           '\./atommask',
+           '\./laser',
            '\./restart\.traj',
            '\./restart\.ctrl',
            '\./run\.sh',
@@ -876,14 +884,14 @@ def get_general():
           break
         else:
           print 'Choose one of the following: %s' % (list(kernels))
-      w=question('Choose width of the smoothing function (in units of the X columns):',float,[25.0])[0]
+      w=question('Choose width of the smoothing function (in units of the T column):',float,[25.0])[0]
       INFOS['convolute_T']={'function': kernels[kern]['f'](w)}
       #print 'Choose the size of the grid along X:'
       INFOS['convolute_T']['npoints']=question('Size of the grid along T:',int,[200])[0]
-      print '\nChoose minimum and maximum of the grid along X:'
-      print 'Enter either a single number a (X grid from  xmin-a*width  to  xmax+a*width)'
-      print '        or two numbers a and b (X grid from  a  to  b)'
-      INFOS['convolute_T']['xrange']=question('Xrange:',float,[kernels[kern]['factor']])
+      print '\nChoose minimum and maximum of the grid along T:'
+      print 'Enter either a single number a (T grid from  xmin-a*width  to  xmax+a*width)'
+      print '        or two numbers a and b (T grid from  a  to  b)'
+      INFOS['convolute_T']['xrange']=question('Trange:',float,[kernels[kern]['factor']])
       if len(INFOS['convolute_T']['xrange'])>2:
         INFOS['convolute_T']['xrange']=INFOS['convolute_T']['xrange'][:2]
 
@@ -1179,10 +1187,16 @@ def synchronize( INFOS, data1 ):
   data3['tmin']=min(times)
   data3['tmax']=max(times)
   nx=len(data2[0][0])/2
-  xmin=data2[0][0][0]
-  xmax=xmin
-  ymin=data2[0][0][nx]
-  ymax=ymin
+  for it1,t1 in enumerate(times):
+    xmin=data2[it1][0][0]
+    xmax=xmin
+    if xmax==xmin:
+      break
+  for it1,t1 in enumerate(times):
+    ymin=data2[it1][0][nx]
+    ymax=ymin
+    if ymax==ymin:
+      break
   for T in data2:
     for X in T:
       xmin=min( [xmin]+list(X[:nx]) )

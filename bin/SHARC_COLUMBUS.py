@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -119,8 +119,8 @@ if sys.version_info[1]<5:
 
 # ======================================================================= #
 
-version='2.0'
-versiondate=datetime.date(2018,2,1)
+version='2.1'
+versiondate=datetime.date(2019,9,1)
 
 
 changelogstring='''
@@ -3394,7 +3394,7 @@ def writegeom(QMin):
   os.chdir(QMin['pwd'])
 
 # ======================================================================= #
-def runProgram(string,workdir):
+def runProgram(string,workdir,outfile,errfile=''):
   prevdir=os.getcwd()
   if DEBUG:
     print workdir
@@ -3403,11 +3403,19 @@ def runProgram(string,workdir):
     starttime=datetime.datetime.now()
     sys.stdout.write('%s\n\t%s' % (string,starttime))
     sys.stdout.flush()
+  stdoutfile=open(os.path.join(workdir,outfile),'w')
+  if errfile:
+    stderrfile=open(os.path.join(workdir,errfile),'w')
+  else:
+    stderrfile=sp.STDOUT
   try:
-    runerror=sp.call(string,shell=True)
+    runerror=sp.call(string,shell=True,stdout=stdoutfile,stderr=stderrfile)
   except OSError:
     print 'Call have had some serious problems:',OSError
     sys.exit(98)
+  stdoutfile.close()
+  if errfile:
+    stderrfile.close()
   if PRINT or DEBUG:
     endtime=datetime.datetime.now()
     sys.stdout.write('\t%s\t\tRuntime: %s\t\tError Code: %i\n\n' % (endtime,endtime-starttime,runerror))
@@ -3419,10 +3427,10 @@ def runCOLUMBUS(QMin):
   # setup
   workdir=QMin['scratchdir']+'/JOB'
   if DEBUG:
-    string='%s -m %i -debug > runls' % (QMin['runc'],QMin['colmem'])
+    string='%s -m %i -debug ' % (QMin['runc'],QMin['colmem'])
   else:
-    string='%s -m %i > runls' % (QMin['runc'],QMin['colmem'])
-  runerror=runProgram(string,workdir)
+    string='%s -m %i ' % (QMin['runc'],QMin['colmem'])
+  runerror=runProgram(string,workdir,'runls')
 
   # copy debug infos if crashed
   if runerror!=0:
@@ -3623,8 +3631,8 @@ def runmolcas(QMin):
     if not os.path.isfile(prog):
       print 'No MOLCAS driver (molcas.exe or pymolcas) found in %s/bin/!' % (QMin['molcas'])
       sys.exit(103)
-  string='%s %s &> %s' % (prog,'molcas.input','molcas.output')
-  runerror=runProgram(string,workdir)
+  string='%s %s' % (prog,'molcas.input')
+  runerror=runProgram(string,workdir,'molcas.output')
   if runerror!=0:
     print 'MOLCAS call not successful!'
     sys.exit(104)
@@ -3675,8 +3683,8 @@ def writedalton(oldgeom,newgeom,daltcomm,daltaoin,template):
 # ======================================================================= #
 def rundalton(QMin):
   workdir=QMin['scratchdir']+'/OVERLAP'
-  string='%s/dalton.x -m %i > dalton.out 2> dalton.err' % (QMin['columbus'],QMin['colmem'])
-  runerror=runProgram(string,workdir)
+  string='%s/dalton.x -m %i ' % (QMin['columbus'],QMin['colmem'])
+  runerror=runProgram(string,workdir,'dalton.out','dalton.err')
   if runerror!=0:
     print 'DALTON call not successful!'
     sys.exit(105)
@@ -3700,8 +3708,8 @@ ncore=%i''' % (nintegrals, icore)
 def runcioverlap(QMin,mult):
   workdir=QMin['scratchdir']+'/OVERLAP'
   os.environ['OMP_NUM_THREADS']=str(QMin['ncpu'])
-  string='%s -f cioverlap.in -m %i &> cioverlap.out' % (QMin['wfoverlap'],QMin['colmem'])
-  runerror=runProgram(string,workdir)
+  string='%s -f cioverlap.in -m %i' % (QMin['wfoverlap'],QMin['colmem'])
+  runerror=runProgram(string,workdir,'cioverlap.out')
   if runerror!=0:
     print 'cioverlap call not successful!'
     sys.exit(106)
@@ -3735,8 +3743,8 @@ ncore=%i
 def rundyson(QMin,imult,jmult):
   workdir=QMin['scratchdir']+'/DYSON'
   os.environ['OMP_NUM_THREADS']=str(QMin['ncpu'])
-  string='%s -f dyson.in -m %i &> dyson.out' % (QMin['wfoverlap'],QMin['colmem'])
-  runerror=runProgram(string,workdir)
+  string='%s -f dyson.in -m %i' % (QMin['wfoverlap'],QMin['colmem'])
+  runerror=runProgram(string,workdir,'dyson.out')
   if runerror!=0:
     print 'cioverlap call not successful!'
     sys.exit(107)
@@ -3842,7 +3850,7 @@ mo_out="%s"
 
   # run mo_convert.x
   string='%s/mo_convert.x' % (QMin['columbus'])
-  runerror=runProgram(string,directory)
+  runerror=runProgram(string,directory,'convert.out')
   if runerror!=0:
     print 'mo_convert.x call not successful!'
     sys.exit(109)

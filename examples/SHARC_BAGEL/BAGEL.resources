@@ -1,0 +1,62 @@
+    ## This is a commented version of the BAGEL.resources file 
+    ## for version 1.0 of the SHARC_BAGEL.py interface.
+
+    ## Path to BAGEL, wfoverlaps, pyquante
+bagel /usr/license/bagel/bagel_new5
+wfoverlap $SHARC/wfoverlap.x
+pyquante /user/moritz/pyquante
+
+
+    ##specifies amount of calculated dipole matrix elements
+    ## 0: only calculate dipole moments which are for free (e.g. state dipole if corresponding gradient)
+    ## 1: calculate all groundstate to excited state transition dipole moments (for absorption spectra)
+    ## 2: calculate the complete dipole moment matrix (expensive, as NACs between all states need to be calculated)
+dipolelevel 0
+
+
+
+    ## Paths to savedir and scratchdir
+scratchdir $TMPDIR/WORK
+savedir ./SAVE/
+
+
+
+    ## Total number of CPU cores used.
+ncpu 4
+
+
+    ## Activates MPI mode (comment to use OpenMP mode)
+    ## Note that BAGEL can exhibit very different parallel scaling behaviors in these modes.
+    ## It is advisable to carry out efficiency tests for the intended computation.
+#mpi
+
+
+    ## Number of frozen orbitals for overlap and Dyson norm calculations 
+numfrozcore 5
+
+
+    ## Number of doubly occupied orbitals for Dyson calculations.
+    ## These orbitals are counted from the first nonfrozen orbital.
+numocc 0
+
+    ## Do not save files for subsequent overlap calculations.
+#nooverlap
+
+
+
+    ## Initial orbital settings
+#always_orb_init        # always use archive.%i.init
+#always_guess           # always start from guess orbitals
+                        # otherwise: start from savedir, if possible
+
+
+    ## Increase printlevel of interface a lot
+DEBUG true
+
+
+
+
+
+
+
+# kate: syntax python

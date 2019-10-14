@@ -1,4 +1,4 @@
-Script for hop counting started...
+[?1034hScript for hop counting started...
 
 
   ================================================================================
@@ -36,6 +36,8 @@ This script finds the transition matrix:
 This script can also print the transition matrix for each timestep:
 3        In MCH basis                                                    from output.lis
 4        In MCH basis (ignoring hops within one multiplet)               from output.lis
+5        In MCH basis [cumulative]                                       from output.lis
+6        In MCH basis [cumulative] (ignoring hops within one multiplet)  from output.lis
 
 Analyze mode: 
 ----------------------Number of states----------------------

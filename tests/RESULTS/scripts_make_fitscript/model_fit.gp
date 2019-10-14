@@ -122,7 +122,7 @@ pause -1
 #>>
 # *** File output: ***
 #<<
-set title "mai@iron.itc.univie.ac.at, 2018-02-15 08:07:45.530631\nFile:/user/mai/Documents/NewSHARC/SHARC_2.0/tests_suite/RUNNING_TESTS/scripts_make_fitscript/pop.out"
+set title "mai@iron.itc.univie.ac.at, 2019-08-29 10:58:45.820016\nFile:/user/mai/Documents/NewSHARC/SHARC_2.1/TESTS/pysharc/RUNNING_TESTS/scripts_make_fitscript/pop.out"
 set term pngcairo size 800,480
 set out "model_fit.png"
 replot
@@ -135,6 +135,6 @@ print "&&& k1 : ", 1./k1
 print "&&& S1__0 : ", S1__0
 # *** Infos: ***
 # mai@iron.itc.univie.ac.at
-# Date: 2018-02-15 08:07:45.530669
-# Current directory: /user/mai/Documents/NewSHARC/SHARC_2.0/tests_suite/RUNNING_TESTS/scripts_make_fitscript
+# Date: 2019-08-29 10:58:45.820087
+# Current directory: /user/mai/Documents/NewSHARC/SHARC_2.1/TESTS/pysharc/RUNNING_TESTS/scripts_make_fitscript
 
