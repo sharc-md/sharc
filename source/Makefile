@@ -38,7 +38,7 @@ USE_COMPILER := intel
 USE_LIBS := mkl
 
 #needed for PYSHARC
-ANACONDA := /user/maximilian/anaconda2/
+ANACONDA := 
 # =======================================
 
 
