@@ -11,3 +11,8 @@ script:
   - cd source
   - make
   - ls -l
+  - cd ..
+  - cd wfoverlap
+  - cd source
+  - make wfoverlap_ascii.x
+
