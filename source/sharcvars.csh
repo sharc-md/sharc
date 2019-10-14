@@ -1,6 +1,4 @@
-setenv SHARC /user/mai/SHARC/REPOSITORY/DEVELOPMENT/source/../bin
-setenv PYSHARC /user/mai/SHARC/REPOSITORY/DEVELOPMENT/source/../pysharc
-setenv SHARCLIB /user/mai/SHARC/REPOSITORY/DEVELOPMENT/source/../lib
-setenv ANACONDA /user/maximilian/anaconda2/
-setenv PYTHONPATH $SHARCLIB:$PYSHARC:$PYTHONPATH
-setenv LD_LIBRARY_PATH $SHARCLIB:$ANACONDA/lib:$LD_LIBRARY_PATH
+setenv SHARC=/user/oppel/sharc_git_2.1/sharc/source/../bin
+setenv SHARCLIB=/user/oppel/sharc_git_2.1/sharc/source/../lib
+setenv PYTHONPATH=$SHARCLIB:$PYTHONPATH
+setenv LD_LIBRARY_PATH=$SHARCLIB:$LD_LIBRARY_PATH
