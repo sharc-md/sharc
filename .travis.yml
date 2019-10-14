@@ -5,7 +5,7 @@ before_install:
   - sudo apt-get install libblas-dev liblapack-dev
   - sudo apt-get install libatlas-base-dev
   - sudo apt-get install libopenblas-dev libopenblas-base
-  - sudo apt-get install fftw3 fftw-devel
+  - sudo apt-get install fftw3 fftw3-dev
 
 script:
   - cd source
