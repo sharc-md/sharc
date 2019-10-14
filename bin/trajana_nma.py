@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -27,7 +27,7 @@
 
 """
 author: Felix Plasser and Andrew Atkins
-version: 2.0
+version: 2.1
 descr: Script for doing a normal mode analysis. Coordinates are transformed into the normal mode basis.
     Before this they should have been aligned with the script align.sh
     For each time step structure the coordinates in <ref_struc_file> are subtracted. The resulting vector is transformed into the normal mode basis contained in <vibration_file>.
@@ -68,8 +68,8 @@ except:
     print 'Plotting not possible (probably because pylab/matplotlib is not installed or because there is no X connection)'
     plot_possible = False
 
-version='2.0'
-versiondate=datetime.date(2018,2,1)
+version='2.1'
+versiondate=datetime.date(2019,9,1)
 
 # ======================================================================= #
 def centerstring(string,n,pad=' '):

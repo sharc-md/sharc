@@ -6,7 +6,7 @@
 ||                     Author: Sebastian Mai and Moritz Heindl                    ||
 ||                                                                                ||
 ||                                   Version:2.0                                  ||
-||                                    01.02.18                                    ||
+||                                    22.10.18                                    ||
 ||                                                                                ||
   ================================================================================
 
@@ -52,11 +52,12 @@ Current settings:
             pop_window : 1e-07
             hop_energy : 1.0
              intruders : True
+        extractor_mode : default
 
 ?  [end] #########################Full input#########################
 
 paths                      ['Singlet_1/']
-settings                   {'missing_restart': True, 'etot_step': 0.1, 'hop_energy': 1.0, 'epot_step': 0.7, 'ekin_step': 0.7, 'intruders': True, 'pop_window': 1e-07, 'always_update': False, 'missing_output': True, 'normal_termination': True, 'etot_window': 0.2}
+settings                   {'missing_restart': True, 'etot_step': 0.1, 'hop_energy': 1.0, 'epot_step': 0.7, 'ekin_step': 0.7, 'intruders': True, 'extractor_mode': 'default', 'pop_window': 1e-07, 'always_update': False, 'missing_output': True, 'normal_termination': True, 'etot_window': 0.2}
 
 Do you want to do the specified analysis? [True] 
 Checking the directories...

@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -77,9 +77,9 @@ U_TO_AMU = 1./5.4857990943e-4            # conversion from g/mol to amu
 BOHR_TO_ANG=0.529177211
 PI = math.pi
 
-version='2.0'
-versionneeded=[0.2, 1.0, 2.0, float(version)]
-versiondate=datetime.date(2018,2,1)
+version='2.1'
+versionneeded=[0.2, 1.0, 2.0, 2.1, float(version)]
+versiondate=datetime.date(2019,9,1)
 
 # ======================================================================================================================
 # ======================================================================================================================

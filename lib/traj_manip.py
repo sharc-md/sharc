@@ -1,27 +1,3 @@
-#
-#******************************************
-#
-#    SHARC Program Suite
-#
-#    Copyright (c) 2018 University of Vienna
-#
-#    This file is part of SHARC.
-#
-#    SHARC is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    SHARC is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with SHARC.  If not, see <http://www.gnu.org/licenses/>.
-#
-#******************************************
-
 """
 author: Felix Plasser
 version: 1.0
@@ -67,14 +43,14 @@ class trajectory:
         
         #print 'timestep:'
         # the first structure is read in
-        notatend = obconversion.ReadFile(mol, os.path.join(path, 'output.xyz'))
+        notatend = obconversion.ReadFile(mol, path)
         
         self.num_at = mol.NumAtoms()
                 
         # the other structures are read in
         while notatend:
             self.structures += [struc_linalg.structure(str(t) + ' fs')] # define the structure object
-            self.structures[-1].get_mol(mol, os.path.join(path, 'output.xyz')) # read in the data
+            self.structures[-1].get_mol(mol, path) # read in the data
             t = t + self.dt
             
             mol = openbabel.OBMol()

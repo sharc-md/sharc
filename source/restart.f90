@@ -2,7 +2,7 @@
 !
 !    SHARC Program Suite
 !
-!    Copyright (c) 2018 University of Vienna
+!    Copyright (c) 2019 University of Vienna
 !
 !    This file is part of SHARC.
 !
@@ -77,6 +77,7 @@ module restart
     ! write ctrl
     write(u,'(A)') trim(ctrl%cwd)
     write(u,*) ctrl%output_version
+    write(u,*) ctrl%compat_mode
     write(u,*) ctrl%natom, '! natom'
     write(u,*) ctrl%maxmult
     write(u,*) (ctrl%nstates_m(imult),imult=1,ctrl%maxmult)
@@ -91,7 +92,10 @@ module restart
     write(u,*) ctrl%eselect_dmgrad
     write(u,*) ctrl%dampeddyn
     write(u,*) ctrl%decoherence_alpha
+    write(u,*) ctrl%force_hop_to_gs
     write(u,*) (ctrl%actstates_s(istate),istate=1,ctrl%nstates)
+    write(u,*) (ctrl%output_steps_stride(istate),istate=1,3)
+    write(u,*) (ctrl%output_steps_limits(istate),istate=1,3)
     write(u,*) ctrl%restart
     write(u,*) ctrl%staterep
     write(u,*) ctrl%initcoeff
@@ -117,6 +121,7 @@ module restart
     write(u,*) ctrl%track_phase
     write(u,*) ctrl%track_phase_at_zero
     write(u,*) ctrl%hopping_procedure
+    write(u,*) ctrl%output_format
 
     ! write the laser field
     if (ctrl%laser==2) then
@@ -181,6 +186,8 @@ module restart
     write(u,*) traj%time_step
     write(u,*) traj%kind_of_jump
     write(u,*) traj%steps_in_gs
+    write(u,*) (traj%ncids(i),i=1,10)
+    write(u,*) traj%nc_index
 
     ! write the arrays
     write(u,*) (traj%atomicnumber_a(iatom),iatom=1,ctrl%natom)
@@ -350,6 +357,7 @@ module restart
     read(u_ctrl,'(A)') ctrl%cwd
     call getcwd(ctrl%cwd)
     read(u_ctrl,*) ctrl%output_version
+    read(u_ctrl,*) ctrl%compat_mode
     read(u_ctrl,*) ctrl%natom
     read(u_ctrl,*) ctrl%maxmult
     allocate( ctrl%nstates_m(ctrl%maxmult) )
@@ -365,8 +373,11 @@ module restart
     read(u_ctrl,*) ctrl%eselect_dmgrad
     read(u_ctrl,*) ctrl%dampeddyn
     read(u_ctrl,*) ctrl%decoherence_alpha
+    read(u_ctrl,*) ctrl%force_hop_to_gs
     allocate( ctrl%actstates_s(ctrl%nstates) )
     read(u_ctrl,*) (ctrl%actstates_s(istate),istate=1,ctrl%nstates)
+    read(u_ctrl,*) (ctrl%output_steps_stride(istate),istate=1,3)
+    read(u_ctrl,*) (ctrl%output_steps_limits(istate),istate=1,3)
     read(u_ctrl,*) ctrl%restart
     read(u_ctrl,*) ctrl%staterep
     read(u_ctrl,*) ctrl%initcoeff
@@ -392,6 +403,7 @@ module restart
     read(u_ctrl,*) ctrl%track_phase
     read(u_ctrl,*) ctrl%track_phase_at_zero
     read(u_ctrl,*) ctrl%hopping_procedure
+    read(u_ctrl,*) ctrl%output_format
 
     ! read the laser field
     ! with an external laser, increasing the simulation time necessitates that the laserfield in
@@ -423,6 +435,8 @@ module restart
     
     close(u_ctrl)
 
+    ! -------------------------
+
     ctrl%restart=.true.
 
     call allocate_traj(traj,ctrl)
@@ -452,6 +466,9 @@ module restart
     read(u_traj,*) traj%time_step
     read(u_traj,*) traj%kind_of_jump
     read(u_traj,*) traj%steps_in_gs
+    read(u_traj,*) (traj%ncids(i),i=1,10)
+    read(u_traj,*) traj%nc_index
+    traj%nc_index=-traj%nc_index
 
     ! read the arrays
     read(u_traj,*) (traj%atomicnumber_a(iatom),iatom=1,ctrl%natom)

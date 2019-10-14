@@ -86,7 +86,7 @@ INTERFACE={
      },
   'molcas':      {'script':          'SHARC_MOLCAS.py',
                   'description':     'MOLCAS (CASSCF, CASPT2, MS-CASPT2)',
-                  'couplings':       [1,3],
+                  'couplings':       [3],
                   'dipolegrad':      True,
                   'files':           ['MOLCAS.template','MOLCAS.resources']
      },
@@ -119,6 +119,12 @@ INTERFACE={
                   'couplings':       [3],
                   'dipolegrad':      False,
                   'files':           ['ORCA.template','ORCA.resources']
+     },
+  'bagel':        {'script':          'SHARC_BAGEL.py',
+                  'description':     'BAGEL (CASSCF, CASPT2, (X)MS-CASPT2)',
+                  'couplings':       [1,3],
+                  'dipolegrad':      False,
+                  'files':           ['BAGEL.template','BAGEL.resources']
      }
   }
 

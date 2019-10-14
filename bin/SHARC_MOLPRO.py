@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -76,8 +76,8 @@ if sys.version_info[1]<5:
 
 # ======================================================================= #
 
-version='2.0'
-versiondate=datetime.date(2018,2,1)
+version='2.1'
+versiondate=datetime.date(2019,9,1)
 
 
 changelogstring='''
@@ -3159,6 +3159,7 @@ def saveAOovl(WORKDIR,QMin):
     formatting=1
   else:
     formatting=0
+    q=len(line.split())
 
   # get matrix
   AOovl=[]
@@ -3186,7 +3187,7 @@ def saveAOovl(WORKDIR,QMin):
         for y in s:
           AOovl[-1].append(float(y))
     elif formatting==0:
-      for x in range((nao-1)/99+1):
+      for x in range((nao-1)/q+1):
         iline+=1
         line=out[iline]
         s=line.split()
@@ -3536,7 +3537,7 @@ def decompose_csf(ms2,step):
 
     # add determinant to dict if coefficient non-zero
     if num!=0.:
-      dets[tuple(det)]=1.*sign*math.sqrt(coeff)
+      dets[tuple(det)]=-1.*sign*math.sqrt(coeff)
 
   return dets
 
@@ -3621,10 +3622,10 @@ def run_wfoverlap(QMin,errorcodes):
       job=QMin['multmap'][m]
       WORKDIR=os.path.join(QMin['scratchdir'],'WFOVL_%i_%i' % (m,job))
       files={'aoovl':'aoovl_double', 
-             'det.a': 'det_ci.%i.old' % m,
              'det.b': 'det_ci.%i' % m,
-             'mo.a':  'mo.%i.old' % job,
-             'mo.b':  'mo.%i' % job }
+             'det.a': 'det_ci.%i.old' % m,
+             'mo.b':  'mo.%i' % job,
+             'mo.a':  'mo.%i.old' % job }
       setupWORKDIR_WF(WORKDIR,QMin,files)
       errorcodes['WFOVL_%i_%i' % (m,job)]=runWFOVERLAP(WORKDIR,QMin['wfoverlap'],memory=QMin['memory'],ncpu=QMin['ncpu'])
 
@@ -3782,15 +3783,50 @@ def get_Double_AOovl(QMin):
     print 'Did not find AO overlap matrix!'
     sys.exit(109)
 
+  # detect format
+  line=out[iline+1]
+  if 'E' in line:
+    formatting=2
+    q=24
+  elif len(line.split())==0:
+    formatting=1
+  else:
+    formatting=0
+    q=len(line.split())
+
+  # get matrix
   AOovl=[]
   for irow in range(nao):
     AOovl.append([])
-    for x in range((nao-1)/99+1):
+    if formatting==2:
       iline+=1
       line=out[iline]
-      s=line.split()
+      i=0
+      s=[]
+      while True:
+        x=line[1+i*q:1+(i+1)*q]
+        s.append(x)
+        i+=1
+        if 1+(i+1)*q > len(line):
+          break
       for y in s:
         AOovl[-1].append(float(y))
+    elif formatting==1:
+      iline+=1
+      for x in range((nao-1)/10+1):
+        iline+=1
+        line=out[iline]
+        s=line.split()
+        for y in s:
+          AOovl[-1].append(float(y))
+    elif formatting==0:
+      for x in range((nao-1)/q+1):
+        iline+=1
+        line=out[iline]
+        s=line.split()
+        for y in s:
+          AOovl[-1].append(float(y))
+
 
   # get off-diagonal block of AO matrix
   AOovl2=[]
@@ -3971,6 +4007,7 @@ def getQMout(QMin):
       g=getnacana(out,nac[0],nac[1],nac[3],natom)
       phase1=allphases[nac[0]][nac[1]-1]
       phase2=allphases[nac[0]][nac[3]-1]
+      #print 'correcting:',nac,phase1,phase2,phase1*phase2
       for iatom in range(natom):
         for ixyz in range(3):
           g[iatom][ixyz]*=phase1*phase2

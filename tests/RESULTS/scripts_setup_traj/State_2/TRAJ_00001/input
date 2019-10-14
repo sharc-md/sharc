@@ -27,3 +27,5 @@ grad_select
 eselect 0.001000
 nospinorbit
 write_overlap
+output_format ascii
+output_dat_steps 1

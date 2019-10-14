@@ -2,7 +2,7 @@
 !
 !    SHARC Program Suite
 !
-!    Copyright (c) 2018 University of Vienna
+!    Copyright (c) 2019 University of Vienna
 !
 !    This file is part of SHARC.
 !
@@ -205,7 +205,7 @@ subroutine Rescale_velocities(traj,ctrl)
   select case (traj%kind_of_jump)
     case (0)
       if (printlevel>2) write(u_log,'(A)') 'No jump occured.'
-    case (1)
+    case (1,4)
       select case (ctrl%ekincorrect)
         case (0)
           if (printlevel>2) write(u_log,*) 'Velocity is not rescaled after surface hop.'
@@ -255,6 +255,29 @@ subroutine Rescale_velocities(traj,ctrl)
             write(u_log,'(A,1X,E16.8)') 'Delta is          ',deltaE
             write(u_log,'(A,1X,F12.6)') 'Scaling factor is ',factor
           endif
+        case (3)
+          call available_ekin(ctrl%natom,&
+          &traj%veloc_ad,real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)-&
+          &traj%gmatrix_ssad(traj%state_diag_old, traj%state_diag_old,:,:)),&
+          &traj%mass_a, sum_kk, sum_vk)
+          deltaE=4.d0*sum_kk*(traj%Etot-traj%Ekin-&
+          &real(traj%H_diag_ss(traj%state_diag,traj%state_diag)))+sum_vk**2
+          if (sum_vk<0.d0) then
+            factor=(sum_vk+sqrt(deltaE))/2.d0/sum_kk
+          else
+            factor=(sum_vk-sqrt(deltaE))/2.d0/sum_kk
+          endif
+          do i=1,3
+            traj%veloc_ad(:,i)=traj%veloc_ad(:,i)-factor*&
+            &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,i)-&
+            &traj%gmatrix_ssad(traj%state_diag_old, traj%state_diag_old,:,i))/traj%mass_a(:)
+          enddo
+          if (printlevel>2) then
+            write(u_log,'(A)') 'Velocity is rescaled along gradient difference vector.'
+            write(u_log,'(A,1X,E16.8,1X,E16.8)') 'a, b: ', sum_kk, sum_vk
+            write(u_log,'(A,1X,E16.8)') 'Delta is          ',deltaE
+            write(u_log,'(A,1X,F12.6)') 'Scaling factor is ',factor
+          endif
         endselect
     case (2)
       if (printlevel>2) write(u_log,'(A)') 'Frustrated jump.'
@@ -271,9 +294,15 @@ subroutine Rescale_velocities(traj,ctrl)
           &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag,:,:)),&
           &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
           &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
+        case (3)
+          call reflect_nac(ctrl%natom,traj%veloc_ad,traj%mass_a,&
+          &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)-&
+          &traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
+          &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
+          &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
+      endselect
     case (3)
           if (printlevel>2) write(u_log,*) 'Velocity is not rescaled after resonant surface hop.'
-    endselect
   endselect
 
 endsubroutine
@@ -311,7 +340,7 @@ subroutine reflect_nac(natom,veloc_ad,mass_a,nac_ad,Gdiag,Gfrust)
 
   integer :: idir, iat
   real*8 :: mass_ad(natom,3)
-  real*8 :: sum_kk, sum_pk, sum_Fdiagk, sum_Ffrustk
+  real*8 :: sum_pk, sum_Fdiagk, sum_Ffrustk
   real*8 :: factor
 
   do idir=1,3
@@ -326,8 +355,8 @@ subroutine reflect_nac(natom,veloc_ad,mass_a,nac_ad,Gdiag,Gfrust)
     write(u_log,'(A,4E14.6)') ' sum_Fdiagk, sum_Ffrustk, sum_vk, sum_kk', sum_Fdiagk, sum_Ffrustk, sum_pk,&
     &sum(nac_ad*nac_ad)
   endif
-  write(u_log,'(A,4E14.6)') 'fptmp: pk, pv, pp', sum(mass_ad*veloc_ad*nac_ad),&
-  &sum(mass_ad*veloc_ad*veloc_ad), sum(mass_ad*mass_ad*veloc_ad*veloc_ad)
+!   write(u_log,'(A,4E14.6)') 'fptmp: pk, pv, pp', sum(mass_ad*veloc_ad*nac_ad),&
+!   &sum(mass_ad*veloc_ad*veloc_ad), sum(mass_ad*mass_ad*veloc_ad*veloc_ad)
     
   if ((sum_Fdiagk*sum_Ffrustk<0).and.(sum_Ffrustk*sum_pk<0))then
     if (printlevel>2) write(u_log,*) 'Conditions for reflection fulfilled.'
@@ -337,8 +366,8 @@ subroutine reflect_nac(natom,veloc_ad,mass_a,nac_ad,Gdiag,Gfrust)
       factor = 2 * sum(veloc_ad(iat,:)*nac_ad(iat,:)) / sum(nac_ad(iat,:)*nac_ad(iat,:))
       veloc_ad(iat,:) = veloc_ad(iat,:) - factor * nac_ad(iat,:)
     enddo
-  write(u_log,'(A,4E14.6)') 'fptmp: pk, pv, pp', sum(mass_ad*veloc_ad*nac_ad),&
-  &sum(mass_ad*veloc_ad*veloc_ad), sum(mass_ad*mass_ad*veloc_ad*veloc_ad)
+!     write(u_log,'(A,4E14.6)') 'fptmp: pk, pv, pp', sum(mass_ad*veloc_ad*nac_ad),&
+!     &sum(mass_ad*veloc_ad*veloc_ad), sum(mass_ad*mass_ad*veloc_ad*veloc_ad)
   else
     if (printlevel>2) write(u_log,*) 'Conditions for reflection not fulfilled.'
   endif

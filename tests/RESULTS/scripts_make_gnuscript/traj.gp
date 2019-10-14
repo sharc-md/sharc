@@ -47,6 +47,55 @@ plot "output_data/expec.out" u 1:($4)               title "Total Energy" lw   0.
 
 pause -1
 
+unset key
+unset colorbox
+set title "Energies in diagonal basis"
+set xlabel "Time t in fs"
+set ylabel "Energy in eV"
+set cbrange [0:17]
+set palette defined (0.0 "gray90", 1e-5 "gray60", 1e-4 "gray30", 1e-3 "orange", 1e-2 "red", 1e-1 "magenta", 1e-0 "blue", 10 "blue", 11 "green", 12 "red", 13 "turquoise", 14 "orange", 15 "cyan", 16 "brown", 17 "skyblue")
+
+plot "output_data/expec.out" u 1:($4-$5)               title "Total Energy" lw   0.50 lc rgbcolor "#000000" w l, \
+""               u 1:($5-$5):(abs($23)+10) title "State 1"     lw   4.50 pal w l, \
+""               u 1:($5-$5):(abs($41))    title "State 1"     lw   3.50 pal w l, \
+""               u 1:($6-$5):(abs($24)+10) title "State 2"     lw   4.50 pal w l, \
+""               u 1:($6-$5):(abs($42))    title "State 2"     lw   3.50 pal w l, \
+""               u 1:($7-$5):(abs($25)+10) title "State 3"     lw   4.50 pal w l, \
+""               u 1:($7-$5):(abs($43))    title "State 3"     lw   3.50 pal w l, \
+""               u 1:($8-$5):(abs($26)+10) title "State 4"     lw   4.50 pal w l, \
+""               u 1:($8-$5):(abs($44))    title "State 4"     lw   3.50 pal w l, \
+""               u 1:($9-$5):(abs($27)+10) title "State 5"     lw   4.50 pal w l, \
+""               u 1:($9-$5):(abs($45))    title "State 5"     lw   3.50 pal w l, \
+""               u 1:($10-$5):(abs($28)+10) title "State 6"     lw   4.50 pal w l, \
+""               u 1:($10-$5):(abs($46))    title "State 6"     lw   3.50 pal w l, \
+""               u 1:($11-$5):(abs($29)+10) title "State 7"     lw   4.50 pal w l, \
+""               u 1:($11-$5):(abs($47))    title "State 7"     lw   3.50 pal w l, \
+""               u 1:($12-$5):(abs($30)+10) title "State 8"     lw   4.50 pal w l, \
+""               u 1:($12-$5):(abs($48))    title "State 8"     lw   3.50 pal w l, \
+""               u 1:($13-$5):(abs($31)+10) title "State 9"     lw   4.50 pal w l, \
+""               u 1:($13-$5):(abs($49))    title "State 9"     lw   3.50 pal w l, \
+""               u 1:($14-$5):(abs($32)+10) title "State 10"     lw   4.50 pal w l, \
+""               u 1:($14-$5):(abs($50))    title "State 10"     lw   3.50 pal w l, \
+""               u 1:($15-$5):(abs($33)+10) title "State 11"     lw   4.50 pal w l, \
+""               u 1:($15-$5):(abs($51))    title "State 11"     lw   3.50 pal w l, \
+""               u 1:($16-$5):(abs($34)+10) title "State 12"     lw   4.50 pal w l, \
+""               u 1:($16-$5):(abs($52))    title "State 12"     lw   3.50 pal w l, \
+""               u 1:($17-$5):(abs($35)+10) title "State 13"     lw   4.50 pal w l, \
+""               u 1:($17-$5):(abs($53))    title "State 13"     lw   3.50 pal w l, \
+""               u 1:($18-$5):(abs($36)+10) title "State 14"     lw   4.50 pal w l, \
+""               u 1:($18-$5):(abs($54))    title "State 14"     lw   3.50 pal w l, \
+""               u 1:($19-$5):(abs($37)+10) title "State 15"     lw   4.50 pal w l, \
+""               u 1:($19-$5):(abs($55))    title "State 15"     lw   3.50 pal w l, \
+""               u 1:($20-$5):(abs($38)+10) title "State 16"     lw   4.50 pal w l, \
+""               u 1:($20-$5):(abs($56))    title "State 16"     lw   3.50 pal w l, \
+""               u 1:($21-$5):(abs($39)+10) title "State 17"     lw   4.50 pal w l, \
+""               u 1:($21-$5):(abs($57))    title "State 17"     lw   3.50 pal w l, \
+""               u 1:($22-$5):(abs($40)+10) title "State 18"     lw   4.50 pal w l, \
+""               u 1:($22-$5):(abs($58))    title "State 18"     lw   3.50 pal w l, \
+""               u 1:($3-$5)               title "Trajectory"   lw   1.00 lc rgbcolor "#000000" pt 6 w p
+
+pause -1
+
 set key
 set yrange [0:1]
 set ylabel "Wavefunction Amplitude"

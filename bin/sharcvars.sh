@@ -1,0 +1,6 @@
+export SHARC=/user/mai/SHARC/REPOSITORY/DEVELOPMENT/source/../bin
+export PYSHARC=/user/mai/SHARC/REPOSITORY/DEVELOPMENT/source/../pysharc
+export SHARCLIB=/user/mai/SHARC/REPOSITORY/DEVELOPMENT/source/../lib
+export ANACONDA=/user/maximilian/anaconda2/
+export PYTHONPATH=$SHARCLIB:$PYSHARC:$PYTHONPATH
+export LD_LIBRARY_PATH=$SHARCLIB:$ANACONDA/lib:$LD_LIBRARY_PATH

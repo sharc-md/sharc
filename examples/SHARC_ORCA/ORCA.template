@@ -1,0 +1,117 @@
+    ## This is a commented version of the ORCA.template file 
+    ## for version 1.0 of the SHARC_ORCA.py interface.
+
+    ## ======== BASIS SETS ============
+
+
+    ## This keyword defines the basis set for all atoms.
+    ## copied verbatim to input
+basis cc-pvdz
+
+    ## This keyword defines the auxiliary basis set for all atoms.
+    ## copied verbatim to input
+#auxbasis cc-pvdz/j 
+
+    ## This keyword can be used to override the main basis set for certain elements
+#basis_per_element F cc-pvqz
+
+    ## This keyword can be used to override the main basis set for certain atoms
+    ## note that in QM/MM calculations, the number refers to atoms within QM region only!
+basis_per_atom 2 cc-pvtz
+
+
+    ## ======== CHEMISTRY ============
+
+    ## This keyword defines the XC functional.
+    ## copied verbatim to input
+    ## "hf" can also be used and gives TDHF or CIS for excited states
+functional b3lyp
+
+    ## This keyword modifies the amount of HF exchange in the XC functional.
+    ## If not present, the original value of the chosen functional is used.
+#hfexchange 0.15
+
+    ## This keyword activates dispersion correction.
+    ## All arguments are written verbatim to input.
+dispersion D3
+
+    ## Settings for range separated functionals
+    ## order of arguments: mu, scal, ACM-A, ACM-B, ACM-C
+    ## See Orca Manual under "RangeSepMu, RangeSepScal, and ACM (adiabatic connection model)
+    ## Note that ACM-A also sets the HF exchange amount, so use only hfexchange or range_sep_settings
+#range_sep_settings   0.14   1.0   0.0   0.0   1.0
+
+    ## This keyword sets the total charge of the molecule.
+    ## Unlike in the Gaussian input, this keyword does not allow to set the multiplicity.
+    ## Instead, the interface automatically sets this number based on the requested multiplicity.
+    ## This keyword accepts either a single number, or as many numbers as there are multiplicities.
+    ## In the second case, the charges are used for the respective multiplicities.
+charge 0 +1 0 +1 0
+
+    ## With this keyword, the interface requests a scrf calculation, with the method and solvent given as arguments.
+#TODO: solvent? with gradients?
+
+
+
+    ## ======== ACCURACY and CONVERGENCE ============
+
+    ## This keyword controls the integration grid.
+    ## If not given, Orca defaults will be used
+grid 3     # Options: 1-7
+gridx 3
+gridxc 3
+
+    ## This keyword sets the density fitting scheme.
+    ## this is off by default and can be activated with:
+ri rijcosx
+
+
+
+
+
+
+
+    ## With this keyword, any ORCA keyword can be added to the input
+    ## copied verbatim to input
+keys tightscf zora
+
+
+    ## ======== EXCITATIONS ============
+
+    ## This keyword deactivates TDA (which the interface will request by default).
+#no_tda
+
+    ## This keyword increases the number of excited states for the Davidson step.
+    ## These extra states will not be reported in the output, which is controlled by the "states" request in QM.in.
+    ## Like the "charges" key, padding can be specified per multiplicity.
+    ## Note that extra states change how the Davidson procedure converges and thus can slightly affect the results.
+paddingstates 0 0 0 0 0
+
+
+
+    ## This keyword requests that triplet states are calculated in a separate job based on an open-shell triplet ground state.
+    ## The default is that triplets are calculated based on the closed-shell singlet ground state.
+    ## Unrestricted triplets are not compatible with a spin-orbit computation.
+#unrestricted_triplets
+
+
+
+    ## This keyword activates a QM/MM calculation, using TINKER for the MM part.
+    ## The default is to not run a QM/MM calculation.
+    ## If activated, the interface will look for two more files:
+    ## - a force field file in Amber95 format
+    ## - connection table file, specifying the connection table and atom types
+    ## currently, only electrostatic embedding is supported by the SHARC-ORCA interface
+#qmmm
+
+
+
+
+
+
+
+
+
+
+
+# kate: syntax python

@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -69,9 +69,9 @@ U_TO_AMU = 1./5.4857990943e-4            # conversion from g/mol to amu
 ANG_TO_BOHR = 1./0.529177211    #1.889725989      # conversion from Angstrom to bohr
 PI = math.pi
 
-version='2.0'
-versionneeded=[0.2, 1.0, 2.0, float(version)]
-versiondate=datetime.date(2018,2,1)
+version='2.1'
+versionneeded=[0.2, 1.0, 2.0, 2.1, float(version)]
+versiondate=datetime.date(2019,9,1)
 
 
 IToMult={
@@ -407,6 +407,11 @@ def get_initconds(INFOS):
   sys.stdout.write( 'Reading initial conditions %i to %i\n\n' % (INFOS['irange'][0],INFOS['irange'][1]))
 
 
+  width=50
+  idone=0
+  imax=INFOS['irange'][1]-INFOS['irange'][0]+1
+  done=0
+
   statelist=[]
   for icond in range(INFOS['irange'][0],INFOS['irange'][1]+1):
     # get list of excited states
@@ -418,11 +423,16 @@ def get_initconds(INFOS):
       if i+1>len(statelist):
         statelist.append([])
       statelist[i].append(state)
+    idone+=1
+    if done<idone*width/imax:
+      done=idone*width/imax
+      sys.stdout.write('\rProgress: ['+'='*done+' '*(width-done)+'] %3i%%' % (done*100/width))
+      sys.stdout.flush()
 
   if len(statelist)!=INFOS['nstate']:
     del INFOS['states']
   INFOS['nstate']=len(statelist)
-  sys.stdout.write( 'Number of states: %i\n' % (len(statelist)))
+  sys.stdout.write( '\n\nNumber of states: %i\n' % (len(statelist)))
   if len(statelist)==0:
     sys.stdout.write('No excited-state information found! \nPerhaps this is an output file of wigner.py. In this case, \nplease first perform the excited-state calculations using setup_init.py and excite.py!\n\n')
     quit(0)
@@ -464,6 +474,8 @@ def make_spectra(statelist,INFOS):
 # ======================================================================================================================
 
 def make_spectra_bootstrap(statelist,INFOS):
+
+  power=INFOS['power']
 
   # check for rectangular statelist
   ncond=len(statelist[0])
@@ -517,8 +529,8 @@ def make_spectra_bootstrap(statelist,INFOS):
       data.append(j.spec[ipt])
     mean_spec.spec[ipt]=mean_geom(data)
     stdev=stdev_geom(data,mean_spec.spec[ipt])
-    stdev_specp.spec[ipt]=mean_spec.spec[ipt]*(stdev**3-1.)
-    stdev_specm.spec[ipt]=mean_spec.spec[ipt]*(1./stdev**3-1.)
+    stdev_specp.spec[ipt]=mean_spec.spec[ipt]*(stdev**power-1.)
+    stdev_specm.spec[ipt]=mean_spec.spec[ipt]*(1./stdev**power-1.)
 
   allspec=[mean_spec,stdev_specp,stdev_specm]+allspec
 
@@ -876,6 +888,7 @@ date %s
 
   parser.add_option('-b', dest='b', type=str, nargs=1, default='spectrum_bootstrap.out', help="Output file for bootstrap analysis of total spectrum")
   parser.add_option('-B', dest='B', type=int, nargs=1, default=0, help="Number of bootstrap cycles")
+  parser.add_option('-p', dest='p', type=int, nargs=1, default=3, help="Number of standard deviations for bootstrap output (default=3)")
   parser.add_option('-r', dest='r', type=int, nargs=1, default=16661, help="Seed for the random number generator (integer, default=16661)")
 
   (options, args) = parser.parse_args()
@@ -917,6 +930,7 @@ date %s
   random.seed(options.r)
   INFOS['bootstrapfile']=options.b
   INFOS['bootstraps']=options.B
+  INFOS['power']=options.p
 
   if options.o=='':
     if INFOS['dos_switch']:

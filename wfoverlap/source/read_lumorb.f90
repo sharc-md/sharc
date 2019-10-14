@@ -2,7 +2,7 @@
 !
 !    SHARC Program Suite
 !
-!    Copyright (c) 2018 University of Vienna
+!    Copyright (c) 2019 University of Vienna
 !
 !    This file is part of SHARC.
 !
@@ -153,7 +153,7 @@ CONTAINS
           IF (modulo(iao,4).EQ.0) READ(moflio,*)
         END DO
         IF (modulo(nao,4).NE.0)READ(moflio,*)
-      ELSE IF ((ver>1.95).AND.(ver<2.15)) THEN
+      ELSE IF ((ver>1.95).AND.(ver<2.25)) THEN
         DO iao=1,nao
           READ(moflio,'(E22.14)',IOSTAT=iost,ADVANCE='no')coeffs(imo,iao)
           IF(iost.NE.0)THEN

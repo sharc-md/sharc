@@ -2,7 +2,7 @@
 
     SHARC Program Suite
 
-    Copyright (c) 2018 University of Vienna
+    Copyright (c) 2019 University of Vienna
 
     This file is part of SHARC.
 
@@ -45,4 +45,6 @@ version 1.1
         data_extractor.x: added expec_MCH.out output file
         sharc.x: SHARC fun facts, minor changes (error code in output.log)
 version 2.0
-        major changes
+        major changes (see manual)
+version 2.1
+        major changes (see manual)

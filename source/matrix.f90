@@ -2,7 +2,7 @@
 !
 !    SHARC Program Suite
 !
-!    Copyright (c) 2018 University of Vienna
+!    Copyright (c) 2019 University of Vienna
 !
 !    This file is part of SHARC.
 !
@@ -623,9 +623,9 @@ subroutine zdiagonalize_and_project(n,H,U,Uold)
 
   ! diagonalise H
 !           Hinput=H
+!           call matwrite(n,H,6,'H','ES24.16E2')
   call zdiagonalize(n,H,U)
 !           call transform(n,Hinput,U,'utau')
-!           call matwrite(n,H,6,'H','F12.9')
 !           call matwrite(n,Hinput,6,'U^tHU','F12.9')
   do i=1,n
     eigv(i)=H(i,i)
@@ -891,7 +891,6 @@ do istep=1,nsubsteps
     Hold=SOold + (SO-SOold)*(istep-1)/nsubsteps
     if (printlevel>6) then
       write(u_print,*) 'dtsubstep=',dtsubstep
-
     endif
     call z_project_recursive(n, Hold, H, Uold_dummy, U, dtsubstep, printlevel, u_print)
 

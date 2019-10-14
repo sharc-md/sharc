@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -81,8 +81,8 @@ BOHR_TO_ANG=0.529177211
 AU_TO_FS=0.024188843
 PI = math.pi
 
-version='2.0'
-versiondate=datetime.date(2018,2,1)
+version='2.1'
+versiondate=datetime.date(2019,9,1)
 
 
 IToMult={
@@ -481,12 +481,12 @@ def get_general():
           LD_dynamics=True
 
 
-  allowed=[i for i in range(1,12)]
+  allowed=[i for i in range(1,16)]
   print centerstring('Analyze Mode',60,'-')
   print '''\nThis script can analyze the classical populations in different ways:
 1       Number of trajectories in each diagonal state                                   from output.lis
-2       Number of trajectories in each MCH state                                        from output.lis
-3       Number of trajectories in each MCH state (multiplets summed up)                 from output.lis
+2       Number of trajectories in each (approximate) MCH state                          from output.lis
+3       Number of trajectories in each (approximate) MCH state (multiplets summed up)   from output.lis
 4       Number of trajectories whose total spin value falls into certain intervals      from output.lis
 5       Number of trajectories whose dipole moment falls into certain intervals         from output.lis
 6       Number of trajectories whose oscillator strength falls into certain intervals   from output_data/fosc.out
@@ -496,12 +496,21 @@ It can also sum the quantum amplitudes:
 8       Quantum amplitudes in MCH picture                                               from output_data/coeff_MCH.out
 9       Quantum amplitudes in MCH picture (multiplets summed up)                        from output_data/coeff_MCH.out
 
-It can also transform the classical diagonal populations to MCH basis (might take long):
-10      Transform diagonal populations to MCH states                                    from output.dat
-11      Transform diagonal populations to MCH states (multiplets summed up)             from output.dat'''
+It can also transform the classical diagonal populations to MCH basis:
+12      Transform diagonal classical populations to MCH                                 from output_data/coeff_class_MCH.out
+13      Transform diagonal classical populations to MCH (multiplets summed up)          from output_data/coeff_class_MCH.out 
+14      Wigner-transform classical diagonal populations to MCH                          from output_data/coeff_mixed_MCH.out
+15      Wigner-transform classical diagonal populations to MCH (multiplets summed up)   from output_data/coeff_mixed_MCH.out '''
   if LD_dynamics:
-    print '20      Quantum amplitudes in diabatic picture                                          from output_data/coeff_diab.out'
+    print '''
+It can also compute diabatic populations:
+20      Quantum amplitudes in diabatic picture                                          from output_data/coeff_diab.out
+21      Transform diagonal classical populations to diabatic                            from output_data/coeff_class_diab.out
+22      Wigner-transform classical diagonal populations to diabatic                     from output_data/coeff_mixed_diab.out
+'''
     allowed.append(20)
+    allowed.append(21)
+    allowed.append(22)
   while True:
     num=question('Analyze mode:',int)[0]
     if not num in allowed:
@@ -516,7 +525,7 @@ It can also transform the classical diagonal populations to MCH basis (might tak
 
 
 
-  if INFOS['mode'] in [6,7,8,9,20]:
+  if INFOS['mode'] in [6,7,8,9,12,13,14,15,20,21,22]:
     print 'Run data_extractor.x for each trajectory prior to performing the analysis?\nFor many or long trajectories, this might take some time.'
     run_extractor=question('Run data_extractor.x?',bool,True)
     if run_extractor:
@@ -531,7 +540,7 @@ It can also transform the classical diagonal populations to MCH basis (might tak
 
 
 
-  if INFOS['mode'] in [1,2,3,7,8,9,20]:
+  if INFOS['mode'] in [1,2,3,7,8,9,12,13,14,15,20,21,22]:
 
     print centerstring('Number of states',60,'-')
     print '\nPlease enter the number of states as a list of integers\ne.g. 3 0 3 for three singlets, zero doublets and three triplets.'
@@ -645,7 +654,10 @@ def do_calc(INFOS):
                 update=True
             if update:
               os.chdir(path)
-              io=sp.call(sharcpath+'/data_extractor.x -s -f output.dat > /dev/null 2> /dev/null',shell=True)
+              if os.path.isfile('output.dat.nc'):
+                io=sp.call(sharcpath+'/data_extractor_NetCDF.x -xs output.dat > /dev/null 2> /dev/null',shell=True)
+              else:
+                io=sp.call(sharcpath+'/data_extractor.x -xs output.dat > /dev/null 2> /dev/null',shell=True)
               if io!=0:
                 print 'WARNING: extractor call failed for %s! Exit code %i' % (path,io)
               os.chdir(cwd)
@@ -658,9 +670,9 @@ def do_calc(INFOS):
   files=[]
   ntraj=0
   print 'Checking the directories...'
-  for idir in INFOS['paths']:
+  for idir in sorted(INFOS['paths']):
     ls=os.listdir(idir)
-    for itraj in ls:
+    for itraj in sorted(ls):
       if not 'TRAJ_' in itraj:
         continue
       path=idir+'/'+itraj
@@ -673,8 +685,16 @@ def do_calc(INFOS):
         pathfile=path+'/output_data/coeff_diag.out'
       elif INFOS['mode'] in [8,9]:
         pathfile=path+'/output_data/coeff_MCH.out'
+      elif INFOS['mode'] in [12,13]:
+        pathfile=path+'/output_data/coeff_class_MCH.out'
+      elif INFOS['mode'] in [14,15]:
+        pathfile=path+'/output_data/coeff_mixed_MCH.out'
       elif INFOS['mode'] in [20]:
         pathfile=path+'/output_data/coeff_diab.out'
+      elif INFOS['mode'] in [21]:
+        pathfile=path+'/output_data/coeff_class_diab.out'
+      elif INFOS['mode'] in [22]:
+        pathfile=path+'/output_data/coeff_mixed_diab.out'
       elif INFOS['mode'] in [10,11]:
         pathfile=path+'/output.dat'
       if not os.path.isfile(pathfile):
@@ -701,7 +721,7 @@ def do_calc(INFOS):
     sys.exit(0)
 
   # get timestep
-  if INFOS['mode'] in [1,2,3,4,5,6,7,8,9,20]:
+  if INFOS['mode'] in [1,2,3,4,5,6,7,8,9,12,13,14,15,20,21,22]:
     for ifile in files:
       lisf=open(ifile)
       file_valid=True
@@ -719,7 +739,7 @@ def do_calc(INFOS):
       f=line.split()
       if INFOS['mode'] in [1,2,3,4,5]:
         t0=float(f[1])
-      elif INFOS['mode'] in [6,7,8,9,20]:
+      elif INFOS['mode'] in [6,7,8,9,12,13,14,15,20,21,22]:
         t0=float(f[0])
       N=0
       while True:
@@ -737,7 +757,7 @@ def do_calc(INFOS):
       f=l2.split()
       if INFOS['mode'] in [1,2,3,4,5]:
         dt=(float(f[1])-t0)/N
-      elif INFOS['mode'] in [6,7,8,9,20]:
+      elif INFOS['mode'] in [6,7,8,9,12,13,14,15,20,21,22]:
         dt=(float(f[0])-t0)/N
       if dt==0.:
         print 'ERROR: Timestep is zero.'
@@ -764,9 +784,9 @@ def do_calc(INFOS):
   nsteps=int(INFOS['maxtime']/dt)+1
 
   # get nstates
-  if INFOS['mode'] in [1,2,7,8,20]:
+  if INFOS['mode'] in [1,2,7,8,12,14,20,21,22]:
     nstates=INFOS['nmstates']
-  elif INFOS['mode'] in [3,9]:
+  elif INFOS['mode'] in [3,9,13,15]:
     nstates=INFOS['nstates']
   elif INFOS['mode'] in [4,5,6]:
     nstates=len(INFOS['histo'].binlist)+1
@@ -790,6 +810,7 @@ def do_calc(INFOS):
   # get populations
   width=60
   pop_full=[ [ [0. for j in range(nstates) ] for i in range(nsteps) ] for ifile in files ]
+  traj_per_step=[ 0. for i in range(nsteps) ]
   shortest=9999999.
   longest=0.
   for fileindex,ifile in enumerate(files):
@@ -809,6 +830,8 @@ def do_calc(INFOS):
             vec[state]+=vec2[i].real**2+vec2[i].imag**2
         for istate in range(nstates):
           pop_full[fileindex][istep][istate]+=vec[istate]
+      for itt in range(istep+1):
+        traj_per_step[itt]+=1
       if dt*istep<shortest:
         shortest=dt*istep
       if dt*istep>longest:
@@ -851,11 +874,18 @@ def do_calc(INFOS):
           elif INFOS['mode']==6:
             state=INFOS['histo'].put(float(f[1]))
           pop_full[fileindex][t][state]+=1
-        elif INFOS['mode'] in [7,8,9,20]:
+        elif INFOS['mode'] in [7,8,9,12,13,14,15,20,21,22]:
           vec=[ 0. for i in range(nstates)]
           if INFOS['mode'] in [7,8,20]:
             for i in range(nstates):
               vec[i]=float(f[2+2*i])**2+float(f[3+2*i])**2
+          if INFOS['mode'] in [12,14,21,22]:
+            for i in range(nstates):
+              vec[i]=float(f[2+i])
+          if INFOS['mode'] in [13,15]:
+            for i in range(INFOS['nmstates']):
+              state=INFOS['statemap'][i+1][3]-1
+              vec[state]+=float(f[2+i])
           if INFOS['mode']==9:
             for i in range(INFOS['nmstates']):
               state=INFOS['statemap'][i+1][3]-1
@@ -865,6 +895,9 @@ def do_calc(INFOS):
           for i in range(nstates):
             pop_full[fileindex][t][i]+=vec[i]
       lisf.close()
+      for itt in range(t+1):
+        if itt<len(traj_per_step):
+          traj_per_step[itt]+=1
       if dt*t<shortest:
         shortest=dt*t
       if dt*t>longest:
@@ -879,7 +912,7 @@ def do_calc(INFOS):
         t+=1
         if INFOS['mode'] in [1,2,3,4,5,6]:
           pop_full[fileindex][t][state]+=1
-        elif INFOS['mode'] in [7,8,9,20]:
+        elif INFOS['mode'] in [7,8,9,12,13,14,15,20,21,22]:
           for i in range(nstates):
             pop_full[fileindex][t][i]+=vec[i]
   print 'Shortest trajectory: %f' % (shortest)
@@ -906,12 +939,12 @@ def do_calc(INFOS):
 
     if INFOS['mode'] in [1,7]:
       s+='%16s ' % ('X%i' % (i+1))
-    elif INFOS['mode'] in [2,8,20,10]:
+    elif INFOS['mode'] in [2,8,20,10,12,14,21,22]:
       mult,state,ms=tuple(INFOS['statemap'][i+1][0:3])
       #IstateToMultState(i+1,INFOS['states'])
       string='%s %i %i' % (IToMult[mult][0:3],state,ms)
       s+='%16s ' % (string)
-    elif INFOS['mode'] in [3,9,11]:
+    elif INFOS['mode'] in [3,9,11,13,15]:
       mult,state=tuple(INFOS['statemap'][i+1][0:2])
       #INstateToMultState(i+1,INFOS['states'])
       string='%s %i' % (IToMult[mult][0:3],state)
@@ -965,6 +998,7 @@ def do_calc(INFOS):
   outf.close()
 
 
+
   # save bootstrapping data
   if INFOS['bootstrap']:
     print 'Writing to %s ...' % (INFOS['bootstrap_dir'])
@@ -981,12 +1015,12 @@ def do_calc(INFOS):
 
         if INFOS['mode'] in [1,7]:
           s+='%16s ' % ('X%i' % (i+1))
-        elif INFOS['mode'] in [2,8,20,10]:
+        elif INFOS['mode'] in [2,8,20,10,12,14,21,22]:
           mult,state,ms=tuple(INFOS['statemap'][i+1][0:3])
           #IstateToMultState(i+1,INFOS['states'])
           string='%s %i %i' % (IToMult[mult][0:3],state,ms)
           s+='%16s ' % (string)
-        elif INFOS['mode'] in [3,9,11]:
+        elif INFOS['mode'] in [3,9,11,13,15]:
           mult,state=tuple(INFOS['statemap'][i+1][0:2])
           #INstateToMultState(i+1,INFOS['states'])
           string='%s %i' % (IToMult[mult][0:3],state)
@@ -1014,6 +1048,20 @@ def do_calc(INFOS):
 
   INFOS['outputfile']=outfilename
   INFOS['ntraj']=ntraj
+
+
+  # print number of trajs
+  outfilename='traj_per_step_'+outfilename
+  s='#%15s %16s\n' % ('Time','Ntraj')
+  for it,n in enumerate(traj_per_step):
+    s+='%16.9f %16.9f\n' % (it*dt,n)
+  outf=open(outfilename,'w')
+  print 'Writing number of trajectories per step to %s ...' % (outfilename)
+  outf.write(s)
+  outf.close()
+
+
+
   return INFOS
 
 # ======================================================================================================================
@@ -1191,9 +1239,13 @@ def make_gnuplot(INFOS):
          7: 'Quantum amplitudes (diagonal)',
          8: 'Quantum amplitudes (MCH)',
          9: 'Quantum amplitudes (MCH, multiplets)',
-        10: 'Transformed classical populations (MCH)',
-        11: 'Transformed classical populations (MCH)',
-        20: 'Quantum amplitudes (diabatic)'
+        12: 'Transformed classical populations (MCH)',
+        13: 'Transformed classical populations (MCH, multiplets)',
+        14: 'Wigner-transformed classical populations (MCH)',
+        15: 'Wigner-transformed classical populations (MCH, multiplets)',
+        20: 'Quantum amplitudes (diabatic)',
+        21: 'Transformed classical populations (diabatic)',
+        22: 'Wigner-transformed classical populations (diabatic)'
         }
 
   gnustring='''set title "%s\\n%i Trajectories (Shortest %.1f fs, Longest %.1f fs)"
@@ -1224,11 +1276,11 @@ set out '%s.png'
 
     if INFOS['mode'] in [1,7]:
       gnustring+='u 1:%i w l tit "State %i" lw 2.5 lc rgbcolor "%s"' % (istate+1,istate,R.hexcolor(1,istate) )
-    elif INFOS['mode'] in [2,8,10,20]:
+    elif INFOS['mode'] in [2,8,12,14,20,21,22]:
       mult,state,ms=tuple(INFOS['statemap'][istate][0:3])
       name=IToMult[mult]+' %i' % (state-(mult==1 or mult==2))
       gnustring+='u 1:%i w l tit "%s" lw 2.5 lc rgbcolor "%s"' % (istate+1,name,R.hexcolor(mult,state))
-    elif INFOS['mode'] in [3,9,11]:
+    elif INFOS['mode'] in [3,9,13,15]:
       gnustring+='u 1:%i' % (istate+1)
       for i in INFOS['statemap']:
         if istate==INFOS['statemap'][i][3]:

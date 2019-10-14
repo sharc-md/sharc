@@ -1,0 +1,21 @@
+    ## This is a commented version of the ORCA.resources file 
+
+    ## ======== ORCA setup ============
+
+    ## 
+orcadir $ORCA
+tinker $TINKER/
+scratchdir $SCRADIR/WORK
+ncpu 1
+memory 1000
+
+wfoverlap $SHARC/wfoverlap.x
+wfthres 0.99
+
+theodir $THEODORE
+theodore_prop Om POSi POSf PR CT PRNTO Z_HE RMSeh
+theodore_fragment 1 3 6
+theodore_fragment 2 4 5
+
+qmmm_table    ORCA.qmmm.table
+qmmm_ff_file  ORCA.qmmm.ff

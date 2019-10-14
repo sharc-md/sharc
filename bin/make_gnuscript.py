@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -68,8 +68,8 @@ if sys.version_info[1]<5:
 
 # ======================================================================= #
 
-version='2.0'
-versiondate=datetime.date(2018,2,1)
+version='2.1'
+versiondate=datetime.date(2019,9,1)
 
 # hash table for conversion of multiplicity to the keywords used in MOLPRO
 IToMult={
@@ -250,6 +250,28 @@ def main():
     gnustring+='""               u 1:($%i):(abs($%i))    title "State %i"     lw % 6.2f pal w l, \\\n'                   % (5+i,5+2*nmstates+i,i+1,3.5)
   gnustring+=  '""               u 1:($%i)               title "Trajectory"   lw % 6.2f lc rgbcolor "#000000" pt 6 w p\n\n' % (3,1.0)
   gnustring+='pause -1\n\n'
+
+
+  # first plot relative: energies in diag picture, with spin expectation value and dipole expectation value
+  # needs to have the expec.out file from data_extractor
+  # write header for first plot
+  gnustring+='unset key\nunset colorbox\nset title "Energies in diagonal basis"\nset xlabel "Time t in fs"\nset ylabel "Energy in eV"\nset cbrange [0:17]\n'
+  gnustring+='set palette defined (0.0 "gray90", 1e-5 "gray60", 1e-4 "gray30", 1e-3 "orange", 1e-2 "red", 1e-1 "magenta", 1e-0 "blue", 10 "blue", 11 "green", 12 "red", 13 "turquoise", 14 "orange", 15 "cyan", 16 "brown", 17 "skyblue")\n\n'
+  gnustring+=  'plot "output_data/expec.out" u 1:($%i-$5)               title "Total Energy" lw % 6.2f lc rgbcolor "#000000" w l, \\\n' % (4,0.5)
+  for i in range(nmstates):
+    gnustring+='""               u 1:($%i-$5):(abs($%i)+10) title "State %i"     lw % 6.2f pal w l, \\\n'                   % (5+i,5+1*nmstates+i,i+1,4.5)
+  #for i in range(nmstates):
+    gnustring+='""               u 1:($%i-$5):(abs($%i))    title "State %i"     lw % 6.2f pal w l, \\\n'                   % (5+i,5+2*nmstates+i,i+1,3.5)
+  gnustring+=  '""               u 1:($%i-$5)               title "Trajectory"   lw % 6.2f lc rgbcolor "#000000" pt 6 w p\n\n' % (3,1.0)
+  gnustring+='pause -1\n\n'
+
+
+
+
+
+
+
+
 
   # second plot: coefficients in MCH picture
   #angdiff=1./maxmult/max(states)

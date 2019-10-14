@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -83,8 +83,8 @@ U_TO_AMU = 1./5.4857990943e-4
 BOHR_TO_ANG=0.529177211
 PI = math.pi
 
-version='2.0'
-versiondate=datetime.date(2018,2,1)
+version='2.1'
+versiondate=datetime.date(2019,9,1)
 
 
 # hash table for conversion of multiplicity to the keywords used in MOLPRO
@@ -849,21 +849,22 @@ def read_QMin():
   QMin['statemap']=statemap
 
   # find unit keyword
-  factor=1.
+  factor=BOHR_TO_ANG
   for line in qmin:
     s=line.split()
     if len(s)==0:
       continue
     if 'unit' in s[0].lower():
-      if not 'bohr' in s[1].lower():
-        factor=BOHR_TO_ANG
+      if 'bohr' in s[1].lower():
+        factor=1.
   for i in range(QMin['natom']):
     for j in range(3):
       geom[i][j+1]/=factor
   QMin['geom']=geom
+  print geom
 
   # find init, samestep, restart
-  for line in qmin:
+  for line in qmin[2:]:
     line=line.split('#')[0]
     s=line.split()
     if len(s)==0:
@@ -901,7 +902,7 @@ def read_QMin():
     s=line.lower().split()
     if len(s)==0:
       continue
-    for t in ['h','soc', 'nacdr', 'dm', 'grad', 'overlap']:
+    for t in ['h', 'soc', 'nacdr', 'dm', 'grad', 'overlap']:
         if s[0] in t:
             QMin[s[0]] = []
     if 'nacdt' in s[0]:
@@ -1210,20 +1211,23 @@ def getQMout(QMin,SH2LVC):
     dipole.append(Dmatrix)
 
   # get overlap matrix
-  Uoldfile=os.path.join(QMin['savedir'],'Uold.out')
-  if 'init' in QMin:
-    overlap = [ [ float(i==j) for i in range(QMin['nmstates']) ] for j in range(QMin['nmstates']) ]
-  else:
-    Uold = [[float(v) for v in line.split()] for line in open(Uoldfile, 'r').readlines()]
-    if NONUMPY:
-      overlap = [ [ 0. for i in range(QMin['nmstates']) ] for j in range(QMin['nmstates']) ]
-      rS = range(QMin['nmstates'])
-      for a in rS:
-        for b in rS:
-          for i in rS:
-            overlap[a][b]+=Uold[i][a]*U[i][b]
-    else:
-      overlap = numpy.dot(numpy.array(Uold).T,U)
+  if 'overlap' in QMin:
+      Uoldfile=os.path.join(QMin['savedir'],'Uold.out')
+      if 'init' in QMin:
+        overlap = [ [ float(i==j) for i in range(QMin['nmstates']) ] for j in range(QMin['nmstates']) ]
+      else:
+        Uold = [[float(v) for v in line.split()] for line in open(Uoldfile, 'r').readlines()]
+        if NONUMPY:
+          overlap = [ [ 0. for i in range(QMin['nmstates']) ] for j in range(QMin['nmstates']) ]
+          rS = range(QMin['nmstates'])
+          for a in rS:
+            for b in rS:
+              for i in rS:
+                overlap[a][b]+=Uold[i][a]*U[i][b]
+        else:
+          overlap = numpy.dot(numpy.array(Uold).T,U)
+      QMout['overlap']=overlap
+
 
   Ufile=os.path.join(QMin['savedir'],'U.out')
   f = open(Ufile, 'w')
@@ -1244,7 +1248,6 @@ def getQMout(QMin,SH2LVC):
   QMout['dm']=dipole
   QMout['grad']=grad
   #QMout['dmdr']=dmdr
-  QMout['overlap']=overlap
   QMout['runtime']=0.
 
   #pprint.pprint(QMout,width=192)

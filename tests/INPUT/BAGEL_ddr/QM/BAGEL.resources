@@ -1,0 +1,8 @@
+
+bagel $BAGEL
+wfoverlap $SHARC/wfoverlap.x
+dipolelevel 0
+scratchdir $SCRADIR/WORK
+savedir $SCRADIR/TRAJ/restart
+ncpu 1
+

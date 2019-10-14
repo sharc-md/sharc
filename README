@@ -2,7 +2,7 @@
 
     SHARC Program Suite
 
-    Copyright (c) 2018 University of Vienna
+    Copyright (c) 2019 University of Vienna
 
 
     This file is part of SHARC.
@@ -38,6 +38,7 @@ directory structure:
 * doc:          the documentation (manual and tutorial)
 * tests:        a test suite to check the installation.  
 * examples:     documented example inputs for quantum chemistry interfaces
+* pysharc:      source code for the PySHARC extension of SHARC
 * lib:          Python libraries for some SHARC components
 * wfoverlap:    wave function overlap program (with source/ and scripts/ directories)
 

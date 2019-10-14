@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -276,7 +276,8 @@ excitation energies and oscillator strengths.
 
   parser = OptionParser(usage=usage, description=description)
   parser.add_option('-i', dest='i', type=str, nargs=1, default='', help="QM.in file (to read number of states)")
-  parser.add_option('-e', dest='e', type=float, nargs=1, default=0.0, help="Absolute energy shift (float, default=0.0)")
+  parser.add_option('-e', dest='e', type=float, nargs=1, default=0.0, help="Absolute energy shift (float, default=compute relative energies)")
+  parser.add_option('-E', dest='E', action='store_true', help="Use absolute shift of 0.0 (default=compute relative energies).")
   parser.add_option('-s', dest='s', type=str, nargs=1, default='', help="Number of states (in quotes separated by whitespace)")
   parser.add_option('-n', dest='n', type=int, nargs=1, default=1, help="Number of atoms")
   parser.add_option('-D', dest='D', action='store_true',help="Diagonalize")
@@ -357,7 +358,7 @@ excitation energies and oscillator strengths.
       #else:
         #dmx=dmy=dmz=0.
         #fosc.append(0.)
-      if ezero!=0.0:
+      if ezero!=0.0 or options.E:
         de=(e-ezero)*27.21
       else:
         de=(e-energies[0])*27.21
@@ -379,7 +380,7 @@ excitation energies and oscillator strengths.
       else:
         dmx=dmy=dmz=0.
         fosc.append(0.)
-      if ezero!=0.0:
+      if ezero!=0.0 or options.E:
         de=(e-ezero)*27.21
       else:
         de=(e-energies[0])*27.21

@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -37,6 +37,7 @@ import sys
 import datetime
 from optparse import OptionParser
 import re
+import time
 
 # =========================================================0
 # compatibility stuff
@@ -75,8 +76,8 @@ U_TO_AMU = 1./5.4857990943e-4            # conversion from g/mol to amu
 ANG_TO_BOHR = 1./0.529177211    #1.889725989      # conversion from Angstrom to bohr
 PI = math.pi
 
-version='2.0'
-versiondate=datetime.date(2018,2,1)
+version='2.1'
+versiondate=datetime.date(2019,9,1)
 
 
 NUMBERS = {'H':1, 'He':2,
@@ -671,15 +672,23 @@ file. Returns molecule and modes as the other function does.
       print 'WARNING: Displacement vector of mode %i is null vector. Ignoring this mode!' % (imode+1)
       modes[imode]['freq']=0.
 
-  if not lvc:
-    # delete low modes
-    newmodes=[]
+
+  newmodes=[]
+  if lvc:
+    # delete low modes and modes with zero norm
+    for imode in range(nmodes):
+      if modes[imode]['freq']<0.:
+        print 'Detected negative frequency!'
+      if sum( [ abs(x)for y in modes[imode]['move']  for x in y ] ):
+        if modes[imode]['freq']>=LOW_FREQ*CM_TO_HARTREE:
+          newmodes.append(modes[imode])   
+  else:
     for imode in range(nmodes):
       if modes[imode]['freq']<0.:
         print 'Detected negative frequency!'
       if modes[imode]['freq']>=LOW_FREQ*CM_TO_HARTREE:
         newmodes.append(modes[imode])
-    modes=newmodes
+  modes=newmodes  
 
   nmodes = len(modes)
   modes = determine_normal_modes_format(modes,molecule,nmodes,flag)
@@ -1166,9 +1175,10 @@ Method is based on L. Sun, W. L. Hase J. Chem. Phys. 133, 044313
     atom.veloc = [0.0, 0.0, 0.0] # initialise velocity lists
   for mode in modes: # for each uncoupled harmonatomlist oscillator
     while True:
-      # get random Q and P in the interval [-3,+3]
+      # get random Q and P in the interval [-5,+5]
       # this interval is good for vibrational ground state
       # should be increased for higher states
+      # TODO: needs to be restructured: first obtain temperature, then draw random numbers, then compute wigner probability
       random_Q = random.random()*10.0 - 5.0
       random_P = random.random()*10.0 - 5.0
       # calculate probability for this set of P and Q with Wigner distr.
@@ -1319,7 +1329,17 @@ def lvc_input(molecule, modes):
     if not len(modes)==len(modes[0]['move']*3):
       print 'Error: Less than 3N normal modes in file!'
       print 'For LVC model setup, all 3N modes need to be present.'
-      sys.exit(1)
+      print 'Adding additional rotational and translational null-vectors'
+      nr_missing=len(modes[0]['move']*3)-len(modes)
+      if nr_missing != 6:
+        print 'There are %i normal modes missing that will be assumed to be null-vectors! Make sure this is intended.' % nr_missing
+        time.sleep(2)
+      empty_modes=[ {'freq' : 0.0 , 'move' : [ [0,0,0] for x in range(len(modes[0]['move']))]} for x in range(nr_missing)]
+      empty_modes.extend(modes)
+      modes=empty_modes
+
+      
+      #sys.exit(1)
     print "Creating V0.txt for SHARC_LVC.py ..."
 
     wf = open('V0.txt', 'w')

@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -72,8 +72,8 @@ ANG_TO_BOHR = 1./0.529177211    #1.889725989      # conversion from Angstrom to 
 AMBERVEL_TO_AU = 0.0009350161
 PI = math.pi
 
-version='2.0'
-versiondate=datetime.date(2018,2,1)
+version='2.1'
+versiondate=datetime.date(2019,9,1)
 
 # =========================================================
 

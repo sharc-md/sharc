@@ -1,10 +1,10 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 #******************************************
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -23,7 +23,6 @@
 #
 #******************************************
 
-#!/usr/bin/env python2
 
 import sys
 import os
@@ -34,33 +33,33 @@ import os
 try:
   import numpy
 except ImportError:
-  print 'The kf module required to read ADF binary files needs numpy. Please install numpy and then try again'
+  print('The kffile module required to read ADF binary files needs numpy. Please install numpy and then try again')
   sys.exit()
 
 adf=os.path.expandvars('$ADFHOME')
 sys.path.append(adf+'/scripting')
-import kf
+from scm.plams import KFFile
 
 # ================================================
 
 def read_t21(filename):
-  f = kf.kffile(filename)
+  f = KFFile(filename)
 
   try:
     f.sections()
   except:
-    print 'File does not seem to be a TAPE21 file...'
+    print('File does not seem to be a TAPE21 file...')
     return None
 
-  Freq = f.read("Freq","Frequencies").tolist()
+  Freq = f.read("Freq","Frequencies")
 
   natom = int(f.read("Freq","nr of atoms"))
 
-  fragtype=f.read("Geometry","fragmenttype").tolist()
-  atomtype_index=f.read("Geometry","fragment and atomtype index").tolist()[natom:]
+  fragtype=f.read("Geometry","fragmenttype").split()
+  atomtype_index=f.read("Geometry","fragment and atomtype index")[natom:]
   Atomsymbs=[ fragtype[i-1] for i in atomtype_index ]
 
-  xyz = f.read("Freq","xyz").tolist()
+  xyz = f.read("Freq","xyz")
   FreqCoord=[]
   x=0
   for i in range(natom):
@@ -68,7 +67,7 @@ def read_t21(filename):
     FreqCoord.append(atom)
     x+=3
 
-  Normalmodes= f.read("Freq","Normalmodes").tolist()
+  Normalmodes= f.read("Freq","Normalmodes")
   Modes={}
   for i in range(3*natom):
     m=[]
@@ -95,7 +94,7 @@ def read_ADFout(filename):
   while True:
     iline+=1
     if iline>=len(data):
-      print 'Could not find Frequencies output!'
+      print('Could not find Frequencies output!')
       return None
     line=data[iline]
     if 'F R E Q U E N C' in line:
@@ -112,7 +111,7 @@ def read_ADFout(filename):
     try:
       atom=[ s[1], float(s[2]), float(s[3]), float(s[4]) ]
     except IndexError:
-      print 'Could not find optimized coordinates!'
+      print('Could not find optimized coordinates!')
       return None
     FreqCoord.append(atom)
     natom+=1
@@ -201,7 +200,7 @@ F=read_t21(filename)
 if not F:
   F=read_ADFout(filename)
 if not F:
-  print 'Could not parse file %s!' % filename
+  print('Could not parse file %s!' % filename)
   sys.exit(1)
 
 string=format_molden(F)

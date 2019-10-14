@@ -4,7 +4,7 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2018 University of Vienna
+#    Copyright (c) 2019 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -79,8 +79,8 @@ if sys.version_info[1]<5:
 
 # ======================================================================= #
 
-version='2.0'
-versiondate=datetime.date(2018,2,1)
+version='2.1'
+versiondate=datetime.date(2019,9,1)
 
 
 
@@ -91,6 +91,9 @@ changelogstring='''
 
 01.12.2017:
 - all features of ADF interface, minus SOCs
+
+08.01.2019:
+- added "basis_external" keyword
 '''
 
 # ======================================================================= #
@@ -1508,9 +1511,9 @@ def readQMin(QMinfilename):
             sys.exit(45)
         os.environ['THEODIR']=QMin['theodir']
         if 'PYTHONPATH' in os.environ:
-          os.environ['PYTHONPATH']+=os.pathsep + os.path.join(QMin['theodir'],'lib')
+          os.environ['PYTHONPATH']+=os.pathsep + os.path.join(QMin['theodir'],'lib') + os.pathsep + QMin['theodir']
         else:
-          os.environ['PYTHONPATH']=os.path.join(QMin['theodir'],'lib')
+          os.environ['PYTHONPATH']=os.path.join(QMin['theodir'],'lib') + os.pathsep + QMin['theodir']
 
 
     # neglected gradients
@@ -1546,7 +1549,8 @@ def readQMin(QMinfilename):
               'qmmm_table'              :'GAUSSIAN.qmmm.table',
               'qmmm_ff_file'            :'GAUSSIAN.ff',
               'iop'                     :'',
-              'keys'                    :''
+              'keys'                    :'',
+              'basis_external'          :''
               }
     integers={
               }
@@ -1689,7 +1693,11 @@ def readQMin(QMinfilename):
                 #QMin['template']['qmmm_ff_file']=filename
 
 
-
+    ## read external basis set
+    if QMin['template']['basis_external']:
+      QMin['template']['basis']='gen'
+      QMin['template']['basis_external']=readfile(QMin['template']['basis_external'])
+      
 
 
     ##do logic checks
@@ -2347,9 +2355,10 @@ def writeGAUSSIANinput(QMin):
     data=['p',
           'nosym',
           'unit=AU',
-          QMin['template']['functional'],
-          QMin['template']['basis']
+          QMin['template']['functional']
           ]
+    if not QMin['template']['functional'].lower()=='dftba':
+        data.append(QMin['template']['basis'])
     if dograd:
         data.append('force')
     if 'AOoverlap' in QMin:
@@ -2403,7 +2412,13 @@ def writeGAUSSIANinput(QMin):
     for iatom,atom in enumerate(QMin['geo']):
         label=atom[0]
         string+='%4s %16.9f %16.9f %16.9f\n' % (label,atom[1],atom[2],atom[3])
-    string+='\n\n\n'
+    string+='\n'
+    if QMin['template']['functional'].lower()=='dftba':
+      string+='@GAUSS_EXEDIR:dftba.prm\n'
+    if QMin['template']['basis_external']:
+      for line in QMin['template']['basis_external']:
+        string+=line
+    string+='\n\n'
 
 
     return string
@@ -3259,6 +3274,10 @@ def get_Double_AOovl(QMin):
     filename=os.path.join(WORKDIR,'GAUSSIAN.rwf')
     NAO,Smat=get_smat(filename,QMin['groot'])
 
+    # adjust the diagonal blocks for DFTB-A
+    if QMin['template']['functional']=='dftba':
+      Smat=adjust_DFTB_Smat(Smat,NAO,QMin)
+
     ## Smat is now full matrix NAO*NAO
     ## we want the lower left quarter, but transposed
     string='%i %i\n' % (NAO/2,NAO/2)
@@ -3280,6 +3299,44 @@ def get_geometry(filename):
       geometry.append( [ s[0], float(s[1]), float(s[2]), float(s[3]) ] )
     return geometry
 
+# ======================================================================= #
+def adjust_DFTB_Smat(Smat,NAO,QMin):
+  # list with the number of basis functions for basis set VSTO-6G* (used for DFTBA in Gaussian)
+  nbasis={1: ['h','he'],
+          2: ['li','be'],
+          4: ['b','c','n','o','f','ne']}
+  nbs={}
+  for i in nbasis:
+    for el in nbasis[i]:
+      nbs[el]=i
+  Nb=0
+  itot=0
+  mapping={}
+  for ii,i in enumerate(QMin['geo']):
+    try:
+      Nb+=nbs[i[0].lower()]
+    except KeyError:
+      print 'Error: Overlaps with DFTB need further testing!'
+      sys.exit(80)
+    for j in range(nbs[i[0].lower()]):
+      mapping[itot]=ii
+      itot+=1
+  #print mapping
+  #sys.exit(81)
+  # make interatomic overlap blocks unit matrices
+  for i in range(Nb):
+    ii=mapping[i]
+    for j in range(Nb):
+      jj=mapping[j]
+      if ii!=jj:
+        continue
+      if i==j:
+        Smat[i][j+Nb]=1.
+        Smat[i+Nb][j]=1.
+      else:
+        Smat[i][j+Nb]=0.
+        Smat[i+Nb][j]=0.
+  return Smat
 
 # =============================================================================================== #
 # =============================================================================================== #
@@ -3830,7 +3887,7 @@ def getsmate(out,s1,s2):
         ilines+=1
         if ilines==len(out):
             print 'Overlap of states %i - %i not found!' % (s1,s2)
-            sys.exit(80)
+            sys.exit(82)
         if containsstring('Overlap matrix <PsiA_i|PsiB_j>', out[ilines]):
             break
     ilines+=1+s1
@@ -3844,7 +3901,7 @@ def getDyson(out,s1,s2):
         ilines+=1
         if ilines==len(out):
             print 'Dyson norm of states %i - %i not found!' % (s1,s2)
-            sys.exit(81)
+            sys.exit(83)
         if containsstring('Dyson norm matrix <PsiA_i|PsiB_j>', out[ilines]):
             break
     ilines+=1+s1
@@ -3952,7 +4009,7 @@ def main():
             DEBUG=True
     except ValueError:
         print 'PRINT or DEBUG environment variables do not evaluate to numerical values!'
-        sys.exit(82)
+        sys.exit(84)
 
     # Process Command line arguments
     if len(sys.argv)!=2:
@@ -3960,7 +4017,7 @@ def main():
         print 'version:',version
         print 'date:',versiondate
         print 'changelog:\n',changelogstring
-        sys.exit(83)
+        sys.exit(85)
     QMinfilename=sys.argv[1]
 
     # Print header
