@@ -2095,7 +2095,8 @@ def readQMin(QMinfilename):
               'frozen'                  :-1
               }
     floats  ={
-              'hfexchange'              :-1.
+              'hfexchange'              :-1.,
+              'intacc'                  :-1.
               }
     special ={'paddingstates'           :[0 for i in QMin['states']],
               'charge'                  :[i%2 for i in range(len(QMin['states']))],
@@ -2971,6 +2972,11 @@ def writeORCAinput(QMin):
        QMin['template']['range_sep_settings']['ACM2'],
        QMin['template']['range_sep_settings']['ACM3']
       )
+
+    #Intacc
+    if QMin['template']['intacc']>0.:
+      string+='''%%method
+  intacc %3.1f\nend\n\n''' % (QMin['template']['intacc'])
 
 
     # excited states

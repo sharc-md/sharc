@@ -493,9 +493,9 @@ def printQMin(QMin):
     for i in range(1,QMin['nmstates']+1):
       for j in range(1,QMin['nmstates']+1):
         if [i,j] in QMin['overlap'] or [j,i] in QMin['overlap']:
-        string+='X '
-      else:
-        string+='. '
+          string+='X '
+        else:
+          string+='. '
     string+='\n'
     print string
 

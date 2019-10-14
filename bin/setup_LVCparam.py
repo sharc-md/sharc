@@ -2979,7 +2979,7 @@ The BAGEL interface will generate the appropriate BAGEL input automatically.
 
   print centerstring('Dipole level',60,'-')+'\n'
   print 'Please specify the desired amount of calculated dipole moments:\n0 -only dipole moments that are for free are calculated\n1 -calculate all transition dipole moments between the (singlet) ground state and all singlet states for absorption spectra\n2 -calculate all dipole moments'
-  INFOS['dipolelevel']=question('Requested dipole level:',str,0)
+  INFOS['dipolelevel']=question('Requested dipole level:',int,[0])[0]
   print ''
 
 
