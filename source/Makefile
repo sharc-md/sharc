@@ -274,7 +274,7 @@ clean:
 	rm -rvf build_info.inc
 	rm -rvf *.so
 	rm -rvf ../pysharc/lib/libsharc.so
-	rm -rvf sharcvars.sh
+	rm -rvf sharcvars.*sh
 
 test_path:
 	echo $(MAKEFILEPATH)
