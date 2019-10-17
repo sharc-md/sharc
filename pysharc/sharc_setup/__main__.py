@@ -68,7 +68,7 @@ extra_compile_args = ['-std=c99', '-Wall',]
 pysharc_extension = Extension('sharc/sharc',
             [ os.path.join(pysharc_path, fname) for fname in pysharc_cfiles ],
             include_dirs = [ 'include', ],
-            library_dirs = [ 'lib', '/user/maximilian/anaconda2/lib' ],
+            library_dirs = [ 'lib', '$HOME/anaconda2/lib' ],
             libraries = mkl_libs + basic_libs,
             extra_compile_args = extra_compile_args,
 )

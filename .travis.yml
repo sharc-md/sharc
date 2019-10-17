@@ -1,0 +1,18 @@
+language: c
+sudo: required
+before_install:
+  - sudo apt-get install gfortran
+  - sudo apt-get install libblas-dev liblapack-dev
+  - sudo apt-get install libatlas-base-dev
+  - sudo apt-get install libopenblas-dev libopenblas-base
+  - sudo apt-get install fftw3 fftw3-dev
+
+script:
+  - cd source
+  - make
+  - ls -l
+  - cd ..
+  - cd wfoverlap
+  - cd source
+  - make wfoverlap_ascii.x
+

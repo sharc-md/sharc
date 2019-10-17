@@ -66,7 +66,7 @@ DUMMYOBS=read_dalton_dummy.o read_molcas_dummy.o
 #OPTOBS = $(DUMMYOBS)
 
 # activate direct reading of Dalton and Seward files
-LIBS = $(COLUMBUS)/libmolcas_col.a $(COLUMBUS)/colib.a $(COLUMBUS)/blaswrapper.a  $(LALIB)
+#LIBS = $(COLUMBUS)/libmolcas_col.a $(COLUMBUS)/colib.a $(COLUMBUS)/blaswrapper.a  $(LALIB)
 OPTOBS = read_dalton.o read_molcas.o
 
 ############## Compilation routines #############
@@ -86,7 +86,7 @@ wfoverlap.x : main.f90 $(MAINOBS) $(OPTOBS) iomod.o
 wfoverlap_ascii.x : main.f90 $(MAINOBS) $(DUMMYOBS) iomod.o
 	$(FC) $(FCFLAGS) $(LINKFLAGS) $(PROFILE) $^ -o $@ $(LALIB)
 	cp $@ ../../bin
-	ln -s $@ ../../bin/wfoverlap.x
+	ln -fs $@ ../../bin/wfoverlap.x
 
 alloc:
 	./write_allocmod.pl > my_alloc.f90
