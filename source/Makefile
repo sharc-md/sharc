@@ -77,7 +77,7 @@ endif
 ifeq ($(USE_COMPILER), gnu)
   CC :=gcc
   F90 :=gfortran 
-  EXTRAFLAGS := -ffree-line-length-none
+  EXTRAFLAGS := -ffree-line-length-none 
 else ifeq ($(USE_COMPILER), intel)
   CC:=icc
   F90:=ifort 
@@ -90,7 +90,7 @@ ifeq ($(USE_LIBS), mkl)
   LD= -L$(MKLROOT)/lib/intel64 -lmkl_rt -lpthread -lm -lgfortran $(NETCDF_LIB)
 #   LD= -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lpthread -lm -lgfortran $(NETCDF_LIB)
 else ifeq ($(USE_LIBS), gnu)
-  LD= -lblas -llapack -lfftw3 -lgfortran  $(NETCDF_LIB)
+  LD= -lblas -llapack -lfftw3 -lgfortran $(NETCDF_LIB)
 endif
 
 
@@ -193,33 +193,33 @@ all: sharc data_extractor diagonalizer laser sharcvars
 endif
 
 
-sharc: build_info        $(TOOLS) $(SHARC) main.o
-	$(F90)     $(LD) $(TOOLS) $(SHARC) main.o  -o  $(SHARCTARGET)
+sharc: build_info $(TOOLS) $(SHARC) main.o
+	$(F90)    $(TOOLS) $(SHARC) main.o  -o  $(SHARCTARGET) $(LD)
 	ln -sf $(SHARCTARGET) sharc.x
 
 
-libsharc: build_info         $(TOOLS) $(SHARC)
-	$(F90) -shared $(LD) $(TOOLS) $(SHARC)  -o ../pysharc/lib/libsharc.so
+libsharc: build_info   $(TOOLS) $(SHARC)
+	$(F90) -shared $(TOOLS) $(SHARC)  -o ../pysharc/lib/libsharc.so $(LD)
 
 
 data_extractor: build_info $(DATA_EXTRACTOR)  $(TOOLS)
-	$(F90)       $(LD) $(DATA_EXTRACTOR) $(TOOLS) -o $@.x
+	$(F90)  $(DATA_EXTRACTOR) $(TOOLS) -o $@.x $(LD)
 
 
 data_extractor_NetCDF: $(DATA_EXTRACTOR_NETCDF) $(TOOLS)
-	$(F90)   $(LD) $(DATA_EXTRACTOR_NETCDF) $(TOOLS) -o $@.x
+	$(F90)  $(DATA_EXTRACTOR_NETCDF) $(TOOLS) -o $@.x $(LD)
 
 
-data_converter:       $(DATA_CONVERTER) $(TOOLS)
-	$(F90)  $(LD) $(DATA_CONVERTER) $(TOOLS) -o $@.x
+data_converter: $(DATA_CONVERTER) $(TOOLS)
+	$(F90)  $(DATA_CONVERTER) $(TOOLS) -o $@.x $(LD)
 
 
-diagonalizer:        $(DIAGONALIZER) 
-	$(F90) $(LD) $(DIAGONALIZER) -o $@.x 
+diagonalizer: $(DIAGONALIZER) 
+	$(F90)  $(DIAGONALIZER) -o $@.x $(LD)
 
 
 laser:  $(LASER) 
-	$(F90)   $(LD) $(LASER) -o $@.x
+	$(F90)   $(LASER) -o $@.x $(LD)
 
 
 install: all
