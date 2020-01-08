@@ -740,7 +740,10 @@ subroutine EDC_step(traj,ctrl)
   do istate=1,ctrl%nstates
     if (istate/=traj%state_diag) then
       tau=tau0 / abs( real(traj%H_diag_ss(istate,istate) ) - real(traj%H_diag_ss(traj%state_diag,traj%state_diag)) )
-      c(istate)=traj%coeff_diag_s(istate) * exp( -ctrl%dtstep / tau)
+!       c(istate)=traj%coeff_diag_s(istate) * exp( -ctrl%dtstep / tau)
+      ! Equation in "Critical appraisal ..." paper is wrong, exp() should be applied to populations,
+      ! not coefficients, so for coefficients we need to add a factor of 1/2
+      c(istate)=traj%coeff_diag_s(istate) * exp( -0.5d0*ctrl%dtstep / tau)
       sumc=sumc+abs(c(istate))**2
     endif
   enddo
