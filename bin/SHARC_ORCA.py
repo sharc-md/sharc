@@ -122,6 +122,21 @@ IToMult={
                  6: 'Sextet', 
                  7: 'Septet', 
                  8: 'Octet', 
+                 9: '9-et', 
+                 10: '10-et', 
+                 11: '11-et', 
+                 12: '12-et', 
+                 13: '13-et', 
+                 14: '14-et', 
+                 15: '15-et', 
+                 16: '16-et', 
+                 17: '17-et', 
+                 18: '18-et', 
+                 19: '19-et', 
+                 20: '20-et', 
+                 21: '21-et', 
+                 22: '22-et', 
+                 23: '23-et', 
                  'Singlet': 1, 
                  'Doublet': 2, 
                  'Triplet': 3, 
@@ -1939,6 +1954,15 @@ def readQMin(QMinfilename):
             DEBUG=True
 
 
+    # save_stuff option
+    QMin['save_stuff']=False
+    line=getsh2Orcakey(sh2Orca,'save_stuff')
+    if line[0]:
+        if len(line)<=1 or 'true' in line[1].lower():
+            QMin['save_stuff']=True
+
+
+
     # debug option
     line=getsh2Orcakey(sh2Orca,'no_print')
     if line[0]:
@@ -2076,7 +2100,8 @@ def readQMin(QMinfilename):
     # define classes and defaults
     bools   ={'no_tda'                  :False,
               'unrestricted_triplets'   :False,
-              'qmmm'                    :False
+              'qmmm'                    :False,
+              'picture_change'          :False
               }
     strings ={'basis'                   :'6-31G',
               'auxbasis'                :'',
@@ -2092,7 +2117,8 @@ def readQMin(QMinfilename):
               'keys'                    :''
               }
     integers={
-              'frozen'                  :-1
+              'frozen'                  :-1,
+              'maxiter'                 :700,
               }
     floats  ={
               'hfexchange'              :-1.,
@@ -2957,7 +2983,8 @@ def writeORCAinput(QMin):
 
     # hf exchange
     if QMin['template']['hfexchange']>=0.:
-      string+='%%method\nScalHFX = %f\nScalDFX = %f\nend\n\n' % (QMin['template']['hfexchange'],1.-QMin['template']['hfexchange'])
+      #string+='%%method\nScalHFX = %f\nScalDFX = %f\nend\n\n' % (QMin['template']['hfexchange'],1.-QMin['template']['hfexchange'])
+      string+='%%method\nScalHFX = %f\nend\n\n' % (QMin['template']['hfexchange'])
 
     # Range separation
     if QMin['template']['range_sep_settings']['do']:
@@ -3022,7 +3049,14 @@ def writeORCAinput(QMin):
     string+='%scf\n'
     if 'AOoverlap' in QMin:
       string+='maxiter 0\n'
+    else:
+      string+='maxiter %i\n' % (QMin['template']['maxiter'])
     string+='end\n\n'
+
+    # rel
+    if QMin['template']['picture_change']:
+      string+='%rel\nPictureChange true\nend\n\n'
+
 
     ## TODO: workaround
     #if 'soc' in QMin and 'grad' in QMin:
@@ -3780,61 +3814,61 @@ def get_smat_from_gbw(file1, file2=''):
 
 
 
-# ======================================================================= #
-def read_molden(filename):
-  data=readfile(filename)
+## ======================================================================= #
+#def read_molden(filename):
+  #data=readfile(filename)
 
-  molecule=[]
-  # get geometry
-  for iline,line in enumerate(data):
-    if '[atoms]' in line.lower():
-      break
-  else:
-    print 'No geometry found in %s!' % (filename)
-    sys.exit(91)
+  #molecule=[]
+  ## get geometry
+  #for iline,line in enumerate(data):
+    #if '[atoms]' in line.lower():
+      #break
+  #else:
+    #print 'No geometry found in %s!' % (filename)
+    #sys.exit(91)
 
-  if 'au' in line.lower():
-    factor=1.
-  elif 'angstrom' in line.lower():
-    factor=au2a
+  #if 'au' in line.lower():
+    #factor=1.
+  #elif 'angstrom' in line.lower():
+    #factor=au2a
 
-  while True:
-    iline+=1
-    line=data[iline]
-    if '[' in line:
-      break
-    s=line.lower().split()
-    atom={'el':s[0],'coord':[float(i)*factor for i in s[3:6]],'basis':[]}
-    molecule.append(atom)
+  #while True:
+    #iline+=1
+    #line=data[iline]
+    #if '[' in line:
+      #break
+    #s=line.lower().split()
+    #atom={'el':s[0],'coord':[float(i)*factor for i in s[3:6]],'basis':[]}
+    #molecule.append(atom)
 
-  # get basis set
-  for iline,line in enumerate(data):
-    if '[gto]' in line.lower():
-      break
-  else:
-    print 'No geometry found in %s!' % (filename)
-    sys.exit(92)
+  ## get basis set
+  #for iline,line in enumerate(data):
+    #if '[gto]' in line.lower():
+      #break
+  #else:
+    #print 'No geometry found in %s!' % (filename)
+    #sys.exit(92)
 
-  shells={'s': 1, 'p':3, 'd':6, 'f':10, 'g':15}
-  while True:
-    iline+=1
-    line=data[iline]
-    if '[' in line:
-      break
-    s=line.lower().split()
-    if len(s)==0:
-      continue
-    if not s[0] in shells:
-      iatom=int(s[0])-1
-    else:
-      newbf=[s[0].upper()]
-      nprim=int(s[1])
-      for iprim in range(nprim):
-        iline+=1
-        s=data[iline].split()
-        newbf.append( (float(s[0]),float(s[1]) ) )
-      molecule[iatom]['basis'].append(newbf)
-  return molecule
+  #shells={'s': 1, 'p':3, 'd':6, 'f':10, 'g':15}
+  #while True:
+    #iline+=1
+    #line=data[iline]
+    #if '[' in line:
+      #break
+    #s=line.lower().split()
+    #if len(s)==0:
+      #continue
+    #if not s[0] in shells:
+      #iatom=int(s[0])-1
+    #else:
+      #newbf=[s[0].upper()]
+      #nprim=int(s[1])
+      #for iprim in range(nprim):
+        #iline+=1
+        #s=data[iline].split()
+        #newbf.append( (float(s[0]),float(s[1]) ) )
+      #molecule[iatom]['basis'].append(newbf)
+  #return molecule
 
 
 
@@ -3977,7 +4011,7 @@ at_lists=%s
 def runTHEODORE(WORKDIR,THEODIR):
     prevdir=os.getcwd()
     os.chdir(WORKDIR)
-    string='python2 '+os.path.join(THEODIR,'bin','analyze_tden.py')
+    string=os.path.join(THEODIR,'bin','analyze_tden.py')
     stdoutfile=open(os.path.join(WORKDIR,'theodore.out'),'w')
     stderrfile=open(os.path.join(WORKDIR,'theodore.err'),'w')
     if PRINT or DEBUG:
@@ -4451,6 +4485,20 @@ def getQMout(QMin):
             for ion in QMin['ionmap']:
                 outfile=os.path.join(QMin['scratchdir'],'Dyson_%i_%i_%i_%i/wfovl.out' % ion)
                 shutil.copy(outfile,os.path.join(copydir,'Dyson_%i_%i_%i_%i.out' % ion))
+
+    if QMin['save_stuff']:
+        copydir=os.path.join(QMin['savedir'],'save_stuff')
+        if not os.path.isdir(copydir):
+            mkdir(copydir)
+        for job in joblist:
+            outfile=os.path.join(QMin['scratchdir'],'master_%i/ORCA.log' % (job))
+            shutil.copy(outfile,os.path.join(copydir,"ORCA_%i.log" % job))
+            outfile=os.path.join(QMin['scratchdir'],'master_%i/ORCA.gbw' % (job))
+            shutil.copy(outfile,os.path.join(copydir,"ORCA_%i.gbw" % job))
+            outfile=os.path.join(QMin['scratchdir'],'master_%i/ORCA.cis' % (job))
+            shutil.copy(outfile,os.path.join(copydir,"ORCA_%i.cis" % job))
+
+
 
     return QMin,QMout
 
