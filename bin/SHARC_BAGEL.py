@@ -85,10 +85,22 @@ if sys.version_info[1]<5:
 
 # ======================================================================= #
 
-version='1.0'
-versiondate=datetime.date(2019,5,27)
+version='1.1'
+versiondate=datetime.date(2020,8,24)
 changelogstring='''
+27.05.2019: INITIAL VERSION
+- CASSCF and (X)MS-CASPT2 energies, gradients NACs and dipoles
+- AO overlaps computed by PyQuante (only up to f functions)
+- No QM/MM and SOCs
+
+24.8.2020:
+- Bugfix for dipolelevel 2 (crashed before)
+- Adapted getenergy so that no crashes occur if the xms ci coefficients 
+  are printed in the output
+- increased default overlap threshold to 0.99995 (wfthres) for smoother overlaps
+- unified use of mpi_parallel keyword
 '''
+
 # ======================================================================= #
 # holds the system time when the script was started
 starttime=datetime.datetime.now()
@@ -406,7 +418,6 @@ def printQMin(QMin):
     string+='%+2i %7s  ' % (QMin['chargemap'][i],'')
   print string
 
-
   string='Method: \t'
   string+='SA(%i' % (QMin['template']['nstate'][0])
   for i in QMin['template']['nstate'][1:]:
@@ -496,7 +507,7 @@ def printQMin(QMin):
           string+='X '
         else:
           string+='. '
-    string+='\n'
+      string+='\n'
     print string
 
   print 'State map:'
@@ -1473,9 +1484,9 @@ def readQMin(QMinfilename):
     os.environ['LD_LIBRARY_PATH']=os.environ['LD_LIBRARY_PATH']+':%s' % (QMin['BAGEL']+'/lib') 
 
     # set up boost library 
-    QMin['LD_LIB']=get_sh2BAGEL_environ(sh2BAGEL,'ld_lib',False,False)
-    if QMin['LD_LIB']:
-        os.environ['LD_LIBRARY_PATH']=os.environ['LD_LIBRARY_PATH']+':%s' % QMin['LD_LIB']
+#    QMin['LD_LIB']=get_sh2BAGEL_environ(sh2BAGEL,'ld_lib',False,False)
+#    if QMin['LD_LIB']:
+#        os.environ['LD_LIBRARY_PATH']=os.environ['LD_LIBRARY_PATH']+':%s' % QMin['LD_LIB']
 
 
     # debug option
@@ -1594,7 +1605,7 @@ def readQMin(QMinfilename):
         QMin['dipolelevel']=int(line[1])
 
     # truncation threshold
-    QMin['wfthres']=0.99 
+    QMin['wfthres']=0.99995 
     line=getsh2BAGELkey(sh2BAGEL,'wfthres')
     if line[0]:
         QMin['wfthres']= float(line[1])
@@ -1709,9 +1720,6 @@ def readQMin(QMinfilename):
                     if not compatible:
                         print 'WARNING: Charges from template not compatible with multiplicities!  (this is probably OK if you use QM/MM)'
                         sys.exit(47)
-#                else:
-#                    print 'Length of "charge" does not match length of "states"!'
-#                    sys.exit(48)
             elif line[0]=='nstate':
                 rootstates=[int(x) for x in line[1:]]
                 while rootstates[-1] == 0:
@@ -1769,8 +1777,8 @@ def readQMin(QMinfilename):
       QMin['template']['method'] = 'caspt2'
       QMin['template']['xms'] = 'false'
       QMin['template']['ms'] = 'true'
-      print 'MS-CASPT2 gradients do not seem to be stable at the moment, violating total energy conversion throughout the dynamics in coupling regions. If static properties are of interest, it is sufficient to comment out the exit statement after this comment.'
-      #sys.exit()
+      print '\nMS-CASPT2 gradients do not seem to be stable at the moment, violating total energy conversion throughout the dynamics in coupling regions. If static properties are of interest, it is sufficient to comment out the exit statement after this comment in the SHARC_BAGEL.py script.\n'
+      sys.exit(51)
     elif QMin['template']['method'] == 'xms-caspt2':
       QMin['template']['method'] = 'caspt2'
       QMin['template']['xms'] = 'true'
@@ -1867,14 +1875,19 @@ def readQMin(QMinfilename):
     nacmap=set()
     if 'nacdr' in QMin:
       if QMin['dipolelevel'] == 1:
-          for i in range(2,QMin['states'][0]+1):
-              QMin['nacdr'].append([1,i])
+          sum_states=0
+          for i in range(len(QMin['states'])):
+              if QMin['states'][i] < 2:
+                  continue
+              for j in range(2,QMin['states'][i]+1):
+                  QMin['nacdr'].append([1+sum_states,j+sum_states])
               #print [1,i]
+              sum_states += QMin['states'][i]*(i+1)
       if QMin['dipolelevel'] == 2:  
           for i in range(nmstates):
               for j in range(nmstates):
                   if i != j:
-                  		QMin['nacdr'].append([i+1,j+1])  
+                      QMin['nacdr'].append([i+1,j+1]) 
       for i in QMin['nacdr']:
         s1=statemap[i[0]][0:2]
         s2=statemap[i[1]][0:2]
@@ -2769,13 +2782,11 @@ def get_dets_from_cores(filename,QMin):
     job=QMin['IJOB']
     casscf=[]
     totrot=[]
-    xms=[]
     nclosed=QMin['template']['nclosed']
     nact=QMin['template']['nact']
     mult=QMin['jobs'][job]['mults'][0]
     read=False
     readrot=False
-    readxms=False
     #loop over outfile to get all casscf-ci-coeffs and rot matrices
     for line in cores:
         if 'NACME' in line and read:
@@ -2795,27 +2806,21 @@ def get_dets_from_cores(filename,QMin):
              
         if readrot:
             rot.append(line.split())
-        if readxms:
-            a+=1
-            if a > 2:
-              xms.append(line.split()[1:4])
-              if a > 4:
-                readxms=False                      
+                     
         if 'ci vector' in line:
             ci_vec={}
             read=True
-        if 'MS-CASPT2 rotation matrix' in line:
+        if 'MS-CASPT2 rotation matrix' in line: #this gets both rotation matrices 
             rot=[]
             readrot=True
         if '* nvirt' in line:
             nvirt=int(line.split()[3])
-        if 'Extended multi-state CASPT2 (XMS-CASPT2) rotation matrix' in line:
-            readxms=True
-            a=0
 
+    
     #rotate states to get caspt2-ci-coeffs
     if QMin['template']['method']=='caspt2' and len(totrot) > 0:
-        #print "rot start"
+        #only the last rotation matrix is needed (see Issue 203 in the BAGEL github)
+        totrot = [totrot[-1]]    
         for j in range(len(totrot)):
             mats = [totrot[j]] 
             newstates=[]
@@ -2831,14 +2836,12 @@ def get_dets_from_cores(filename,QMin):
                               else:
                                   ci_vec[config]=float(casscf[j][config])*float(rotmat[j][i])
                   newstates.append(ci_vec)
-        casscf=deepcopy(newstates)
-#        for m in casscf:
-#          cisum=0
-#          for entry in m:
-#            cisum+=m[entry]**2
-#          print cisum
+            casscf=deepcopy(newstates) #only needed in case of multiple rotations which is not true atm
+ 
     else:   
       newstates=casscf
+      
+
 
     #rearrange dets 
     used_dets={}
@@ -2863,7 +2866,6 @@ def get_dets_from_cores(filename,QMin):
       break #break after first configuration
     #construct string for det file
     nalpha=na+nclosed
-    #print "hupdidupi", nclosed, nact, nvirt
     s='%i %i %i\n' % (len(newstates), nclosed+nact+nvirt, len(used_dets))
     
     #adapt sign of the configurations to be consistent with the wfoverlap convention
@@ -2880,7 +2882,6 @@ def get_dets_from_cores(filename,QMin):
       for contribution in used_dets[entry]:
         s+='%11.7f ' % (contribution*(-1)**ninv)
       s+='\n'
-#    print s
 
     strings={}
     filename=os.path.join(QMin['savedir'],'dets.%i' % mult)
@@ -3454,20 +3455,15 @@ def getQMout(QMin):
                     continue
                 mult2,state2,ms2=tuple(QMin['statemap'][j1])
                 test=(mult,state-1,mult2,state2-1)
-                if not ms1==ms2:
+                if ms2 != ms:
                     continue
                 if test in nacs:
-                    #### TODO: check if "full" option is used as nacmtype
-                    #### TODO: seems to be ok without unweighting
-                    #### unweight the energy gap
-                    ###dE=QMout['h'][i][i]-QMout['h'][j][j]
-                    dE=1.
                     nacdr[i][j]=deepcopy(nacs[test])
                     nacdr[j][i]=deepcopy(nacdr[i][j])
                     for x in range(natom):
                         for y in range(3):
-                            nacdr[i][j][x][y]*=+dE
-                            nacdr[j][i][x][y]*=-dE
+                            #nacdr[i][j][x][y]*=+dE
+                            nacdr[j][i][x][y]*=-1#dE
         QMout['nacdr']=nacdr
 
     # Regular Overlaps
@@ -3612,6 +3608,15 @@ def getenergy(corefile,ijob,QMin):
     else:
         caspt2=False
         mscaspt2=False
+        
+    get_casscf = True  # only try to read in casscf energies once. Previous 
+    #version crashed with newer versions/modifications of BAGEL that print 
+    #XMS wave functions.
+
+    casscfenergies = {}
+    caspt2energies = {}
+    mscaspt2energies = {}    
+    
     for imult in mults:
         nstates=estates_to_extract[imult-1]
         if nstates > 0:
@@ -3620,50 +3625,57 @@ def getenergy(corefile,ijob,QMin):
                     if '* MS-CASPT2 energy :' in line:
                         if int(line.split()[5]) == 0:
                             gsenergy=float(line.split()[6])
-                            energies={(gsmult,1): gsenergy}
+                            mscaspt2energies[(gsmult,1)] = gsenergy
                         else:
                             i=int(line.split()[5])
-                            energies[(imult,i+(gsmult==imult))] = float(line.split()[6])
+                            mscaspt2energies[(imult,i+(gsmult==imult))] = float(line.split()[6])
 
                 if '* CASPT2 energy :' in line and caspt2:
                     if int(line.split()[5]) == 0:
                         gsenergy=float(line.split()[6])
-                        energies={(gsmult,1): gsenergy}
+                        caspt2energies[(gsmult,1)] = gsenergy
                     else:
                         i=int(line.split()[5])
-                        energies[(imult,i+(gsmult==imult))] = float(line.split()[6])                    
+                        caspt2energies[(imult,i+(gsmult==imult))] = float(line.split()[6])                    
                                                                                                       
                 else:
-                    if '* ci vector' in line and ' 0,' in line:
+                    if '* ci vector' in line and ' 0,' in line and get_casscf:
+                        get_casscf = False
                         for i in range(nstates):
                             if i == 0:
-                                #print "line that failes: ", line
                                 if '*' in f[iline-nstates-1+i]:
-                                    energies={(gsmult,1):float(f[iline-nstates-1+i].split()[3])}
+                                    casscfenergies[(gsmult,1)] = float(f[iline-nstates-1+i].split()[3])
                                 else:
-                                    energies={(gsmult,1):float(f[iline-nstates-1+i].split()[2])}
+                                    casscfenergies[(gsmult,1)] = float(f[iline-nstates-1+i].split()[2])
                             elif '*' in f[iline-nstates-1+i]:
-                                energies[(imult,i+(gsmult==imult))] = float(f[iline-nstates-1+i].split()[3])
+                                casscfenergies[(imult,i+(gsmult==imult))] = float(f[iline-nstates-1+i].split()[3])
                             else:
-                                energies[(imult,i+(gsmult==imult))] = float(f[iline-nstates-1+i].split()[2])
+                                casscfenergies[(imult,i+(gsmult==imult))] = float(f[iline-nstates-1+i].split()[2])
                                 
+    if mscaspt2energies:
+      energies = mscaspt2energies
+    elif caspt2energies:
+      energies = caspt2energies
+    else:
+      energies = casscfenergies
+
 
     return energies
 
 
 # ======================================================================= #
 def getdm(QMin,job):
-
+    #collects dipole moments from the output file. The interface only stores the 
+    #relaxed dipole moments
+    
     cores=os.path.join(QMin['scratchdir'],'master_%i/BAGEL.out' % (job))
     if PRINT:
         print 'Dipoles:  '+shorten_DIR(cores)
     out=readfile(cores)
     if QMin['template']['method']=='casscf':
         getstring='Permanent dipole moment: Relaxed'
-    elif QMin['template']['method']=='caspt2' and QMin['dipolelevel']==0:
-        getstring='Permanent dipole moment: CASPT2 relaxed' 
-    elif QMin['template']['method']=='caspt2' and QMin['dipolelevel']==1:
-        getstring='Permanent dipole moment: Transition dipole moment between'
+    elif QMin['template']['method']=='caspt2':
+        getstring='Permanent dipole moment: CASPT2 relaxed'
     dipoles=[]
     for iline,line in enumerate(out):
         if getstring in line:
