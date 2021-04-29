@@ -61,7 +61,7 @@ module restart
     integer :: u
     type(ctrl_type) :: ctrl
 
-    integer :: imult, istate, ilaser, iatom
+    integer :: imult, istate, ilaser, iatom, iconstr
 
     ! the ctrl restart file is only written once at the beginning to avoid writing the laser field
     ! each timestep
@@ -97,6 +97,7 @@ module restart
     write(u,*) (ctrl%output_steps_stride(istate),istate=1,3)
     write(u,*) (ctrl%output_steps_limits(istate),istate=1,3)
     write(u,*) ctrl%restart
+    write(u,*) ctrl%restart_rerun_last_qm_step
     write(u,*) ctrl%staterep
     write(u,*) ctrl%initcoeff
     write(u,*) ctrl%laser
@@ -121,7 +122,20 @@ module restart
     write(u,*) ctrl%track_phase
     write(u,*) ctrl%track_phase_at_zero
     write(u,*) ctrl%hopping_procedure
-    write(u,*) ctrl%output_format
+    write(u,*) ctrl%output_format, '! output_format'
+
+    ! constraints
+    write(u,*) ctrl%do_constraints
+    write(u,*) ctrl%constraints_tol
+    write(u,*) ctrl%n_constraints
+    if (ctrl%do_constraints==1) then
+      do iconstr=1,ctrl%n_constraints
+        write(u,*) ctrl%constraints_ca(iconstr,1),ctrl%constraints_ca(iconstr,2)
+      enddo
+      do iconstr=1,ctrl%n_constraints
+        write(u,*) ctrl%constraints_dist_c(iconstr)
+      enddo
+    endif
 
     ! write the laser field
     if (ctrl%laser==2) then
@@ -325,7 +339,7 @@ module restart
     type(trajectory_type) :: traj
     type(ctrl_type) :: ctrl
 
-    integer :: imult, iatom, i,j,k, istate,ilaser
+    integer :: imult, iatom, i,j,k, istate,ilaser,iconstr
     character(8000) :: string
     real*8 :: dummy_randnum
     integer :: time
@@ -379,6 +393,7 @@ module restart
     read(u_ctrl,*) (ctrl%output_steps_stride(istate),istate=1,3)
     read(u_ctrl,*) (ctrl%output_steps_limits(istate),istate=1,3)
     read(u_ctrl,*) ctrl%restart
+    read(u_ctrl,*) ctrl%restart_rerun_last_qm_step
     read(u_ctrl,*) ctrl%staterep
     read(u_ctrl,*) ctrl%initcoeff
     read(u_ctrl,*) ctrl%laser
@@ -404,6 +419,24 @@ module restart
     read(u_ctrl,*) ctrl%track_phase_at_zero
     read(u_ctrl,*) ctrl%hopping_procedure
     read(u_ctrl,*) ctrl%output_format
+
+
+
+    ! constraints
+    read(u_ctrl,*) ctrl%do_constraints
+    read(u_ctrl,*) ctrl%constraints_tol
+    read(u_ctrl,*) ctrl%n_constraints
+    allocate( ctrl%constraints_ca(ctrl%n_constraints,2) )
+    allocate( ctrl%constraints_dist_c(ctrl%n_constraints) )
+    if (ctrl%do_constraints==1) then
+      do iconstr=1,ctrl%n_constraints
+        read(u_ctrl,*) ctrl%constraints_ca(iconstr,1),ctrl%constraints_ca(iconstr,2)
+      enddo
+      do iconstr=1,ctrl%n_constraints
+        read(u_ctrl,*) ctrl%constraints_dist_c(iconstr)
+      enddo
+    endif
+
 
     ! read the laser field
     ! with an external laser, increasing the simulation time necessitates that the laserfield in

@@ -47,6 +47,14 @@ subroutine VelocityVerlet_xstep(traj,ctrl)
   type(ctrl_type) :: ctrl
   integer :: iatom, idir
 
+  ! variables for constraints
+  real*8 :: initdistvec(ctrl%n_constraints,3)
+  logical :: check_constraints(ctrl%n_constraints)
+  integer :: iconstr, iA, iB, iiter
+  real*8 :: relpos(3)
+  real*8 :: d2t, coeff
+
+
   if (printlevel>2) then
     write(u_log,*) '============================================================='
     write(u_log,*) '              Velocity Verlet -- X-step'
@@ -55,6 +63,16 @@ subroutine VelocityVerlet_xstep(traj,ctrl)
     call vec3write(ctrl%natom,traj%geom_ad,u_log,'Old geom','F12.7')
   endif
 
+  ! prepare if RATTLE
+  if (ctrl%do_constraints==1) then
+    do iconstr = 1,ctrl%n_constraints
+      iA=ctrl%constraints_ca(iconstr,1)
+      iB=ctrl%constraints_ca(iconstr,2)
+      initdistvec(iconstr,:) = traj%geom_ad(iA,:)-traj%geom_ad(iB,:)
+    enddo
+  endif
+
+  ! propagate positions
   do iatom=1,ctrl%natom
     do idir=1,3
       traj%accel_ad(iatom,idir)=&
@@ -66,6 +84,56 @@ subroutine VelocityVerlet_xstep(traj,ctrl)
       &+0.5d0*traj%accel_ad(iatom,idir)*ctrl%dtstep**2
     enddo
   enddo
+
+  ! carry out RATTLE
+  if (ctrl%do_constraints==1) then
+    if (printlevel>2) then
+      write(u_log,'(A)') 'RATTLE iterations'
+      write(u_log,'(A3,X,A3,X,A5,X,A5,X,A12,X,A12,X,A2)') 'It','Con','AtomA','AtomB','Resid','coeff','OK' 
+    endif
+    do iiter=1,1000
+      ! initialize logical variable that controls whether constraints are enforced
+      check_constraints(:) = .TRUE.
+        ! loop over the constrained bonds
+        do iconstr = 1, ctrl%n_constraints
+          ! define the atomic id of the atoms that have fixed distance
+          iA=ctrl%constraints_ca(iconstr,1)
+          iB=ctrl%constraints_ca(iconstr,2)
+          ! compute the relative position of the two constrained atoms, and the relative norm squared
+          relpos = traj%geom_ad(iA,:) - traj%geom_ad(iB,:)
+          D2t = DOT_PRODUCT(relpos, relpos)
+          ! when the difference with the fixed distance is significantly different from zero, do RATTLE
+          coeff=0.d0
+          if ( abs(D2t - ctrl%constraints_dist_c(iconstr) ) > ctrl%constraints_tol ) then
+            ! compute RATTLE coefficient
+            coeff = (D2t - ctrl%constraints_dist_c(iconstr)) / &
+            & (2.D0 * ctrl%dtstep * DOT_PRODUCT(initdistvec(iconstr,:), relpos) * &
+            & (1.D0 / traj%mass_a(iA) + 1.D0 / traj%mass_a(iB)))
+            ! correct positions
+            traj%geom_ad(iA,:) = traj%geom_ad(iA,:) - (coeff * ctrl%dtstep * initdistvec(iconstr,:) / traj%mass_a(iA) )
+            traj%geom_ad(iB,:) = traj%geom_ad(iB,:) + (coeff * ctrl%dtstep * initdistvec(iconstr,:) / traj%mass_a(iB) )
+            ! correct velocities
+            traj%veloc_ad(iA,:) = traj%veloc_ad(iA,:) - (coeff * initdistvec(iconstr,:) / traj%mass_a(iA) )
+            traj%veloc_ad(iB,:) = traj%veloc_ad(iB,:) + (coeff * initdistvec(iconstr,:) / traj%mass_a(iB) )
+            ! this constraint was not ok
+            check_constraints(iconstr) = .FALSE.
+          endif
+          ! print
+          if (printlevel>2) then
+            write(u_log,'(I3,X,I3,X,I5,X,I5,X,F12.7,X,F12.7,X,L1)') iiter,iconstr,iA,iB,&
+            &abs(D2t - ctrl%constraints_dist_c(iconstr)),coeff,check_constraints(iconstr)
+          endif
+        end do ! end of the loop over the constraints
+      ! break the loop when all constraints are satisfied
+      if ( all(check_constraints) ) exit
+    end do
+  endif
+  if (.not. all(check_constraints) ) then
+    write(0,*) 'Could not satisfy RATTLE constraints in 1000 iterations (xstep)!'
+    stop 1
+  endif
+
+
 
   if (printlevel>2) then
     call vec3write(ctrl%natom,traj%accel_ad,u_log,'accel','F12.9')
@@ -87,6 +155,13 @@ subroutine VelocityVerlet_vstep(traj,ctrl)
   type(ctrl_type) :: ctrl
   integer :: iatom, idir
 
+  ! variables for constraints
+  logical :: check_constraints(ctrl%n_constraints)
+  integer :: iconstr, iA, iB, iiter
+  real*8 :: relpos(3), relvel(3)
+  real*8 :: d2t, coeff
+
+
   if (printlevel>2) then
     write(u_log,*) '============================================================='
     write(u_log,*) '              Velocity Verlet -- V-step'
@@ -105,6 +180,52 @@ subroutine VelocityVerlet_vstep(traj,ctrl)
       &+traj%accel_ad(iatom,idir)*ctrl%dtstep
     enddo
   enddo
+
+  ! carry out RATTLE
+  if (ctrl%do_constraints==1) then
+    if (printlevel>2) then
+      write(u_log,'(A)') 'RATTLE iterations'
+      write(u_log,'(A3,X,A3,X,A5,X,A5,X,A12,X,A12,X,A2)') 'it','Con','AtomA','AtomB','Resid','coeff','OK'
+    endif
+    do iiter=1,1000
+      ! initialize logical variable that controls whether constraints are enforced
+      check_constraints(:) = .TRUE.
+        ! loop over the constrained bonds
+        do iconstr = 1, ctrl%n_constraints
+          ! define the atomic id of the atoms that have fixed distance
+          iA = ctrl%constraints_ca(iconstr,1)
+          iB = ctrl%constraints_ca(iconstr,2)
+          ! compute projection of the relative velocity with respect to the distance vector of the bond
+          relvel = traj%veloc_ad(iA,:) - traj%veloc_ad(iB,:)
+          relpos = traj%geom_ad(iA,:) - traj%geom_ad(iB,:)
+          d2t = DOT_PRODUCT(relpos, relvel)
+          ! when this projection is significantly different from zero, do RATTLE
+          coeff=0.d0
+          if ( abs(d2t) > ctrl%constraints_tol ) then
+            ! compute RATTLE coefficient
+            coeff = d2t / ((1.D0 / traj%mass_a(iA) + 1.D0 / traj%mass_a(iB)) * ctrl%constraints_dist_c(iconstr))
+            ! correct velocities
+            traj%veloc_ad(iA,:) = traj%veloc_ad(iA,:) - (coeff * relpos(:) / traj%mass_a(iA) )
+            traj%veloc_ad(iB,:) = traj%veloc_ad(iB,:) + (coeff * relpos(:) / traj%mass_a(iB) )
+            ! this constraint was not ok
+            check_constraints(iconstr) = .FALSE.
+          endif
+          ! print
+          if (printlevel>2) then
+            write(u_log,'(I3,X,I3,X,I5,X,I5,X,F12.7,X,F12.7,X,L1)') iiter,iconstr,iA,iB,&
+            &abs(D2t),coeff,check_constraints(iconstr)
+          endif
+        end do ! end of the loop over the constraints
+      ! break the loop when all constraints are satisfied
+      if ( all(check_constraints) ) exit
+    end do
+  endif
+  if (.not. all(check_constraints) ) then
+    write(0,*) 'Could not satisfy RATTLE constraints in 1000 iterations (vstep)!'
+    stop 1
+  endif
+  
+
 
   if (printlevel>2) then
     call vec3write(ctrl%natom,traj%accel_ad,u_log,'accel','F12.9')

@@ -59,7 +59,7 @@ module input
   type(trajectory_type) :: traj
   type(ctrl_type) :: ctrl
   character*255 :: filename
-  character*8000 :: geomfilename, line
+  character*8000 :: geomfilename, line, rattlefilename
   character*8000, allocatable :: values(:)
   integer :: narg, io, nlines, selg, selt
   integer :: i,j,k,n
@@ -70,7 +70,6 @@ module input
   character*8000 :: string1
   character*8000, allocatable :: string2(:)
   logical :: selectdirectly_bool
-
   
 #ifndef __PYSHARC__
   ! get the input filename from the command line argument
@@ -120,6 +119,7 @@ module input
 
     ! default is no restart
     ctrl%restart=.false.
+    ctrl%restart_rerun_last_qm_step=.false.
     ! look for restart keyword
     line=get_value_from_key('restart',io)
     if (io==0) then
@@ -258,6 +258,22 @@ module input
             &ctrl%dtstep/ctrl%nsubsteps*au2fs, 'fs step.'
           endif
           write(u_log,*)
+        endif
+      endif
+      line=get_value_from_key('restart_rerun_last_qm_step',io)
+      if (io==0) then
+        ctrl%restart_rerun_last_qm_step=.true.
+        write(u_log,'(a)') 'Assuming that restart/ directory corresponds to upcoming time step)'
+        write(u_log,'(a)') '(e.g., after a crash or job kill).'
+      else
+        line=get_value_from_key('restart_goto_new_qm_step',io)
+        if (io==0) then
+          ctrl%restart_rerun_last_qm_step=.false.
+          write(u_log,'(a)') 'Assuming that restart/ directory corresponds to time step in restart files'
+          write(u_log,'(a)') '(e.g., after using STOP file, killafter mechanism, or reaching time step limit).'
+        else
+          write(0,*) 'Please add "restart_rerun_last_qm_step" or "restart_goto_new_qm_step" keyword!'
+          stop
         endif
       endif
 
@@ -1378,6 +1394,98 @@ module input
     endif
     write(u_log,*)
 
+  ! =====================================================
+
+  ! find constraints
+    ctrl%constraints_tol=1e-7
+    ctrl%do_constraints=0
+    line=get_value_from_key('rattle',io)
+    if (io==0) then
+      ctrl%do_constraints=1
+    endif
+    line=get_value_from_key('norattle',io)
+    if (io==0) then
+      ctrl%do_constraints=0
+    endif
+
+     line=get_value_from_key('rattletolerance',io)
+     if (io==0) then
+       read(line,*) ctrl%constraints_tol
+     endif
+
+    if (ctrl%do_constraints==1) then
+
+      ! look up rattle filename
+      line=get_value_from_key('rattlefile',io)
+      if (io==0) then
+        ! extract string within quotes (can contain spaces)
+        call get_quoted(line,rattlefilename)
+        filename=trim(rattlefilename)
+      else
+        ! default rattle filename
+        filename='rattle'
+        rattlefilename=filename
+      endif
+    ! open the rattle file
+      open(u_i_rattle,file=filename, status='old', action='read', iostat=io)
+      if (io/=0) then
+        write(0,*) 'Could not find rattle file "',trim(filename),'"!'
+        stop 1
+      endif
+
+    ! find number of constraints
+      nlines=0
+      do
+        read(u_i_rattle,'(A)',iostat=io) line
+        if (io/=0) exit
+        call split(line,' ', values,n)
+        deallocate(values)
+        if (n<2) exit
+        nlines=nlines+1
+      enddo
+      ctrl%n_constraints=nlines
+      if (ctrl%n_constraints==0) then
+        write(0,*) 'No constraints found in ',rattlefilename
+        stop 1
+      endif
+
+      allocate( ctrl%constraints_ca(ctrl%n_constraints,2) )
+      allocate( ctrl%constraints_dist_c(ctrl%n_constraints) )
+
+      rewind(u_i_rattle)
+      do i=1,ctrl%n_constraints
+        read(u_i_rattle,'(A)') line
+        call split(line,' ',values,n)
+        if (n<2) then
+          write(0,*) 'Problem reading the rattle file!'
+          stop 1
+        endif
+        read(values(1),*) ctrl%constraints_ca(i,1)
+        read(values(2),*) ctrl%constraints_ca(i,2)
+        if ( (ctrl%constraints_ca(i,1)>ctrl%natom).or.&
+            &(ctrl%constraints_ca(i,2)>ctrl%natom).or.&
+            &(ctrl%constraints_ca(i,1)<1).or.&
+            &(ctrl%constraints_ca(i,2)<1) ) then
+          write(0,*) 'Atom index in constraint wrong:'
+          write(0,*) trim(line)
+          stop 1
+        endif
+        if (n>=3) then
+          read(values(3),*) ctrl%constraints_dist_c(i)
+          ctrl%constraints_dist_c(i)=ctrl%constraints_dist_c(i)**2
+        else
+          ctrl%constraints_dist_c(i)=-1.d0
+        endif
+      enddo
+
+    else   ! if no constraints
+      ctrl%n_constraints=0
+    endif
+
+  
+
+
+
 
   ! =====================================================
 
@@ -1419,6 +1527,45 @@ module input
       endif
       write(u_log,*)
     endif
+
+  ! =====================================================
+
+    if (ctrl%do_constraints==1) then
+
+      do i=1,ctrl%n_constraints
+        if (ctrl%constraints_dist_c(i)<0.d0) then
+          a=0.
+          k=ctrl%constraints_ca(i,1)
+          n=ctrl%constraints_ca(i,2)
+          do j=1,3
+            a=a+(traj%geom_ad(k,j)-traj%geom_ad(n,j))**2
+          enddo
+          ctrl%constraints_dist_c(i)=a
+        endif
+      enddo
+
+
+      if (printlevel>1) then
+        write(u_log,'(3a)') 'Constraints from file: "',trim(rattlefilename),'"'
+        write(u_log,*) 'List of constraints:'
+        write(u_log,'(3X,A6,3X,A6,3X,A15)') 'Atom A','Atom B','Distance (Bohr)'
+        do i=1,ctrl%n_constraints
+          write(u_log,'(3X,I6,3X,I6,3X,F15.6)') ctrl%constraints_ca(i,1),&
+          &ctrl%constraints_ca(i,2),dsqrt(ctrl%constraints_dist_c(i))
+        enddo
+      endif
+      write(u_log,*)
+
+    endif
+
+
+
+
+
+
+
+
+
 
   ! =====================================================
 

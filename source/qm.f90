@@ -474,13 +474,13 @@ module qm
     use output
     implicit none
     type(trajectory_type) :: traj
-    integer(KIND=2):: status
+    integer(KIND=4):: status        ! TODO: check integer/integer(KIND=2)
     character(255) :: command
-    integer(KIND=2) :: system
+    integer(KIND=4) :: system       ! TODO: check integer/integer(KIND=2)
 
     call flush(u_log)
     command='sh QM/runQM.sh'
-    status=system(command)/2**8
+    status=system(command)          ! TODO: /2**8 factor?
 
     if (status/=0) then
       write(0,*) 
@@ -547,8 +547,9 @@ module qm
     if ((traj%step==0).and..not.(ctrl%track_phase_at_zero==1)) then
       write(u_qm_qmin,'(A)') 'init'
     endif
-    if (ctrl%restart) then
+    if (ctrl%restart_rerun_last_qm_step) then
       write(u_qm_qmin,'(A)') 'restart'
+      ctrl%restart_rerun_last_qm_step=.false.
     endif
     if (ctrl%calc_soc==1) then
       write(u_qm_qmin,'(A)') 'SOC'
