@@ -30,7 +30,7 @@
 # -------------------------------------- configure ---------------------------------------
 
 # =======================================
-ANACONDA := $HOME/anaconda2/
+ANACONDA := ${HOME}/miniconda3/
 # =======================================
 
 
@@ -38,7 +38,7 @@ INC= -I.  -I$(ANACONDA)/include
 OPT= -O3 -Wall
 SHARED= -fPIC
 
-CC=$(ANACONDA)/bin/gcc
+CC=gcc
 
 
 OBJ_LIB=nc_basic.o nc_sharc.o
