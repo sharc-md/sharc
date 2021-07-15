@@ -29,6 +29,7 @@
 #
 # usage: python setup_traj.py
 
+
 import copy
 import math
 import sys
