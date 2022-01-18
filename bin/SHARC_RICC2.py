@@ -1196,6 +1196,10 @@ def gettransdm(ricc2,QMin,istate,jstate,pol):
     stopstring='Model:'
     nostring='Transition and Operator of different multiplicity.'
 
+    # invert search for triplets
+    if m1==3:
+      start1string,stopstring=stopstring,start1string
+
     # find correct section
     iline=-1
     while True:
@@ -1209,8 +1213,11 @@ def gettransdm(ricc2,QMin,istate,jstate,pol):
 
     # find correct state
     while True:
-      iline+=1
-      if iline+2==len(ricc2):
+      if m1==1:
+        iline+=1
+      elif m1==3:
+        iline-=1
+      if iline+2==len(ricc2) or iline==-1:
         print 'Could not find transition dipole moment of istate=%i,jstate=%i, Fail=5' % (istate,jstate)
         sys.exit(26)
       line=ricc2[iline]
@@ -4209,7 +4216,8 @@ def runeverything(tasks, QMin):
 # ======================================================================= #
 def run_theodore(QMin):
   workdir=os.path.join(QMin['scratchdir'],'JOB')
-  string='python2 %s/bin/analyze_tden.py' % (QMin['theodir'])
+  #string='python2 %s/bin/analyze_tden.py' % (QMin['theodir'])
+  string=os.path.join(QMin['theodir'],'bin','analyze_tden.py')
   runerror=runProgram(string,workdir,'theodore.out')
   if runerror!=0:
     print 'Theodore calculation crashed! Error code=%i' % (runerror)
