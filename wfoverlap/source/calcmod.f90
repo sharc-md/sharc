@@ -704,7 +704,7 @@ CONTAINS
     REAL(KIND=dop), DIMENSION(:,:), INTENT(OUT) :: Ainv
 
     INTEGER(KIND=ilong) :: N, N2, info
-    REAL(KIND=dop), DIMENSION(size(A,1)) :: ipiv
+    INTEGER(KIND=ilong), DIMENSION(size(A,1)) :: ipiv
     REAL(KIND=dop), DIMENSION(size(A,1)*size(A,2)) :: work
 
     N = size(A,1)
