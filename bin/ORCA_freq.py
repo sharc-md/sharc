@@ -71,7 +71,8 @@ for line in lines:
         intdict={}
     elif read == True and geom == True:
         line = line.strip()
-        if line.startswith( "----" ) or line.startswith( "NO" ):
+        #print line
+        if line.startswith( "----" ) or line.startswith( "NO" ) or "ECP" in line:
             continue
         if line:
             line = line.split()
@@ -123,13 +124,13 @@ for line in lines:
             nmode = False
     elif read == True and intensity == True:
         line = line.strip()
-        if line=='':
+        if line=='' or "km" in line:
             continue
         if line.startswith( "----" ):
            continue
         if 'Mode' in line:
            continue
-        if 'The first' in line:
+        if 'epsilon' in line or 'The first' in line or 'APPROXIMATE' in line:
            intensity=False
            read=False
            continue
