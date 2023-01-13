@@ -1,0 +1,276 @@
+
+                                ,._gz,                                        ,._\
+                               .g@@@p                                       ._Q@$+
+                            ,.Q@@@@@f                                    ._Q@@@+  
+                           .g@@@@@@@I                                 ._g@@@@F!   
+                       ,,_zQ@@@@@@@@Q_,                            ,_zQ@@@@$+     
+                .__ggQ@@@@@@@@@@@@@@@@@L_.              ,         _Q@@@@@@v       
+       , __zg@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@QQz_z_zzQ@@L,    .zQ@@@@@@F`        
+   .__gQ@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Q\__zQ@@@@@@$+          
+  G@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@D            
+    =4A@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@A@$@@@@@L,           
+        =vVAA@$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@p=VX@@@B*   <V@$@@@Q_,         
+                   @@@@@@@@@@P^^^^^^--`     -q@@$=`     =4V`       =X@@@@_        
+                   1@@@@@@@$!                  ^`                       -`        
+                   -q@@@@@@]                                                      
+                    ($@@@@$`                                                      
+                     4@@@@p                                                       
+                      d@@@p                                                       
+                       d@@b                                                       
+                        =4!                                                       
+
+ 
+ EXECUTION INFORMATION:
+ Start date: Thu Apr  9 19:14:27 2020
+ Run host: ln0004
+ Run directory: 
+ /panfs/roc/groups/8/truhlard/shuxx055/test/sharctest/MOLPRO_CSDM_ddr
+ 
+ BUILD INFORMATION:
+ Build date: Thu Apr  9 19:01:44 CDT 2020
+ Build host: ln0004
+ Build directory: 
+ /panfs/roc/groups/8/truhlard/shuxx055/software/sharc/sharc-2.1/source_0324
+ Compiler: 
+ /panfs/roc/intel/x86_64/2018/parallel_studio_xe_msi/compilers_and_libraries_201
+ 8.0.128/linux/bin/intel64/ifort
+ PYSHARC activated: false
+ 
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   Program SHARC started    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ 
+ Version: 2.2 (January 1, 2020)
+ 
+ Print level:            2
+ 
+ =============================================================
+                          Input File
+ =============================================================
+ geomfile "geom"
+ veloc external
+ velocfile "veloc"
+ nstates 2 0 1
+ actstates 2 0 1
+ state 2 mch
+ coeff auto
+ rngseed 26933
+ ezero -329.5062895400
+ tmax 3.0
+ stepsize 0.5
+ nsubsteps 25
+ method scp
+ surf sharc
+ coupling ddr
+ gradcorrect 
+ decoherence_scheme dom
+ grad_all 
+ nac_all 
+ 
+ =============================================================
+                             Restart
+ =============================================================
+ NO RESTART requested. Setting up the initial data from input files...
+ 
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   Initializing Dynamics    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                                    Thu Apr  9 19:14:27 2020
+ 
+Saving output data in ASCII format (output.dat)
+Use data_extractor.x
+ 
+ =============================================================
+                  Number of States and Atoms
+ =============================================================
+ Keyword NSTATES found.
+   2 Singlet
+   0 Doublet
+   1 Triplet
+Total number of states:     5
+ 
+ Dynamics is constrained to a subset of active states.
+ States (T=active, F=frozen): T T T T T
+ 
+Total number of atoms from "geom":    6
+ 
+ =============================================================
+                           Allocation
+ =============================================================
+Allocation with nstates=    5 and natom=    6 successful.
+ 
+ =============================================================
+                        Simulation Time
+ =============================================================
+Using fixed stepsize Velocity-Verlet integrator
+Found nsteps=      6 and stepsize=     0.500 fs.
+This makes a total simulation time of      3.000 fs.
+The electronic wavefunction will be propagated using a   0.0200 fs step.
+ 
+ Warning! Requested writing overlaps but no overlap calculated. Writing of overl
+ ap disabled.
+ =============================================================
+                        Dynamics options
+ =============================================================
+Doing semi-classical Ehrenfest Dynamics using self-consistent potentials
+Doing SHARC dynamics (on diagonal surfaces).
+Using SPATIAL DERIVATIVES <a|d/dR|b> for wavefunction propagation.
+Including non-adiabatic coupling vectors in the gradient transformation.
+Correction to the kinetic energy after surface hop parallel to velocity vector.
+ 
+Including all gradients in the dynamics.
+Calculating wavefunction phases.
+Including all non-adiabatic coupling vectors in the dynamics.
+Calculating spin-orbit couplings.
+ 
+Not writing overlap matrix.
+Not writing gradients.
+Not writing nonadiabatic couplings.
+Not writing property vectors.
+Not writing property matrices.
+ 
+First,   writing to output.dat every      1 steps if step is >=      0
+Then,    writing to output.dat every      1 steps if step is >=      0
+Finally, writing to output.dat every      1 steps if step is >=      0
+ 
+Current working directory is
+        /panfs/roc/groups/8/truhlard/shuxx055/test/sharctest/MOLPRO_CSDM_ddr
+ 
+Shift to the diagonal energies is  -329.506289540
+Scaling factor to the Hamiltonian and gradients is  1.000
+ 
+Random number seed is      26933
+ 
+Damping factor for kinetic energy is  1.000
+ 
+Decoherence is 11 (Decay of Mixing by Zhu, Nangia, Jasper, Truhlar)
+ 
+ 
+ =============================================================
+                             Geometry
+ =============================================================
+Reading from geometry file: "geom"
+ Geometry (Bohr):
+El         x         y         z      #         mass
+C  -0.007491  0.003606 -0.295066      6.    12.000000
+Si  0.001730 -0.002980  2.958150     14.    27.976927
+H   1.705727  0.168971 -1.215263      1.     1.007825
+H   2.497177 -0.102807  4.538723      1.     1.007825
+H  -2.417730  0.156528  4.361735      1.     1.007825
+H  -1.743993 -0.182895 -1.307276      1.     1.007825
+ 
+Reading velocities from file "veloc"
+ Velocities (Bohr/atu):
+El     dx/dt     dy/dt     dz/dt
+C  -0.000058 -0.000173 -0.000362
+Si -0.000006  0.000011 -0.000020
+H  -0.000129  0.000548 -0.000101
+H   0.001182  0.000159  0.002282
+H  -0.000889 -0.000120  0.000680
+H   0.000701  0.001176  0.002006
+ 
+ Atom mask (only active):
+           1 C  T
+           2 Si T
+           3 H  T
+           4 H  T
+           5 H  T
+           6 H  T
+ Atom mask will be used for kinetic energy adjustment.
+ =============================================================
+                Initial State and Coefficients
+ =============================================================
+ 
+Setting state and coefficients for SHARC dynamics.
+ 
+Initial state is    2 in the MCH basis. 
+Initial coefficients will be set automatically.
+ 
+ Coefficients (MCH):
+  #      Real(c)      Imag(c)
+  1  0.000000000  0.000000000
+  2  1.000000000  0.000000000
+  3  0.000000000  0.000000000
+  4  0.000000000  0.000000000
+  5  0.000000000  0.000000000
+ 
+ Coefficients will be transformed after the initial energy calculation.
+ 
+ =============================================================
+                        Laser Field
+ =============================================================
+No laser field will be applied.
+ 
+ =============================================================
+                      Finalizing Input
+ =============================================================
+Trajectory input checksum is    32297448
+ 
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  Entering timestep      0  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<  Trajectory time in fs     0.00000  >>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                        Start time: Thu Apr  9 19:14:27 2020
+ 
+ =============================================================
+              Initializing states and coefficients
+ =============================================================
+Initial state is    2 in the MCH basis. 
+Initial state is    5 in the DIAG basis. 
+ Coefficients (MCH):
+  #      Real(c)      Imag(c)
+  1  0.000000000  0.000000000
+  2  1.000000000  0.000000000
+  3  0.000000000  0.000000000
+  4  0.000000000  0.000000000
+  5  0.000000000  0.000000000
+ Coefficients (diag):
+  #      Real(c)      Imag(c)
+  1 -0.000000003  0.000000000
+  2  0.000000246  0.000000000
+  3  0.000000248 -0.000000000
+  4 -0.000044849  0.000000000
+  5 -0.999999999  0.000000000
+ 
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  Entering timestep      1  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<  Trajectory time in fs     0.50000  >>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                        Start time: Thu Apr  9 19:14:43 2020
+ 
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  Entering timestep      2  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<  Trajectory time in fs     1.00000  >>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                        Start time: Thu Apr  9 19:15:00 2020
+ 
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  Entering timestep      3  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<  Trajectory time in fs     1.50000  >>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                        Start time: Thu Apr  9 19:15:17 2020
+ 
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  Entering timestep      4  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<  Trajectory time in fs     2.00000  >>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                        Start time: Thu Apr  9 19:15:33 2020
+ 
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  Entering timestep      5  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<  Trajectory time in fs     2.50000  >>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                        Start time: Thu Apr  9 19:15:53 2020
+ 
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  Entering timestep      6  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<  Trajectory time in fs     3.00000  >>>>>>>>>>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                                        Start time: Thu Apr  9 19:16:10 2020
+ 
+Total wallclock time:    0 days    0 h    1 min   59 sec
+ -------------------------------------------------------------------------------
+ -----------
+ SHARC fun fact #6: SHARC is not a living fossil.
+ -------------------------------------------------------------------------------
+ -----------

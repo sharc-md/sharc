@@ -4,9 +4,13 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2019 University of Vienna
+#    SHARC-MN Extension
 #
-#    This file is part of SHARC.
+#    Copyright (c) 2019 University of Vienna
+#    Copyright (c) 2022 University of Minnesota
+#
+#    This file is part of SHARC
+#                     and SHARC-MN extension.  
 #
 #    SHARC is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -122,8 +126,8 @@ if sys.version_info[1]<5:
 
 # ======================================================================= #
 
-version='2.1'
-versiondate=datetime.date(2019,9,1)
+version='2.2'
+versiondate=datetime.date(2022,6,8)
 
 
 
@@ -218,6 +222,9 @@ changelogstring='''
 
 15.11.2018:
 - can now do PCM computations (only numerical gradients)
+
+06.08.2022:
+- can now do CMS-PDFT with OpenMolcas
 '''
 
 # ======================================================================= #
@@ -453,7 +460,7 @@ def printheader():
     string+='||'+' '*80+'||\n'
     string+='||'+' '*27+'SHARC - MOLCAS - Interface'+' '*27+'||\n'
     string+='||'+' '*80+'||\n'
-    string+='||'+' '*19+'Authors: Sebastian Mai and Martin Richter'+' '*20+'||\n'
+    string+='||'+' '*14+'Authors: Sebastian Mai, Martin Richter, and Yinan Shu'+' '*13+'||\n'
     string+='||'+' '*80+'||\n'
     string+='||'+' '*(36-(len(version)+1)/2)+'Version: %s' % (version)+' '*(35-(len(version))/2)+'||\n'
     lens=len(versiondate.strftime("%d.%m.%y"))
@@ -634,14 +641,20 @@ def printtasks(tasks):
             print 'Copy\t%s\t==> \t%s' % (task[1],task[2])
         elif task[0]=='rasscf':
             print 'RASSCF\tMultiplicity: %i\tStates: %i\tJOBIPH=%s\tLUMORB=%s' % (task[1],task[2],task[3],task[4])
+        elif task[0]=='rasscf-cms':
+            print 'RASSCF-CMS\tMultiplicity: %i\tStates: %i\tJOBIPH=%s\tLUMORB=%s\tRLXROOT=%i' % (task[1],task[2],task[3],task[4],task[5])
         #elif task[0]=='rasscf-rlx':
             #print 'RASSCF\tMultiplicity: %i\tStates: %i\tRLXROOT=%i' % (task[1],task[2],task[3])
         elif task[0]=='alaska':
             print 'ALASKA'
         elif task[0]=='mclr':
             print 'MCLR'
+        elif task[0]=='mclr-cms':
+            print 'MCLR-CMS'
         elif task[0]=='caspt2':
             print 'CASPT2\tMultiplicity: %i\tStates: %i\tMULTISTATE=%s' % (task[1],task[2],task[3])
+        elif task[0]=='cms-pdft':
+            print 'CMS-PDFT\tFunctional: %s' % (task[1])
         elif task[0]=='rassi':
             print 'RASSI\t%s\tStates: %s' % ({'soc':'Spin-Orbit Coupling','dm':'Dipole Moments','overlap':'Overlaps'}[task[1]],task[2])
         elif task[0]=='espf':
@@ -873,7 +886,7 @@ def makermatrix(a,b):
 
 # ======================================================================= #
 def getversion(out,MOLCAS):
-    allowedrange=[ (18.0,18.999), (8.29999,8.30001) ]
+    allowedrange=[ (18.0,100.0), (8.29999,8.30001) ]
     # first try to find $MOLCAS/.molcasversion
     molcasversion=os.path.join(MOLCAS,'.molcasversion')
     if os.path.isfile(molcasversion):
@@ -936,6 +949,12 @@ def getcienergy(out,mult,state,version,method,dkh):
         modulestring='&CASPT2'
         spinstring='Spin quantum number'
         energystring='::    MS-CASPT2 Root'
+        stateindex=3
+        enindex=6
+    elif method==3:
+        modulestring='&MCPDFT'
+        spinstring='Spin quantum number'
+        energystring='::    CMS-PDFT Root'
         stateindex=3
         enindex=6
 
@@ -2145,7 +2164,7 @@ def readQMin(QMinfilename):
             global PRINT
             PRINT=False
 
-    QMin['memory']=500
+    QMin['memory']=20000
     line=getsh2caskey(sh2cas,'memory')
     if line[0]:
         try:
@@ -2215,7 +2234,7 @@ def readQMin(QMinfilename):
 
     QMin['template']={}
     integers=['nactel','inactive','ras2','frozen']
-    strings =['basis','method','baslib']
+    strings =['basis','method','baslib','functional']
     floats=['ipea','imaginary','gradaccumax','gradaccudefault','displ', 'rasscf_thrs_e', 'rasscf_thrs_rot', 'rasscf_thrs_egrd','cholesky_accu']
     booleans=['cholesky','no-douglas-kroll','qmmm','cholesky_analytical']
     for i in booleans:
@@ -2322,7 +2341,7 @@ def readQMin(QMinfilename):
         sys.exit(63)
 
     # find method
-    allowed_methods=['casscf','caspt2','ms-caspt2']
+    allowed_methods=['casscf','caspt2','ms-caspt2', 'cms-pdft']
     for i,m in enumerate(allowed_methods):
         if QMin['template']['method']==m:
             QMin['method']=i
@@ -2331,10 +2350,19 @@ def readQMin(QMinfilename):
         print 'Unknown method "%s" given in MOLCAS.template' % (QMin['template']['method'])
         sys.exit(64)
 
+    # find functional if it is cms-pdft
+    if QMin['method']==3:
+        allowed_functionals=['tpbe','t:pbe','ft:pbe','t:blyp','ft:blyp','t:revPBE','ft:revPBE','t:LSDA','ft:LSDA']
+        for i,m in enumerate(allowed_functionals):
+            if QMin['template']['functional']==m:
+                QMin['functional']=i
+                break  
+
     # decide which type of gradients to do:
     # 0 = analytical CASSCF gradients in one MOLCAS input file (less overhead, but recommended only under certain circumstances)
     # 1 = analytical CASSCF gradients in separate MOLCAS inputs, possibly distributed over several CPUs (DEFAULT)
     # 2 = numerical gradients (CASPT2, MS-CASPT2, Cholesky-CASSCF; or for dmdr and socdr), possibly distributed over several CPUs
+    # 3 = analytical CMS-PDFT gradients in one MOLCAS input file (less overhead, but recommended only under certain circumstances)
     if 'dmdr' in QMin or 'socdr' in QMin or 'grad' in QMin or 'nacdr' in QMin:
         if 'dmdr' in QMin or 'socdr' in QMin:
             QMin['gradmode']=2
@@ -2342,8 +2370,12 @@ def readQMin(QMinfilename):
             QMin['gradmode']=2
         elif QMin['template']['pcmset']['on']:
             QMin['gradmode']=2
-        elif QMin['method']>0:
+        #caspt2 or ms-caspt2
+        elif QMin['method']==1 or QMin['method']==2:
             QMin['gradmode']=2
+        #cms-pdft
+        elif QMin['method']==3:
+            QMin['gradmode']=3
         else:
             if QMin['ncpu']>0:
                 QMin['gradmode']=1
@@ -2494,15 +2526,22 @@ def gettasks(QMin):
                 tasks.append(['link',mofile,'JOBOLD'])
             elif 'RasOrb' in mofile:
                 tasks.append(['link',mofile,'INPORB'])
-
+ 
         # RASSCF
         # ['rasscf',imult,sa-nstates,jobiph]
         if not 'samestep' in QMin or 'always_orb_init' in QMin:
             jobiph='JobIph' in mofile
             rasorb='RasOrb' in mofile
+            if QMin['method']==3:
+                if not 'init' in QMin:
+                    tasks.append(['copy',os.path.join(QMin['savedir'],'Do_Rotate.%i.txt' % (imult+1)),'Do_Rotate.txt'])
             tasks.append(['rasscf',imult+1,QMin['template']['roots'][imult],jobiph,rasorb])
             if QMin['method']==0:
                 tasks.append(['copy','MOLCAS.JobIph','MOLCAS.%i.JobIph' % (imult+1)])
+            elif QMin['method']==3:
+                tasks.append(['copy','MOLCAS.JobIph','MOLCAS.%i.JobIph' % (imult+1)])
+                if not 'init' in QMin:
+                    tasks.append(['rm', 'JOBOLD'])
             if 'ion' in QMin:
                 tasks.append(['copy','MOLCAS.RasOrb','MOLCAS.%i.RasOrb' % (imult+1)])
             if 'molden' in QMin:
@@ -2536,11 +2575,24 @@ def gettasks(QMin):
                     tasks.append(['mclr',QMin['template']['gradaccudefault'],'nac=%i %i' % (i[1],i[3])])
                     tasks.append(['alaska'])
 
-        if QMin['method']>0:
+        if QMin['method']==1 or QMin['method']==2:
             # caspt2
             tasks.append(['caspt2',imult+1,nstates,QMin['method']==2])
             # copy JobIphs
             tasks.append(['copy','MOLCAS.JobMix','MOLCAS.%i.JobIph' % (imult+1)])
+
+        #CMS-PDFT Gradients
+        if QMin['gradmode']==3:
+            for i in QMin['gradmap']:
+                if i[0]==imult+1:
+                    if not 'init' in QMin:
+                        tasks.append(['copy',os.path.join(QMin['savedir'],'Do_Rotate.%i.txt' % (imult+1)),'Do_Rotate.txt'])
+                    #tasks.append(['link','MOLCAS.%i.JobIph' % (imult+1),'JOBOLD'])
+                    tasks.append(['rasscf-cms',imult+1,QMin['template']['roots'][imult],True,False,i[1]])
+                    tasks.append(['cms-pdft',QMin['template']['functional']])
+                    tasks.append(['copy','Do_Rotate.txt',os.path.join(QMin['savedir'],'Do_Rotate.%i.txt' % (imult+1))])
+                    tasks.append(['mclr-cms',QMin['template']['gradaccudefault']])
+                    tasks.append(['alaska'])
 
         # RASSI for overlaps
         if 'overlap' in QMin:
@@ -2600,13 +2652,21 @@ def writeMOLCASinput(tasks, QMin):
         elif task[0]=='seward':
             string+='&SEWARD\n'
             if not QMin['template']['no-douglas-kroll']:
-                string+='R02O\nRELINT\nEXPERT\n'
+                #string+='R02O\nRELINT\nEXPERT\n'
+                string+='Relativistic = R02O\nRELINT\nEXPERT\n'
             #if 'soc' in QMin and QMin['version']<=8.0:
                 #string+='AMFI\n'
             #if 'soc' in QMin:
                 #string+='AMFI\n'
             if QMin['template']['cholesky']:
                 string+='DOANA\n'
+            #if it is cms-pdft, add CMSI
+            if QMin['method']==3:
+                string+='GRID INPUT\n'
+                string+='GRID=ULTRAFINE\n'
+                string+='NORO\n'
+                string+='NOSC\n'
+                string+='END OF GRID INPUT\n'
             string+='\n'
 
         elif task[0]=='espf':
@@ -2618,6 +2678,9 @@ def writeMOLCASinput(tasks, QMin):
 
         elif task[0]=='copy':
             string+='>> COPY %s %s\n\n' % (task[1],task[2])
+
+        elif task[0]=='rm':
+            string+='>> RM %s\n\n' % (task[1])
 
         elif task[0]=='rasscf':
             nactel=QMin['template']['nactel']
@@ -2657,6 +2720,50 @@ def writeMOLCASinput(tasks, QMin):
             
             string+='\n'
 
+        elif task[0]=='rasscf-cms':
+            nactel=QMin['template']['nactel']
+            npad=QMin['template']['rootpad'][task[1]-1]
+            if (nactel-task[1])%2==0:
+                nactel-=1
+            string+='&RASSCF\nSPIN=%i\nNACTEL=%i 0 0\nINACTIVE=%i\nRAS2=%i\n' % (
+                    task[1],
+                    nactel,
+                    QMin['template']['inactive'],
+                    QMin['template']['ras2'])
+            if npad==0:
+                string+='CIROOT=%i %i 1\n' % (task[2],task[2])
+            else:
+                string+='CIROOT=%i %i; ' % (task[2],task[2]+npad)
+                for i in range(task[2]):
+                    string+='%i ' % (i+1)
+                string+=';'
+                for i in range(task[2]):
+                    string+='%i ' % (1)
+                string+='\n'
+            string+='RLXROOT=%i\n' % (task[5])
+            string+='ORBLISTING=NOTHING\nPRWF=0.1\n'
+            if 'grad' in QMin and QMin['gradmode']<2:
+                string+='THRS=1.0e-10 1.0e-06 1.0e-06\n'
+            else:
+                string+='THRS=%14.12f %14.12f %14.12f\n' % (QMin['template']['rasscf_thrs_e'],QMin['template']['rasscf_thrs_rot'],QMin['template']['rasscf_thrs_egrd'])
+            if task[3]:
+                string+='JOBIPH\n'
+            elif task[4]:
+                string+='LUMORB\n'
+            if QMin['template']['pcmset']['on']:
+                if task[1]==QMin['template']['pcmstate'][0]:
+                    string+='RFROOT = %i\n' % QMin['template']['pcmstate'][1]
+                else:
+                    string+='NONEQUILIBRIUM\n'
+            string+='CMSI\n'
+            string+='CMMI=0\n'
+            if not 'init' in QMin:
+                string+='CMSS=Do_Rotate.txt\n'
+            string+='CMTH=1.0d-10\n'
+            string+='\n'
+
+            string+='\n'
+
         #elif task[0]=='rasscf-rlx':
             #nactel=QMin['template']['nactel']
             #if (nactel-task[1])%2==0:
@@ -2688,6 +2795,13 @@ def writeMOLCASinput(tasks, QMin):
                 string+='RFPERT\n'
             string+='\n'
 
+        elif task[0]=='cms-pdft':
+            string+='&MCPDFT\nKSDFT=%s\n' % (task[1])
+            string+='MSPD\n'
+            if 'grad' in QMin and QMin['gradmode']>2:
+                string+='GRAD\n'
+            string+='\n'
+
         elif task[0]=='rassi':
             string+='&RASSI\nNROFJOBIPHS\n%i' % (len(task[2]))
             for i in task[2]:
@@ -2711,6 +2825,9 @@ def writeMOLCASinput(tasks, QMin):
 
         elif task[0]=='mclr':
             string+='&MCLR\nTHRESHOLD=%f\n%s\n\n' % (task[1],task[2])
+
+        elif task[0]=='mclr-cms':
+            string+='&MCLR\nTHRESHOLD=%f\n\n' % (task[1])
 
         elif task[0]=='alaska':
             string+='&ALASKA\n\n'
@@ -2891,7 +3008,7 @@ def runMOLCAS(WORKDIR,MOLCAS,ncpu,strip=False):
     os.chdir(WORKDIR)
     os.environ['WorkDir']=WORKDIR
     os.environ['MOLCAS_NPROCS']=str(ncpu)
-    path=os.path.join(MOLCAS,'bin/pymolcas')
+    path=os.path.join(MOLCAS,'pymolcas')
     if not os.path.isfile(path):
         path=os.path.join(MOLCAS,'bin/molcas.exe')
         if not os.path.isfile(path):
@@ -2983,7 +3100,7 @@ def generate_joblist(QMin):
     and all jobs from the first set need to be completed before the second set can be processed.'''
 
     joblist=[]
-    if QMin['gradmode']==0:
+    if QMin['gradmode']==0 or QMin['gradmode']==3:
         # case of serial gradients on one cpu
         QMin1=deepcopy(QMin)
         QMin1['master']=[]
@@ -3309,7 +3426,7 @@ def arrangeQMout(QMin,QMoutall,QMoutDyson):
                     QMout['phases'][i]=complex(-1.,0.)
 
     if 'grad' in QMin:
-        if QMin['gradmode']==0:
+        if QMin['gradmode']==0 or QMin['gradmode']==3:
             QMout['grad']=QMoutall['master']['grad']
 
         elif QMin['gradmode']==1:
@@ -3504,7 +3621,7 @@ def verifyQMout(QMout,QMin,out):
     if QMin['method']==0:
         # CASSCF case
         pass
-    elif QMin['method']>0:
+    elif QMin['method']==2 or QMin['method']==3:
         # SS-CASPT2 and MS-CASPT2 cases
         refs=[]
         for istate in range(QMin['nmstates']):

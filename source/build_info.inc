@@ -1,0 +1,5 @@
+character(len=500), parameter :: build_date="Thu Jan 12 21:53:27 CST 2023"
+character(len=500), parameter :: build_host="ln0004"
+character(len=500), parameter :: build_dir="/panfs/jay/groups/16/truhlard/shuxx055/software/sharc/sharcplus/sharc/source"
+character(len=500), parameter :: build_compiler="/panfs/roc/intel/x86_64/2018/parallel_studio_xe_msi/compilers_and_libraries_2018.0.128/linux/bin/intel64/ifort"
+character(len=500), parameter :: use_pysharc="false"

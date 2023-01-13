@@ -1,0 +1,6 @@
+molcas $MOLCAS/
+scratchdir ./scratch
+savedir /home/truhlard/shuxx055/test/MOLCAS_overlap/
+memory 1000
+ncpu 500
+project MOLCAS

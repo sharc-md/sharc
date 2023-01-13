@@ -2,7 +2,7 @@
 !
 !    SHARC Program Suite
 !
-!    Copyright (c) 2019 University of Vienna
+!    Copyright (c) 2023 University of Vienna
 !
 !    This file is part of SHARC.
 !
@@ -26,6 +26,10 @@
 !> \author Sebastian Mai
 !> \date 27.02.2015, modified 27.02.2017 by Philipp Marquetand
 !>
+!>                   modified 11.13.2019 by Yinan Shu
+!>                       modified subroutine write_logtimestep so it tells the trajecotry time
+!>                       modified output.lis, so it prints total density
+!>
 !> This module defines a number of subroutines which print various
 !> information.
 !> 
@@ -46,12 +50,12 @@ module output
 !> - Logo
 !> - Build/verson information
 !> 
-subroutine write_logheader(u,version)
+subroutine write_logheader(u,version,versionmn)
   implicit none
   character*1023 :: hostname, cwd
   character*24 :: ctime, date
   integer :: idate, u
-  character(len=*) :: version
+  character(len=*) :: version, versionmn
   integer :: time
 
   ! build_info.inc is written by the Makefile and contains the 
@@ -80,9 +84,11 @@ subroutine write_logheader(u,version)
 
   write(u,'(A)')      '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
   write(u,'(A)')      '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   Program SHARC started    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
+  write(u,'(A)')      '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  with Minnesta Extention   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
   write(u,'(A)')      '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
   write(u,*)
   write(u,*) 'Version: ', trim(version)
+  write(u,*) '         ', trim(versionmn)
   write(u,*) ''
 
 endsubroutine
@@ -90,18 +96,20 @@ endsubroutine
 ! ===================================================
 
 !> writes the headline for a new timestep and the date where the step was entered
-subroutine write_logtimestep(u,step)
+subroutine write_logtimestep(u,step,trajtime)
   use definitions
   implicit none
   character*24 :: ctime, date
   integer :: idate,time
   integer :: u, step
+  real*8 :: trajtime
 
   idate=time()
   date=ctime(idate)
   if (printlevel>0) then
     write(u,'(A)')      '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
     write(u,'(A,I6,A)') '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  Entering timestep ',step,'  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
+    write(u,'(A,F12.5,A)') '<<<<<<<<<<<<<<<<<<<<<<<<<<<<  Trajectory time in fs',trajtime*au2fs,'  >>>>>>>>>>>>>>>>>>>>>>>>>>>>'
     write(u,'(A)')      '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
     write(u,'(56X,A12,A)')     'Start time: ', trim(date)
     write(u,*)
@@ -191,6 +199,7 @@ endsubroutine
     write(u,'(A)') '**********************************************************'
     write(u,'(A)') '* SHARC -- Surface Hopping including ARbitrary Couplings *'
     write(u,'(A)') '*        Ab initio non-adiabatic dynamics program        *'
+    write(u,'(A)') '* with Minnesota Extention                               *'
     write(u,'(A)') '**********************************************************'
     write(u,'(A)') 
     write(u,'(A,A)') 'Version: ', trim(version)
@@ -198,11 +207,18 @@ endsubroutine
     write(u,'(A)') 
     write(u,'(A)') 'Authors: Sebastian Mai, Martin Richter, Matthias Ruckenbauer,'
     write(u,'(A)') 'Markus Oppel, Philipp Marquetand, and Leticia González'
-    write(u,'(A)') 
+    write(u,'(A)')
+    write(u,'(A)') 'MN extention authors: Yinan Shu, Linyao Zhang,'
+    write(u,'(A)') '                      and Donald G. Truhlar'
+    write(u,'(A)')
     write(u,'(A)') 'Institute of Theoretical Chemistry, University of Vienna'
     write(u,'(A)') 'Währinger Straße 17'
     write(u,'(A)') '1090 Vienna, Austria'
-    write(u,'(A)') 
+    write(u,'(A)')
+    write(u,'(A)') 'Department of Chemistry, Chemical Theory Center, University of Minnesota'
+    write(u,'(A)') 'Smith Hall, 207 Pleasant St SE'
+    write(u,'(A)') 'Minneapolis, MN 55414-0431, United States'
+    write(u,'(A)')  
     write(u,'(A)') 
     write(u,'(A)') 'Please cite the following:'
     write(u,'(A)') 
@@ -215,14 +231,23 @@ endsubroutine
     write(u,'(A)') '  "SHARC: Surface Hopping Including Arbitrary Couplings --'
     write(u,'(A)') '  Program Package for Non-Adiabatic Dynamics" (2014),'
     write(u,'(A)') '  sharc-md.org'
-    write(u,'(A)') 
+    write(u,'(A)')
+    write(u,'(A)') 'Please cite the following if you are using Minnesota extention:'
+    write(u,'(A)')
+    write(u,'(A)') '* Y. Shu, L. Zhang, S. Mai, S. Sun, L. Gonzalez, and D. G. Truhlar:' 
+    write(u,'(A)') '  J. Chem. Theory Comput., 16, 3464--3475 (2020).'
     write(u,'(A)') 
     write(u,'(A)') 'Please report bugs and feature suggestions to:'
     write(u,'(A)') 'sharc@univie.ac.at'
     write(u,'(A)') 'philipp.marquetand@univie.ac.at'
+    write(u,'(A)')
+    write(u,'(A)') 'Please report Minnesota extention related bugs and feature suggestions to:'
+    write(u,'(A)') 'yinan.shu.0728@gmail.com'
+    write(u,'(A)') 'truhlar@umn.edu'
     write(u,'(A)') 
     write(u,'(A)') 
     write(u,'(A)') 'Copyright (c) 2014, University of Vienna'
+    write(u,'(A)') 'Copyright (c) 2020, University of Minnesota'
     write(u,'(A)') 
     write(u,'(A)') 'Permission is hereby granted, free of charge, to any person obtaining a copy '
     write(u,'(A)') 'of this software and associated documentation files (the "Software"), to deal'
@@ -257,14 +282,14 @@ subroutine write_list_header(u)
   implicit none
   integer :: u
 
-  write(u,'(a1,a)') '#',repeat('=',145)
-  write(u,'(a1,A11,1X,A14,1X,A15,1X,A44,1X,A14,1X,A29,1X,A12)') '#',&
-  &'Step |','Time |','State |','Energy |','Gradient |','Expectation Value |','Runtime |'
-  write(u,'(a1,A11,1X,A14,1X,2(A7,1X),6(A14,1X),A12)') '#',&
-  &'|','|','diag |','MCH |','kin |','pot |','tot |','RMS |','DM |','S |','|'
-  write(u,'(a1,A11,1X,A14,1X,2(A7,1X),6(A14,1X),A12)') '#',&
-  &'|','[fs] |','|','|','[eV] |','[eV] |','[eV] |','[eV/Ang] |','[Debye] |','|','[sec] |'
-  write(u,'(a1,a)') '#',repeat('=',145)
+  write(u,'(a1,a)') '#',repeat('=',239)
+  write(u,'(a1,A11,1X,A14,1X,A15,1X,A68,1X,3(A22,1X),A45,1X,A12)') '#',&
+  &'Step |','Time |','State |','Energy |','Angular |','Gradient |','Density |','Expectation Value |','Runtime |'
+  write(u,'(a1,A11,1X,A14,1X,2(A7,1X),8(A22,1X),A12)') '#',&
+  &'|','|','diag |','MCH |','kin |','pot |','tot |','Momentum |','RMS |','Total |','DM |','S |','|'
+  write(u,'(a1,A11,1X,A14,1X,2(A7,1X),8(A22,1X),A12)') '#',&
+  &'|','[fs] |','|','|','[eV] |','[eV] |','[eV] |','[hbar] |','[eV/Ang] |','|','[Debye] |','|','[sec] |'
+  write(u,'(a1,a)') '#',repeat('=',239)
 
 endsubroutine
 
@@ -277,8 +302,9 @@ subroutine write_list_line(u, traj, ctrl)
   implicit none
   type(trajectory_type) :: traj
   type(ctrl_type) :: ctrl
-  integer :: u, imult,ims,istate,jstate,i, idir
-  real*8 :: expec_dm, expec_s, grad_length, temp_dm
+  integer :: u, imult,ims,istate,jstate,i,iatom,idir
+  real*8 :: expec_dm, expec_s, grad_length, temp_dm, den
+  real*8 :: p(ctrl%natom,3), r(ctrl%natom,3), summass, com(3), jmag, j(3)
 
   ! calculate properties
   ! gradient
@@ -312,12 +338,56 @@ subroutine write_list_line(u, traj, ctrl)
     enddo
   enddo
 
+  ! total density
+  den=0.d0
+  do istate=1,ctrl%nstates
+    den=den+traj%coeff_diag_s(istate)*conjg(traj%coeff_diag_s(istate))
+  enddo
+
+  ! angular momentum 
+  !-momentum
+  j=0.d0
+  jmag=0.d0
+  do iatom=1,ctrl%natom
+    do idir=1,3
+      p(iatom,idir)=traj%veloc_ad(iatom,idir)*traj%mass_a(iatom)
+    enddo
+  enddo
+  !-center of mass
+  com=0.d0
+  summass=0.d0
+  do iatom=1,ctrl%natom
+    summass=summass+traj%mass_a(iatom)
+    do idir=1,3
+      com(idir)=com(idir)+traj%geom_ad(iatom,idir)*traj%mass_a(iatom)
+    enddo
+  enddo
+  com=com/summass
+  !-coordinates relative to center of mass
+  do iatom=1,ctrl%natom
+    do idir=1,3
+      r(iatom,idir)=traj%geom_ad(iatom,idir)-com(idir)
+    enddo
+  enddo
+  !-angular momentum J
+  do iatom=1,ctrl%natom
+    j(1)=j(1)+(r(iatom,2)*p(iatom,3)-r(iatom,3)*p(iatom,2))
+    j(2)=j(2)-(r(iatom,1)*p(iatom,3)-r(iatom,3)*p(iatom,1))
+    j(3)=j(3)+(r(iatom,1)*p(iatom,2)-r(iatom,2)*p(iatom,1))
+  enddo
+  !-norm of J
+  do idir=1,3
+    jmag = jmag + j(idir)**2
+  enddo
+  jmag = dsqrt(jmag)
+
+  if ( (ctrl%time_uncertainty==1 .and. traj%in_time_uncertainty==0) .or. ctrl%time_uncertainty==0 ) then 
   select case (traj%kind_of_jump)
     case (0)
       continue
     case (1)
       write(u,'(A,1X,A,1X,I4,1X,A,1X,I4,1X,A,1X,F12.9)') &
-      &'#','Surface Hop: new state=',traj%state_diag,'old state=',traj%state_diag_old,'randnum=',traj%randnum
+      &'#','Surface Hop/Pointer State Switch: new state=',traj%state_diag,'old state=',traj%state_diag_old,'randnum=',traj%randnum
     case (2)
       write(u,'(A)') '# Jump frustrated.'
     case (3)
@@ -329,12 +399,13 @@ subroutine write_list_line(u, traj, ctrl)
       write(u,'(A,1X,A,1X,I4,1X,A,1X,I4,1X,A,1X,F12.9)') &
       &'#','Surface Hop: new state=',traj%state_diag,'old state=',traj%state_diag_old,'randnum=',traj%randnum
   endselect
+  endif
 
-  write(u,'(1X,I9,3X,F12.5,3X,2(I5,3X),6(F12.6,3X),I10)') &
-  &traj%step, ctrl%dtstep*au2fs*traj%step, &
+  write(u,'(1X,I9,3X,F12.5,3X,2(I5,3X),8(F20.10,3X),I10)') &
+  &traj%step, au2fs*traj%microtime, &
   &traj%state_diag, traj%state_MCH, &
   &traj%Ekin*au2eV, traj%Epot*au2eV, traj%Etot*au2eV, &
-  &grad_length, expec_dm, expec_s, &
+  &jmag, grad_length, den, expec_dm, expec_s, &
   &traj%time_step
 
 endsubroutine
@@ -352,7 +423,7 @@ subroutine write_geom(u,traj,ctrl)
   integer :: iatom, idir
 
   write(u,'(I12)') ctrl%natom
-  write(u,'(A5, 1X, F14.5, 1X, I4, 1X, i4)') 't= ',au2fs*ctrl%dtstep*traj%step, traj%state_diag, traj%state_MCH
+  write(u,'(A5, 1X, F14.5, 1X, I4, 1X, i4)') 't= ',au2fs*traj%microtime, traj%state_diag, traj%state_MCH
   do iatom=1,ctrl%natom
     write(u,'(A2,3(1X,F16.9))') traj%element_a(iatom), (traj%geom_ad(iatom,idir)*au2a,idir=1,3)
   enddo
@@ -393,13 +464,17 @@ subroutine write_dat_initial(u, ctrl, traj)
   elseif   (ctrl%output_version >= 2.0) then
     ! header for SHARC v2.0
     write(u,'(a14,f5.1)') 'SHARC_version ',  ctrl%output_version
+    write(u,*) 'method',           ctrl%method
     write(u,*) 'maxmult',          ctrl%maxmult
     write(u,*) 'nstates_m',        ctrl%nstates_m
     write(u,*) 'natom',            ctrl%natom
-    write(u,*) 'dtstep',           ctrl%dtstep 
+    write(u,*) 'dtstep',           ctrl%dtstep
     write(u,*) 'nsteps',           ctrl%nsteps
     write(u,*) 'nsubsteps',        ctrl%nsubsteps
     write(u,*) 'ezero',            ctrl%ezero
+    write(u,*) 'decoherence',      ctrl%decoherence
+    write(u,*) 'switch',           ctrl%switching_procedure
+    write(u,*) 'coupling',         ctrl%coupling
     write(u,*) 'write_overlap',    ctrl%write_overlap
     write(u,*) 'write_grad',       ctrl%write_grad
     write(u,*) 'write_nacdr',      ctrl%write_NACdr
@@ -447,46 +522,61 @@ subroutine write_dat(u, traj, ctrl)
 
     write(u,'(A)') '! 0 Step'
     write(u,'(I12)') traj%step
-    call matwrite(nstates, traj%H_MCH_ss, u, '! 1 Hamiltonian (MCH) in a.u.', 'E21.13e3')
-    call matwrite(nstates, traj%U_ss, u, '! 2 U matrix', 'E21.13e3')
-    call matwrite(nstates, traj%DM_print_ssd(:,:,1), u, '! 3 Dipole moments X (MCH) in a.u.', 'E21.13e3')
-    call matwrite(nstates, traj%DM_print_ssd(:,:,2), u, '! 3 Dipole moments Y (MCH) in a.u.', 'E21.13e3')
-    call matwrite(nstates, traj%DM_print_ssd(:,:,3), u, '! 3 Dipole moments Z (MCH) in a.u.', 'E21.13e3')
+    write(u,'(A)') '! 1 Step Size in fs'
+    write(u,'(F12.6)') ctrl%dtstep*au2fs
+    write(u,'(A)') '! 2 Trajectory time in fs'
+    write(u,'(F12.6)') traj%microtime*au2fs
+    call matwrite(nstates, traj%H_MCH_ss, u, '! 3 Hamiltonian (MCH) in a.u.', 'E21.13e3')
+    call matwrite(nstates, traj%U_ss, u, '! 4 U matrix', 'E21.13e3')
+    call matwrite(nstates, traj%DM_print_ssd(:,:,1), u, '! 5 Dipole moments X (MCH) in a.u.', 'E21.13e3')
+    call matwrite(nstates, traj%DM_print_ssd(:,:,2), u, '! 5 Dipole moments Y (MCH) in a.u.', 'E21.13e3')
+    call matwrite(nstates, traj%DM_print_ssd(:,:,3), u, '! 5 Dipole moments Z (MCH) in a.u.', 'E21.13e3')
 
     if (ctrl%write_overlap==1) then
-      call matwrite(nstates, traj%overlaps_ss, u, '! 4 Overlap matrix (MCH)', 'E21.13e3')
+      call matwrite(nstates, traj%overlaps_ss, u, '! 6 Overlap matrix (MCH)', 'E21.13e3')
     endif
 
-    call vecwrite(nstates, traj%coeff_diag_s, u, '! 5 Coefficients (diag)','E21.13e3')
-    call vecwrite(nstates, traj%hopprob_s, u, '! 6 Hopping Probabilities (diag)','E21.13e3')
+    call vecwrite(nstates, traj%coeff_diag_s, u, '! 7 Coefficients (diag)','E21.13e3')
+    if (ctrl%method==1 .and. ctrl%decoherence==11 .and. ctrl%switching_procedure==1) then !CSDM
+      call vecwrite(nstates, traj%ccoeff_diag_s, u, '! 8 Coherent coefficients (diag)', 'E21.13e3')
+    endif
 
-    write(u,'(A)') '! 7 Ekin (a.u.)'
+    if (ctrl%method==0) then !TSH
+      call vecwrite(nstates, traj%hopprob_s, u, '! 9 Hopping Probabilities (diag)','E21.13e3')
+    else !SCP
+      if (ctrl%decoherence==11) then !DoM 
+        call vecwrite(nstates, traj%switchprob_s, u, '! 9 Switching Probabilities (diag)','E21.13e3')
+      endif
+    endif
+
+    write(u,'(A)') '! 10 Ekin (a.u.)'
     write(u,'(E21.13e3)') traj%Ekin
-    write(u,'(A)') '! 8 states (diag, MCH)'
+    write(u,'(A)') '! 11 Epot (a.u.)'
+    write(u,'(E21.13e3)') traj%Epot
+    write(u,'(A)') '! 12 states (diag, MCH)'
     write(u,'(I12,1X,I12)') traj%state_diag, traj%state_MCH
-    write(u,'(A)') '! 9 Random number'
+    write(u,'(A)') '! 13 Random number'
     write(u,'(E21.13e3)') traj%randnum
-    write(u,'(A)') '! 10 Runtime (sec)'
+    write(u,'(A)') '! 14 Runtime (sec)'
     write(u,'(I12)') traj%time_step
 
-    call vec3write(natom, traj%geom_ad, u, '! 11 Geometry in a.u.','E21.13e3')
-    call vec3write(natom, traj%veloc_ad, u, '! 12 Velocities in a.u.','E21.13e3')
-
+    call vec3write(natom, traj%geom_ad, u, '! 15 Geometry in a.u.','E21.13e3')
+    call vec3write(natom, traj%veloc_ad, u, '! 16 Velocities in a.u.','E21.13e3')
 
     if (ctrl%output_version <= 1.0) then
-      call matwrite(nstates, traj%Property2d_xss(1,:,:), u, '! 13 Property matrix (MCH)', 'E21.13e3')
+      call matwrite(nstates, traj%Property2d_xss(1,:,:), u, '! 17 Property matrix (MCH)', 'E21.13e3')
     elseif (ctrl%output_version >= 2.0) then
       if (ctrl%write_property2d==1) then
-  !       write(u,'(A)') '! 13 Property matrices (MCH)'
+  !       write(u,'(A)') '! 17 Property matrices (MCH)'
         do i=1,ctrl%n_property2d
-          write(string,'(A26,I3,A3,A)') '! 13 Property matrix (MCH)',i,' : ',traj%Property2d_labels_x(i)
+          write(string,'(A26,I3,A3,A)') '! 17 Property matrix (MCH)',i,' : ',traj%Property2d_labels_x(i)
           call matwrite(nstates, traj%Property2d_xss(i,:,:), u, string, 'E21.13e3')
         enddo
       endif
       if (ctrl%write_property1d==1) then
-  !       write(u,'(A)') '! 14 Property vectors (MCH)'
+  !       write(u,'(A)') '! 18 Property vectors (MCH)'
         do i=1,ctrl%n_property1d
-          write(string,'(A26,I3,A3,A)') '! 14 Property vector (MCH)',i,' : ',traj%Property1d_labels_y(i)
+          write(string,'(A26,I3,A3,A)') '! 18 Property vector (MCH)',i,' : ',traj%Property1d_labels_y(i)
           call vecwrite(nstates, traj%Property1d_ys(i,:), u, string, 'E21.13e3')
         enddo
       endif
@@ -494,19 +584,19 @@ subroutine write_dat(u, traj, ctrl)
 
 
     if (ctrl%write_grad == 1) then
-  !     write(u,'(A)') '! 15 Gradient matrix (MCH) as x,y,z (per line) for each atom (per newline)'
+  !     write(u,'(A)') '! 19 Gradient matrix (MCH) as x,y,z (per line) for each atom (per newline)'
       do i=1,ctrl%nstates
-        write(string,'(A26,I3)') '! 15 Gradients (MCH) State',i
+        write(string,'(A26,I3)') '! 19 Gradients (MCH) State',i
         call vec3write(ctrl%natom,traj%grad_mch_sad(i,:,:),u,trim(string),'E21.13e3')
       enddo
     endif
 
 
     if (ctrl%write_NACdr == 1) then
-  !     write(u,'(A)') '! 16 NAC matrix (MCH) as x,y,z (per line) for each atom (per newline)'
+  !     write(u,'(A)') '! 20 NAC matrix (MCH) as x,y,z (per line) for each atom (per newline)'
       do i=1,ctrl%nstates
         do j=1,ctrl%nstates
-          write(string,'(A31,I3,1X,I3)') '! 16 NACdr matrix element (MCH)',i,j
+          write(string,'(A31,I3,1X,I3)') '! 20 NACdr matrix element (MCH)',i,j
           call vec3write(ctrl%natom,traj%NACdr_ssad(i,j,:,:),u,trim(string),'E21.13e3')
         enddo
       enddo

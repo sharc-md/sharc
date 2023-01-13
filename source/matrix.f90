@@ -2,7 +2,7 @@
 !
 !    SHARC Program Suite
 !
-!    Copyright (c) 2019 University of Vienna
+!    Copyright (c) 2023 University of Vienna
 !
 !    This file is part of SHARC.
 !
@@ -73,11 +73,13 @@ private dtransform,ztransform
 private dmultiply,zmultiply
 private ddiagonalize,zdiagonalize
 private dexponential,zexponential
+private dlogarithmic, zlogarithmic
 private ddiagonalize_and_project,zdiagonalize_and_project
 private dwrite,zwrite,iwrite
 private dvecmultiply,zvecmultiply
 private dvecwrite,zvecwrite
 private d3vecwrite,z3vecwrite
+private d2vecwrite,z2vecwrite
 private dishermitian,zishermitian
 private disantihermitian,zisantihermitian
 private disunitary,zisunitary
@@ -94,21 +96,25 @@ public matmultiply
 public matvecmultiply
 public diagonalize
 public exponentiate
+public logarithm
 public diagonalize_and_project
 public allocate_lapack
 public set_project_diffthr
 public matwrite
 public vecwrite
 public vec3write
+public vec2write
 public matread
 public vecread
 public vec3read
+public vec2read
 public ishermitian
 public isantihermitian
 public isunitary
 public project_recursive
 public project_a_on_b
 public intruder
+public mat3invert
 
 ! =================================================================== !
 
@@ -142,6 +148,10 @@ interface exponentiate
   module procedure dexponential,zexponential
 endinterface
 
+interface logarithm
+  module procedure dlogarithmic,zlogarithmic
+endinterface
+
 interface diagonalize_and_project
   module procedure ddiagonalize_and_project,zdiagonalize_and_project
 endinterface
@@ -162,6 +172,10 @@ interface vec3write
   module procedure d3vecwrite,z3vecwrite
 endinterface
 
+interface vec2write
+  module procedure d2vecwrite,z2vecwrite
+endinterface
+
 interface matread
   module procedure dread,zread,iread
 endinterface
@@ -172,6 +186,10 @@ endinterface
 
 interface vec3read
   module procedure d3vecread,z3vecread
+endinterface
+
+interface vec2read
+  module procedure d2vecread,z2vecread
 endinterface
 
 interface ishermitian
@@ -974,6 +992,73 @@ subroutine zexponential(n,A_ss,factor)
 endsubroutine
 
 ! =================================================================== !
+
+!> calculates the matrix logarithmic ln(A)
+!> by ln(A) = U.ln(factor*U^T.A.U).U^T
+!>
+!> is a wrapper around dsyev
+subroutine dlogarithmic(n,A_ss,factor)
+implicit none
+! parameters
+  integer, intent(in) :: n
+  real*8, intent(inout) :: A_ss(n,n)
+  real*8, intent(in) :: factor
+! internal variables
+  real*8 :: EV_s(n),Scratch_ss(n,n),U_ss(n,n)
+  integer :: io,i
+
+  U_ss=A_ss
+  call dsyev('V','L',n,U_ss,n,EV_s,lapack_work_d,lapack_lwork_d,io)
+! U_ss already holds the transformation matrix
+! now  building the diagonal matrix A_ss
+  A_ss=0.d0
+  do i=1,n
+    A_ss(i,i)=log(factor*EV_s(i))
+  enddo
+  call dgemm('N','T',n,n,n,1.d0,A_ss,n,U_ss,n,0.d0,Scratch_ss,n)
+  call dgemm('N','N',n,n,n,1.d0,U_ss,n,Scratch_ss,n,0.d0,A_ss,n)
+
+  return
+
+endsubroutine
+
+! =================================================================== !
+
+!> calculates the matrix logarithmic ln(A)
+!> by ln(A) = U.ln(factor*U^T.A.U).U^T
+!>
+!> is a wrapper around zheev
+!> \param factor allows to calculate matrix exponentials of non-hermitian
+!matrices
+!> for an anti-hermitian matrix A, call dlogarithmic(n,ii*A,-ii), then ii*A is
+!hermitian, but the result is ln(A)
+subroutine zlogarithmic(n,A_ss,factor)
+  implicit none
+! parameters
+  integer, intent(in) :: n
+  complex*16, intent(inout) :: A_ss(n,n)
+  complex*16, intent(in) :: factor
+! internal variables
+  real*8 :: EV_s(n)
+  integer :: io,i
+  complex*16 :: U_ss(n,n),Scratch_ss(n,n)
+
+  U_ss=A_ss
+  call zheev('V','L',n,U_ss,n,EV_s,lapack_work_z,lapack_lwork_z,lapack_rwork_z,io)
+! U_ss already holds the transformation matrix
+! now  building the diagonal matrix A_ss
+  A_ss=dcmplx(0.d0,0.d0)
+  do i=1,n
+    A_ss(i,i)=log(factor*dcmplx(EV_s(i),0.d0))
+  enddo
+  call zgemm('N','C',n,n,n,dcmplx(1.d0,0.d0),A_ss,n,U_ss,n,dcmplx(0.d0,0.d0),Scratch_ss,n)
+  call zgemm('N','N',n,n,n,dcmplx(1.d0,0.d0),U_ss,n,Scratch_ss,n,dcmplx(0.d0,0.d0),A_ss,n)
+
+  return
+
+endsubroutine
+
+! =================================================================== !
 ! =================================================================== !
 !                             Matrix multiplication                   !
 ! =================================================================== !
@@ -1338,6 +1423,60 @@ subroutine z3vecwrite(n,c,wrunit,title,precstring)
 endsubroutine
 
 ! =================================================================== !
+
+!> writes vector c of dimension 2xn to unit wrunit
+!> writes the title before the vector
+!> uses precstring as format string
+subroutine d2vecwrite(n,c,wrunit,title,precstring)
+  implicit none
+  ! parameters
+  integer, intent(in) :: n
+  real*8,intent(in) :: c(n,2)
+  integer, intent(in) :: wrunit
+  character(len=*), intent(in) :: title
+  character(len=*), intent(in) :: precstring
+  ! internal variables
+  integer :: i,j
+  character*255 :: fmtstring
+
+  write(wrunit,'(A)') trim(title)
+
+  write(fmtstring,'(I10)') 2
+  fmtstring='('//trim(adjustl(fmtstring))//'('//trim(adjustl(precstring))//',1X))'
+  do i=1,n
+    write(wrunit,fmtstring) (c(i,j),j=1,2)
+  enddo
+
+endsubroutine
+
+! =================================================================== !
+
+!> writes vector c of dimension 3xn to unit wrunit
+!> writes the title before the vector
+!> uses precstring as format string
+subroutine z2vecwrite(n,c,wrunit,title,precstring)
+  implicit none
+  ! parameters
+  integer, intent(in) :: n
+  complex*16,intent(in) :: c(n,2)
+  integer, intent(in) :: wrunit
+  character(len=*), intent(in) :: title
+  character(len=*), intent(in) :: precstring
+  ! internal variables
+  integer :: i,j
+  character*255 :: fmtstring
+
+  write(wrunit,'(A)') trim(title)
+
+  write(fmtstring,'(I10)') 2
+  fmtstring='('//trim(adjustl(fmtstring))//'('//trim(adjustl(precstring))//',1X,'//trim(adjustl(precstring))//',4X))'
+  do i=1,n
+    write(wrunit,fmtstring) (c(i,j),j=1,2)
+  enddo
+
+endsubroutine
+
+! =================================================================== !
 ! =================================================================== !
 !                                    Read                             !
 ! =================================================================== !
@@ -1574,6 +1713,66 @@ subroutine z3vecread(n,c,runit,title)
 endsubroutine
 
 ! =================================================================== !
+
+!> reads a 2-vector c from unit runit
+!> also reads the title, THIS MEANS THAT the current line of runit has to be the
+!title line
+subroutine d2vecread(n,c,runit,title)
+  implicit none
+  ! parameters
+  integer, intent(in) :: n
+  real*8,intent(out) :: c(n,2)
+  integer, intent(in) :: runit
+  character(len=8000), intent(out) :: title
+  ! internal variables
+  integer :: i,j, io
+
+  read(runit,'(A)', iostat=io) title
+
+  do i=1,n
+    read(runit,*, iostat=io) (c(i,j),j=1,2)
+    if (io/=0) then
+      write(*,*) 'Could not read 2-vector'
+      write(*,*) 'routine=d2vecread(), n=',n,', unit=',runit
+      write(*,*) 'title=',trim(title)
+    endif
+  enddo
+
+endsubroutine
+
+! =================================================================== !
+
+!> reads a 2-vector c from unit runit
+!> also reads the title, THIS MEANS THAT the current line of runit has to be the
+!title line
+subroutine z2vecread(n,c,runit,title)
+  implicit none
+  ! parameters
+  integer, intent(in) :: n
+  complex*16,intent(out) :: c(n,2)
+  integer, intent(in) :: runit
+  character(len=8000), intent(out) :: title
+  ! internal variables
+  integer :: i,j, io
+  real*8 :: re_im(4)
+
+  read(runit,'(A)', iostat=io) title
+
+  do i=1,n
+    read(runit,*) (re_im(j),j=1,4)
+    if (io/=0) then
+      write(*,*) 'Could not read 2-vector'
+      write(*,*) 'routine=d2vecread(), n=',n,', unit=',runit
+      write(*,*) 'title=',trim(title)
+    endif
+    do j=1,2
+      c(i,j)=dcmplx(re_im(2*j-1),re_im(2*j))
+    enddo
+  enddo
+
+endsubroutine
+
+! =================================================================== !
 ! =================================================================== !
 !                                Check functions                      !
 ! =================================================================== !
@@ -1749,4 +1948,30 @@ subroutine z3project_a_on_b(n, a, b, new_a)
 
 endsubroutine
 
-endmodule
+! =================================================================== !
+
+subroutine mat3invert(a,b)
+ ! Performs a direct calculation of the inverse of a 3×3 matrix.
+ real*8, intent(in) :: a(3,3) !! Matrix
+ real*8, intent(out) :: b(3,3) !! Inverse matrix
+ real*8 :: detinv
+
+ ! Calculate the inverse determinant of the matrix
+ detinv = 1/(a(1,1)*a(2,2)*a(3,3) - a(1,1)*a(2,3)*a(3,2)&
+          - a(1,2)*a(2,1)*a(3,3) + a(1,2)*a(2,3)*a(3,1)&
+          + a(1,3)*a(2,1)*a(3,2) - a(1,3)*a(2,2)*a(3,1))
+
+ ! Calculate the inverse of the matrix
+ b(1,1) = +detinv * (a(2,2)*a(3,3) - a(2,3)*a(3,2))
+ b(2,1) = -detinv * (a(2,1)*a(3,3) - a(2,3)*a(3,1))
+ b(3,1) = +detinv * (a(2,1)*a(3,2) - a(2,2)*a(3,1))
+ b(1,2) = -detinv * (a(1,2)*a(3,3) - a(1,3)*a(3,2))
+ b(2,2) = +detinv * (a(1,1)*a(3,3) - a(1,3)*a(3,1))
+ b(3,2) = -detinv * (a(1,1)*a(3,2) - a(1,2)*a(3,1))
+ b(1,3) = +detinv * (a(1,2)*a(2,3) - a(1,3)*a(2,2))
+ b(2,3) = -detinv * (a(1,1)*a(2,3) - a(1,3)*a(2,1))
+ b(3,3) = +detinv * (a(1,1)*a(2,2) - a(1,2)*a(2,1))
+
+endsubroutine
+
+endmodule matrix

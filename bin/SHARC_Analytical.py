@@ -991,6 +991,14 @@ def read_QMin():
     tofile=os.path.join(QMin['savedir'],'geom_old.out')
     shutil.copy(fromfile,tofile)
 
+  # find forbidden keywords and optional keywords
+  for line in qmin:
+    s=line.lower().split()
+    if len(s)==0:
+      continue
+    if 'dmdr' in s[0]:
+      QMin['dmdr']=[]
+
   # read old geometry from savedir/geom_old.out
   try:
     filename=os.path.join(QMin['savedir'],'geom_old.out')
@@ -1011,22 +1019,11 @@ def read_QMin():
   QMin['geom']=geom
   QMin['geomold']=geomold
 
-  # find forbidden keywords and optional keywords
-  for line in qmin:
-    s=line.lower().split()
-    if len(s)==0:
-      continue
-    if 'nacdt' in s[0] or 'nacdr' in s[0]:
-      print 'NACDR and NACDT are not supported!'
-      sys.exit(19)
-    if 'dmdr' in s[0]:
-      QMin['dmdr']=[]
-
-
   # add request keywords
   QMin['soc']=[]
   QMin['dm']=[]
   QMin['grad']=[]
+  QMin['nacdr']=[]
   QMin['overlap']=[]
   QMin['phases']=[]
   QMin['pwd']=os.getcwd()
@@ -1197,7 +1194,7 @@ def read_SH2Ana(QMin):
 # ============================================================================
 # ============================================================================
 def getQMout(QMin,SH2ANA):
-  '''Calculates the MCH Hamiltonian, SOC matrix ,overlap matrix, gradients, DM'''
+  '''Calculates the MCH Hamiltonian, SOC matrix ,NACdR, overlap matrix, gradients, DM'''
 
   QMout={}
 
@@ -1271,6 +1268,34 @@ def getQMout(QMin,SH2ANA):
           for istate in range(QMin['nmstates']) ] 
         for jstate in range(QMin['nmstates']) ]
 
+  # get nonadiabatic couplings
+  gnacdr=[]
+  for iatom in range(QMin['natom']):
+    gnacdr.append([])
+    for idir in range(3):
+      if SH2ANA['gvar'][iatom][idir]=='0':
+        gnacdr[-1].append( [ [ 0. for i in range(QMin['nmstates']) ] for j in range(QMin['nmstates']) ] )
+      else:
+        v=SH2ANA['gvar'][iatom][idir]
+        Dmatrix=transform(SH2ANA['deriv'][v],U)
+        for istate in range(QMin['nmstates']):
+          for jstate in range(QMin['nmstates']):
+            if (istate!=jstate):
+               Dmatrix[istate][jstate]=Dmatrix[istate][jstate]/(Hd[jstate][jstate]-Hd[istate][istate])
+            if (istate==jstate):
+               Dmatrix[istate][jstate]=0.0000
+        gnacdr[-1].append( [ [ Dmatrix[i][j].real for i in range(QMin['nmstates']) ] for j in range(QMin['nmstates']) ] )
+  # rearrange nonadiabatic couplings
+  nacdr= [
+           [
+             [
+               [
+                  gnacdr[iatom][idir][istate][jstate]
+                for idir in range(3) ]
+              for iatom in range(QMin['natom']) ]
+          for istate in range(QMin['nmstates']) ]
+        for jstate in range(QMin['nmstates']) ]
+
   # get overlap matrix
   overlap=matmult(Uold,U,transA=True)
 
@@ -1285,6 +1310,7 @@ def getQMout(QMin,SH2ANA):
   QMout['h']=Hfull
   QMout['dm']=dipole
   QMout['grad']=grad
+  QMout['nacdr']=nacdr
   QMout['dmdr']=dmdr
   QMout['overlap']=overlap
   QMout['runtime']=0.

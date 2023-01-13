@@ -1,0 +1,5 @@
+molcas $MOLCAS/
+scratchdir ./scratch
+memory 1000
+ncpu 500
+project MOLCAS

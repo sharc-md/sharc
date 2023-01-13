@@ -2,7 +2,7 @@
 !
 !    SHARC Program Suite
 !
-!    Copyright (c) 2019 University of Vienna
+!    Copyright (c) 2023 University of Vienna
 !
 !    This file is part of SHARC.
 !
@@ -56,8 +56,8 @@ subroutine propagate_laser(traj,ctrl)
   enddo
 
   ! call the appropriate propagator routine
-  select case (ctrl%coupling)
-    case (0)    ! ddt
+  select case (ctrl%eeom)
+    case (0)    ! constant interpolation, default for coupling=ddt
       ! NADdt_ss can be directly used
       ! constant interpolation
       call unitary_propagator_laser(&
@@ -69,7 +69,7 @@ subroutine propagate_laser(traj,ctrl)
         &ctrl%laserfield_td( (traj%step-1)*ctrl%nsubsteps+2:traj%step*ctrl%nsubsteps+1 ,:),&
         &ctrl%dtstep, ctrl%nsubsteps, 1,&       ! 1=constant interpolation
         &traj%Rtotal_ss)
-    case (1)    ! ddr
+    case (1)    ! linear interpolation, default for coupling=ddr,nacdr
       ! NACdr_ssad has to be scalar multiplied with velocity, NACdt_old_ss already contains the old scalar products
       ! linear interpolation
       traj%NACdt_ss=dcmplx(0.d0,0.d0)
@@ -87,7 +87,7 @@ subroutine propagate_laser(traj,ctrl)
         &ctrl%laserfield_td( (traj%step-1)*ctrl%nsubsteps+2:traj%step*ctrl%nsubsteps+1 ,:),&
         &ctrl%dtstep, ctrl%nsubsteps, 0,&       ! 0=linear interpolation
         &traj%Rtotal_ss)
-    case (2)    ! overlap
+    case (2)    ! local diabatization, defafult for coupling=overlap
       ! overlap matrix is used
       ! use LOCAL DIABATISATION
       call LD_propagator_laser(&
@@ -97,6 +97,16 @@ subroutine propagate_laser(traj,ctrl)
         &traj%overlaps_ss,&
         &traj%DM_ssd,traj%DM_old_ssd,&
         &ctrl%laserfield_td( (traj%step-1)*ctrl%nsubsteps+2:traj%step*ctrl%nsubsteps+1 ,:),&
+        &ctrl%dtstep, ctrl%nsubsteps,&
+        &traj%Rtotal_ss)
+    case (3)    ! norm perserving interporlation
+      call NPI_propagator_laser(&
+        &ctrl%nstates,&
+        &traj%H_MCH_ss, traj%H_MCH_old_ss,&
+        &traj%U_ss,traj%U_old_ss,&
+        &traj%overlaps_ss,&
+        &traj%DM_ssd,traj%DM_old_ssd,&
+        &ctrl%laserfield_td((traj%step-1)*ctrl%nsubsteps+2:traj%step*ctrl%nsubsteps+1 ,:),&
         &ctrl%dtstep, ctrl%nsubsteps,&
         &traj%Rtotal_ss)
   endselect
@@ -111,9 +121,9 @@ subroutine propagate_laser(traj,ctrl)
       &ctrl%laserfield_td( (traj%step-1)*ctrl%nsubsteps+2:traj%step*ctrl%nsubsteps+1 ,:),&
       &u_log,'Laser Field','F12.9')
     endif
-    select case (ctrl%coupling)
-      case (0)  ! ddt
-        write(u_log,*) 'Propagating the coefficients using the ddt matrix...'
+    select case (ctrl%eeom)
+      case (0)  ! constant interpolation 
+        write(u_log,*) 'Propagating the coefficients using the constant interpolated ddt matrix...'
         if (printlevel>4) then
           call matwrite(ctrl%nstates,traj%H_MCH_old_ss,u_log,'Old H_MCH Matrix','F12.9')
           call matwrite(ctrl%nstates,traj%H_MCH_ss,u_log,'H_MCH Matrix','F12.9')
@@ -122,8 +132,8 @@ subroutine propagate_laser(traj,ctrl)
           call matwrite(ctrl%nstates,traj%U_old_ss,u_log,'U_old Matrix','F12.9')
           call matwrite(ctrl%nstates,traj%U_ss,u_log,'U Matrix','F12.9')
         endif
-      case (1)  ! ddr
-        write(u_log,*) 'Propagating the coefficients using the ddr vectors...'
+      case (1)  ! linear interpolation
+        write(u_log,*) 'Propagating the coefficients using the linearly interpolated ddt matrix...'
         if (printlevel>4) then
           call matwrite(ctrl%nstates,traj%H_MCH_old_ss,u_log,'Old H_MCH Matrix','F12.9')
           call matwrite(ctrl%nstates,traj%H_MCH_ss,u_log,'H_MCH Matrix','F12.9')
@@ -141,6 +151,15 @@ subroutine propagate_laser(traj,ctrl)
           call matwrite(ctrl%nstates,traj%U_old_ss,u_log,'U_old Matrix','F12.9')
           call matwrite(ctrl%nstates,traj%U_ss,u_log,'U Matrix','F12.9')
         endif
+      case (3)  ! npi
+        write(u_log,*) 'Propagating the coefficients using Norm Perserving Interpolation...'
+        if (printlevel>4) then
+          call matwrite(ctrl%nstates,traj%H_MCH_old_ss,u_log,'Old H_MCH Matrix','F12.9')
+          call matwrite(ctrl%nstates,traj%H_MCH_ss,u_log,'H_MCH Matrix','F12.9')
+          call matwrite(ctrl%nstates,traj%overlaps_ss,u_log,'Overlap Matrix','F12.9')
+          call matwrite(ctrl%nstates,traj%U_old_ss,u_log,'U_old Matrix','F12.9')
+          call matwrite(ctrl%nstates,traj%U_ss,u_log,'U Matrix','F12.9')
+        endif
     endselect
     if (printlevel>3) then
       call matwrite(ctrl%nstates,traj%Rtotal_ss,u_log,'Propagator Matrix','F12.9')
@@ -150,22 +169,28 @@ subroutine propagate_laser(traj,ctrl)
   ! check for NaNs in the Propagator matrix
   if (any((real(traj%Rtotal_ss)).ne.(real(traj%Rtotal_ss))).or.any((aimag(traj%Rtotal_ss)).ne.(aimag(traj%Rtotal_ss)))) then
     write(0,*) 'The propagator matrix contains NaNs!'
-    select case (ctrl%coupling)
-      case (0)  ! ddt
+    select case (ctrl%eeom)
+      case (0)  ! constant interpolation 
           call matwrite(ctrl%nstates,traj%H_MCH_old_ss,0,'Old H_MCH Matrix','F12.9')
           call matwrite(ctrl%nstates,traj%H_MCH_ss,0,'H_MCH Matrix','F12.9')
           call matwrite(ctrl%nstates,traj%NACdt_old_ss,0,'Old DDT Matrix','F12.9')
           call matwrite(ctrl%nstates,traj%NACdt_ss,0,'DDT Matrix','F12.9')
           call matwrite(ctrl%nstates,traj%U_old_ss,0,'U_old Matrix','F12.9')
           call matwrite(ctrl%nstates,traj%U_ss,0,'U Matrix','F12.9')
-      case (1)  ! ddr
+      case (1)  ! linear interpolation
           call matwrite(ctrl%nstates,traj%H_MCH_old_ss,0,'Old H_MCH Matrix','F12.9')
           call matwrite(ctrl%nstates,traj%H_MCH_ss,0,'H_MCH Matrix','F12.9')
           call matwrite(ctrl%nstates,traj%NACdt_old_ss,0,'Old DDT Matrix','F12.9')
           call matwrite(ctrl%nstates,traj%NACdt_ss,0,'DDT Matrix','F12.9')
           call matwrite(ctrl%nstates,traj%U_old_ss,0,'U_old Matrix','F12.9')
           call matwrite(ctrl%nstates,traj%U_ss,0,'U Matrix','F12.9')
-      case (2)  ! overlap
+      case (2)  ! local diabatization 
+          call matwrite(ctrl%nstates,traj%H_MCH_old_ss,0,'Old H_MCH Matrix','F12.9')
+          call matwrite(ctrl%nstates,traj%H_MCH_ss,0,'H_MCH Matrix','F12.9')
+          call matwrite(ctrl%nstates,traj%overlaps_ss,0,'Overlap Matrix','F12.9')
+          call matwrite(ctrl%nstates,traj%U_old_ss,0,'U_old Matrix','F12.9')
+          call matwrite(ctrl%nstates,traj%U_ss,0,'U Matrix','F12.9')
+      case (3)  ! npi
           call matwrite(ctrl%nstates,traj%H_MCH_old_ss,0,'Old H_MCH Matrix','F12.9')
           call matwrite(ctrl%nstates,traj%H_MCH_ss,0,'H_MCH Matrix','F12.9')
           call matwrite(ctrl%nstates,traj%overlaps_ss,0,'Overlap Matrix','F12.9')
@@ -176,8 +201,11 @@ subroutine propagate_laser(traj,ctrl)
     stop 1
   endif
 
-  ! propagate the coefficients
+  ! save old coefficients
   traj%coeff_diag_old_s=traj%coeff_diag_s
+  traj%coeff_MCH_old_s=traj%coeff_MCH_s
+
+  ! propagate the coefficients
   call matvecmultiply(&
     &ctrl%nstates,&
     &traj%Rtotal_ss, traj%coeff_diag_old_s, traj%coeff_diag_s, &
@@ -237,6 +265,7 @@ subroutine unitary_propagator_laser(n, SO, SOold, NACM, NACMold, U, Uold, DM, DM
 
     ! first ingredient, H
     H=SOold + (SO-SOold)*istep/nsubsteps
+
     ! here the laser field is added to the Hamiltonian
     do ixyz=1,3
       H=H - ( DMold(:,:,ixyz) + (DM(:,:,ixyz)-DMold(:,:,ixyz))*istep/nsubsteps ) * real(laserfield(istep,ixyz))
@@ -363,6 +392,100 @@ endsubroutine
 ! ==================================================================================================
 ! ==================================================================================================
 
+!> calculates the propagator matrix in substeps, see SHARC manual for th equations.
+!> Uses the norm perserving interpolation
+subroutine NPI_propagator_laser(n, SO, SOold, U, Uold, overlap, DM, DMold, laserfield, dt, nsubsteps, Rtotal)
+  use definitions, only: u_log
+  use matrix
+  ! calculates the propagator matrix for a timestep
+  ! it calculates:
+  !                    n
+  !  R = U^t . S^t . PROD exp( -[iH+T]*dt ) . Uold
+  !                   i=1
+  ! note that Rtotal has to be initialized as a unit matrix prior to calling NPI_propagator()
+  !
+  ! T is norm perserving interpolated
+
+  implicit none
+  integer, intent(in) :: n, nsubsteps
+  real*8, intent(in) :: dt
+  complex*16, intent(in) :: U(n,n), Uold(n,n),SO(n,n),SOold(n,n), DM(n,n,3),DMold(n,n,3)
+  complex*16, intent(in) :: laserfield(nsubsteps,3)
+  complex*16, intent(inout) :: overlap(n,n)
+  complex*16, intent(inout) :: Rtotal(n,n)
+
+  ! internal variables:
+  integer :: istep, ixyz, istate, jstate
+  real*8 :: dtsubstep
+  complex*16 :: H(n,n), T(n,n)
+  complex*16 :: Rexp(n,n), Rprod(n,n)
+  complex*16 :: ii=dcmplx(0.d0,1.d0)
+  complex*16 :: w(n,n),tw(n,n),dw(n,n)
+
+  dtsubstep=dt/nsubsteps
+
+  call matmultiply(n,Uold,Rtotal,Rprod,'nn')
+  Rtotal=Rprod
+ 
+  !initialize T
+  T=dcmplx(0.d0,0.d0)
+
+  do istep=1,nsubsteps
+
+    ! first ingredient, H
+    H=SOold + (SO-SOold)*istep/nsubsteps
+
+    ! here the laser field is added to the Hamiltonian
+    do ixyz=1,3
+      H=H - ( DMold(:,:,ixyz) + (DM(:,:,ixyz)-DMold(:,:,ixyz))*istep/nsubsteps ) * real(laserfield(istep,ixyz))
+    enddo
+
+    ! second ingredient, T
+    ! compute NPI rotation matrix W
+    do istate=1,n
+      do jstate=1,n
+        if (jstate .eq. istate) then
+          w(istate,jstate)=cos(acos(overlap(istate,jstate))*istep/nsubsteps)
+          tw(jstate,istate)=cos(acos(overlap(istate,jstate))*istep/nsubsteps)
+          dw(istate,jstate)=-sin(acos(overlap(istate,jstate))*istep/nsubsteps)*acos(overlap(istate,jstate))/dt
+        else
+          w(istate,jstate)=sin(asin(overlap(istate,jstate))*istep/nsubsteps)
+          tw(jstate,istate)=sin(asin(overlap(istate,jstate))*istep/nsubsteps)
+          dw(istate,jstate)=cos(asin(overlap(istate,jstate))*istep/nsubsteps)*asin(overlap(istate,jstate))/dt
+        endif
+      enddo
+    enddo
+    ! compute intermediate T 
+    call matmultiply(n, tw, dw, T, 'nn')
+    do istate=1,n
+      T(istate,istate)=dcmplx(0.d0,0.d0)
+    enddo
+
+    ! set up the total operator: (iUHU+UTU+UdU/dt)*dtsubstep
+    Rexp=dtsubstep*(H-ii*T)
+
+    ! calculate the Operator Exponential
+    call exponentiate(n,Rexp,-ii)
+
+    ! add the propagator of the current timesubstep to the total propagator of
+    ! the full timestep
+    call matmultiply(n,Rexp,Rtotal,Rprod,'nn')
+    Rtotal=Rprod
+
+  enddo
+
+  call matmultiply(n,U,Rtotal,Rprod,'tn')
+  Rtotal=Rprod
+
+  return
+
+endsubroutine
+
+
+! ==================================================================================================
+! ==================================================================================================
+! ==================================================================================================
+
 !> template for a subroutine returning the laser field for a given time
 !> this is not yet fully implemented
 subroutine internal_laserfield(t,field,energy)
@@ -381,4 +504,4 @@ endsubroutine
 
 
 
-endmodule
+endmodule electronic_laser

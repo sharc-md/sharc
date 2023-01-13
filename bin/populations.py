@@ -28,6 +28,8 @@
 # Interactive script for the setup of dynamics calculations for SHARC
 # 
 # usage: python setup_traj.py
+# Jan. 5, 2023: line 871, 873 have been changed by Yinan Shu 
+# this change is made to be consistent with changed output.lis file
 
 import copy
 import math
@@ -868,9 +870,9 @@ def do_calc(INFOS):
             # state in nm scheme to state in n scheme
             state=INFOS['statemap'][state][3]-1
           elif INFOS['mode']==4:
-            state=INFOS['histo'].put(float(f[9]))
+            state=INFOS['histo'].put(float(f[11]))
           elif INFOS['mode']==5:
-            state=INFOS['histo'].put(float(f[8]))
+            state=INFOS['histo'].put(float(f[10]))
           elif INFOS['mode']==6:
             state=INFOS['histo'].put(float(f[1]))
           pop_full[fileindex][t][state]+=1

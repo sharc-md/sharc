@@ -2,7 +2,7 @@
 !
 !    SHARC Program Suite
 !
-!    Copyright (c) 2019 University of Vienna
+!    Copyright (c) 2023 University of Vienna
 !
 !    This file is part of SHARC.
 !
@@ -25,6 +25,10 @@
 !> \authors Sebastian Mai, Philipp Marquetand
 !> \date 22.10.2018
 !>
+!>                   modified 13.11.2019 by Yinan Shu
+!>                     now compatible with adaptive step
+!>                     added new options -ccd, -den, and -cden
+!>
 !> This program reads the output.dat file of a trajectory and calculates various
 !> properties per timestep, which are printed in plottable tables.
 !>
@@ -40,6 +44,9 @@
 !> - coeff_diab.out
 !> - coeff_MCH.out
 !> - coeff_diag.out
+!> - ccoeff_diag.out
+!> - density.out
+!> - cdensity.out
 !> - spin.out
 !> - prob.out
 !> - expec.out
@@ -63,12 +70,19 @@ program data_extractor
   integer, parameter :: u_spin=23         !< spin.out
   integer, parameter :: u_coefd=24        !< coeff_diag.out
   integer, parameter :: u_coefm=25        !< coeff_MCH.out
-  integer, parameter :: u_prob=26         !< prob.out
-  integer, parameter :: u_expec=27        !< expec.out
-  integer, parameter :: u_coefdiab=28     !< coeff_diab.out
-  integer, parameter :: u_expec_mch=29    !< expec_MCH.out
-  integer, parameter :: u_fosc_act=30     !< fosc_act.out
-  integer, parameter :: u_ref=31          !< Reference/QM.out
+  integer, parameter :: u_ccoef=26        !< ccoeff_diag.out
+  integer, parameter :: u_dend=27         !< density_diag.out
+  integer, parameter :: u_cdend=28        !< cdensity_diag.out
+  integer, parameter :: u_rdd=29          !< den_state_diag.out
+  integer, parameter :: u_crdd=30         !< cden_state_diag.out
+  integer, parameter :: u_denm=31         !< density_mch.out
+  integer, parameter :: u_rdm=32          !< den_state_mch.out
+  integer, parameter :: u_prob=33         !< prob.out
+  integer, parameter :: u_expec=34        !< expec.out
+  integer, parameter :: u_coefdiab=35     !< coeff_diab.out
+  integer, parameter :: u_expec_mch=36    !< expec_MCH.out
+  integer, parameter :: u_fosc_act=37     !< fosc_act.out
+  integer, parameter :: u_ref=38          !< Reference/QM.out
   integer, parameter :: u_info=42         !< output.dat.ext
   integer, parameter :: u_ion_diag=51     !< ion_diag.out
   integer, parameter :: u_ion_mch=52      !< ion_mch.out
@@ -90,29 +104,36 @@ program data_extractor
   integer :: maxmult                      !< maximum multiplicity
   integer :: natom                        !< number of atoms
   integer, allocatable :: nstates_m(:)    !< number of states per multiplicity
-  real*8 :: dtstep                        !< nuclear timestep
   real*8 :: ezero                         !< reference energy
+  integer :: method                       !< the method used (0=tsh,1=scp)
+  integer :: decoherence                  !< the decoherence procedure used 0=off, 1=EDC, 2=AFSSH, 11=DoM
+  integer :: switch                       !< switch procedure (1=CSDM, 2=SCDM, 3=NDM)
+  integer :: coupling                     !< the coupling used 0=ddt, 1=ddr, 2=overlap
   integer :: have_overlap                 !< whether overlap matrices are in the dat file (0=no, 1=yes)
   integer :: have_grad                    !< whether gradients are in the dat file (0=no, 1=yes)
   integer :: have_NAC                     !< whether nonadiabatic couplings are in the dat file (0=no, 1=yes)
-  integer :: have_property1d                !< whether property vectors are in the dat file (0=no, 1=yes)
-  integer :: have_property2d                !< whether property matrices are in the dat file (0=no, 1=yes)
-  integer :: n_property1d                !< 
-  integer :: n_property2d                !< 
+  integer :: have_effectiveNAC            !< whether effective nonadiabatic couplings are in the dat file (0=no, 1=yes)
+  integer :: have_property1d              !< whether property vectors are in the dat file (0=no, 1=yes)
+  integer :: have_property2d              !< whether property matrices are in the dat file (0=no, 1=yes)
+  integer :: n_property1d                 !< 
+  integer :: n_property2d                 !< 
   integer :: laser                        !< whether a laser field is in the dat file (0=no, 1=, 2=yes)
   integer :: nsteps                       !< number of timesteps from dat file (needed to read the laser field)
   integer :: nsubsteps                    !< number of substeps (needed to read the laser field)
-  integer :: nprojections                    !< number of vectors to project dipole moment onto
+  integer :: nprojections                 !< number of vectors to project dipole moment onto
 
   !> # Information which is updated per time step
   !> Most of these are equivalent to their definition in definitions.f90
   integer :: step
+  real*8 :: dtstep                        !< nuclear timestep
+  real*8 :: time                          !< trajectory time
   complex*16, allocatable :: H_MCH_ss(:,:),U_ss(:,:),DM_mch_ssd(:,:,:),DM_diag_ssd(:,:,:)
   complex*16, allocatable :: Prop2d_xss(:,:,:)
   real*8, allocatable     :: Prop1d_ys(:,:)
   complex*16, allocatable :: coeff_diag_s(:),overlaps_ss(:,:), ref_ovl_ss(:,:)
+  complex*16, allocatable :: ccoeff_diag_s(:)
   real*8, allocatable :: geom_ad(:,:), veloc_ad(:,:)
-  real*8 , allocatable :: hopprob_s(:)
+  real*8 , allocatable :: hopprob_s(:), switchprob_s(:)
   real*8 :: Ekin, Epot, randnum
   integer :: state_diag, state_MCH, runtime
 
@@ -120,25 +141,31 @@ program data_extractor
   complex*16, allocatable :: H_diag_ss(:,:)       !< diagonal Hamiltonian (including laser field)
   complex*16, allocatable :: A_ss(:,:)            !< temporary matrix
   complex*16, allocatable :: coeff_MCH_s(:)       !< MCH coefficient vector
+  complex*16, allocatable :: den_diag_ss(:)       !< denisty matrix in diag representation, in a vector form
+  complex*16, allocatable :: cden_diag_ss(:)      !< coherent denisty matrix in diag representation, in a vector form
+  complex*16, allocatable :: den_mch_ss(:)        !< denisty matrix in mch representation, in a vector form
   complex*16, allocatable :: laser_td(:,:)        !< laser field for all timesteps
   complex*16, allocatable :: coeff_diab_s(:)      !< diabatic coefficient vector
-  real*8,allocatable :: expec_pop(:)                !< spin expectation value per state
+  real*8,allocatable :: den_diag_s(:)             !< pure state density in mch basis
+  real*8,allocatable :: cden_diag_s(:)            !< pure coherent state density in diag basis
+  real*8,allocatable :: den_mch_s(:)              !< pure state density in mch basis 
+  real*8,allocatable :: expec_pop(:)              !< spin expectation value per state
   real*8,allocatable :: expec_s(:)                !< spin expectation value per state
   real*8,allocatable :: expec_dm(:)               !< oscillator strength per state
   real*8,allocatable :: expec_dm_mch(:)           !< oscillator strength per state in MCH basis
-  real*8,allocatable :: expec_ion_diag(:)           !< oscillator strength per state in MCH basis
-  real*8,allocatable :: expec_ion_mch(:)           !< oscillator strength per state in MCH basis
+  real*8,allocatable :: expec_ion_diag(:)         !< oscillator strength per state in MCH basis
+  real*8,allocatable :: expec_ion_mch(:)          !< oscillator strength per state in MCH basis
   real*8,allocatable :: expec_dm_act(:)           !< oscillator strength per state with active state as source state
   real*8,allocatable :: dm_proj_sp(:,:)           !< dipole moment per state projected onto vector yet to be defined
-  real*8,allocatable :: proj_vec_pd(:,:)           !< vectors to project dipole moment onto
-  real*8,allocatable :: norm_proj_vec_p(:)          !< norm of vectors to project dipole moment onto
-  real*8,allocatable :: proj_point(:,:)          !< norm of vectors to project dipole moment onto
+  real*8,allocatable :: proj_vec_pd(:,:)          !< vectors to project dipole moment onto
+  real*8,allocatable :: norm_proj_vec_p(:)        !< norm of vectors to project dipole moment onto
+  real*8,allocatable :: proj_point(:,:)           !< norm of vectors to project dipole moment onto
   real*8,allocatable :: spin0_s(:)                !< spin value per MCH state (initialized in the beginning)
   real*8,allocatable :: grad_mch_sad(:,:,:)       !< gradient per MCH state per atom per xyz
   real*8,allocatable :: NAC_ssad(:,:,:,:)         !< nonadiabatic coupling per element (MCH state, MCH state) per atom per xyz
-  real*8,allocatable :: distance_scaling(:,:)         !< scaling factor to define point between atom positions
+  real*8,allocatable :: distance_scaling(:,:)     !< scaling factor to define point between atom positions
   real*8 :: sumc                                  !< sum of coefficients
-  integer,allocatable :: proj_atomindex(:,:,:)         !< atomindex to be read from projections.inp
+  integer,allocatable :: proj_atomindex(:,:,:)    !< atomindex to be read from projections.inp
 
   ! helper
   character*8000 :: filename, string1, string3, line
@@ -153,6 +180,13 @@ program data_extractor
   logical :: write_spin
   logical :: write_coeffdiag
   logical :: write_coeffmch
+  logical :: write_ccoeffdiag
+  logical :: write_dendiag
+  logical :: write_cdendiag
+  logical :: write_rdendiag
+  logical :: write_crdendiag
+  logical :: write_denmch
+  logical :: write_rdenmch
   logical :: write_prob
   logical :: write_expec
   logical :: write_expecmch
@@ -190,20 +224,26 @@ program data_extractor
   end do
 
   ! defaults for writing options
-  write_energy    = .false.
-  write_dip       = .false.
-  write_spin      = .false.
-  write_coeffdiag = .false.
-  write_coeffmch  = .false.
-  write_prob      = .false.
-  write_expec     = .false.
-  write_expecmch  = .false.
-  write_coeffdiab = .false.
-  write_dipact    = .false.
-  write_dm_diag   = .false.
-  write_dm_proj   = .false.
-  write_iondiag   = .false.
-  write_ionmch    = .false.
+  write_energy       = .false.
+  write_dip          = .false.
+  write_spin         = .false.
+  write_coeffdiag    = .false.
+  write_coeffmch     = .false.
+  write_dendiag      = .false.
+  write_cdendiag     = .false.
+  write_rdendiag     = .false.
+  write_crdendiag    = .false.
+  write_denmch       = .false.
+  write_rdenmch      = .false.
+  write_prob         = .false.
+  write_expec        = .false.
+  write_expecmch     = .false.
+  write_coeffdiab    = .false.
+  write_dipact       = .false.
+  write_dm_diag      = .false.
+  write_dm_proj      = .false.
+  write_iondiag      = .false.
+  write_ionmch       = .false.
   skip_geom_vel_grad_nac = .false.
 
   ! read command line arguments
@@ -242,6 +282,20 @@ program data_extractor
       write_coeffdiag = .true.
     elseif (trim(args(i)) == "-cm") then
       write_coeffmch = .true.
+    elseif (trim(args(i)) == "-ccd") then
+      write_ccoeffdiag = .true.
+    elseif (trim(args(i)) == "-dend") then
+      write_dendiag = .true.
+    elseif (trim(args(i)) == "-cdend") then
+      write_cdendiag = .true.
+    elseif (trim(args(i)) == "-rdd") then
+      write_rdendiag = .true.
+    elseif (trim(args(i)) == "-crdd") then
+      write_crdendiag = .true.
+    elseif (trim(args(i)) == "-denm") then
+      write_denmch = .true.
+    elseif (trim(args(i)) == "-rdm") then
+      write_rdenmch = .true.
     elseif (trim(args(i)) == "-p") then
       write_prob = .true.
     elseif (trim(args(i)) == "-x") then
@@ -269,6 +323,13 @@ program data_extractor
       write_spin = .true.
       write_coeffdiag = .true.
       write_coeffmch = .true.
+      write_ccoeffdiag = .true.
+      write_rdendiag = .true.
+      write_crdendiag = .true.
+      write_dendiag = .true.
+      write_cdendiag = .true.
+      write_rdenmch = .true.
+      write_denmch = .true.
       write_prob = .true.
       write_expec = .true.
       write_expecmch = .true.
@@ -285,6 +346,10 @@ program data_extractor
       write_spin = .true.
       write_coeffdiag = .true.
       write_coeffmch = .true.
+      write_ccoeffdiag = .true.
+      write_rdendiag = .true.
+      write_crdendiag = .true.
+      write_rdenmch = .true.
       write_prob = .true.
       write_expec = .true.
       write_expecmch = .true.
@@ -300,6 +365,9 @@ program data_extractor
       write_spin = .true.
       write_coeffdiag = .true.
       write_coeffmch = .true.
+      write_ccoeffdiag = .true.
+      write_rdendiag = .true.
+      write_rdenmch = .true.
       write_prob = .true.
       write_expec = .true.
       write_expecmch = .true.
@@ -312,6 +380,8 @@ program data_extractor
       write_dip = .true.
       write_coeffdiag = .true.
       write_coeffmch = .true.
+      write_rdendiag = .true.
+      write_rdenmch = .true.
       write_prob = .true.
       write_expec = .true.
       skip_geom_vel_grad_nac = .true.
@@ -334,6 +404,13 @@ program data_extractor
     write_spin      = .true.
     write_coeffdiag = .true.
     write_coeffmch  = .true.
+    write_ccoeffdiag = .true.
+    write_dendiag   = .true.
+    write_cdendiag  = .true.
+    write_rdendiag  = .true.
+    write_crdendiag = .true.
+    write_denmch    = .true.
+    write_rdenmch   = .true.
     write_prob      = .true.
     write_expec     = .true.
     write_expecmch  = .true.
@@ -480,7 +557,10 @@ program data_extractor
   have_overlap=0
   have_property1d=0
   have_property2d=0
-
+  method=0
+  decoherence=0
+  switch=0
+  coupling=0
 
   if (is_integer) then
     write(*,*) 'Found SHARC v1.0 format'
@@ -510,7 +590,14 @@ program data_extractor
     allocate( proj_vec_pd(nprojections,3) )
     allocate( norm_proj_vec_p(nprojections) )
     allocate( coeff_diag_s(nstates), coeff_MCH_s(nstates), coeff_diab_s(nstates) )
-    allocate( hopprob_s(nstates) )
+    if (method==1 .and. decoherence==11 .and. switch==1) then
+      allocate( ccoeff_diag_s(nstates), cden_diag_ss((nstates+1)*nstates/2), cden_diag_s(nstates) )
+    endif
+    allocate( den_diag_ss((nstates+1)*nstates/2) )
+    allocate( den_mch_ss((nstates+1)*nstates/2) )
+    allocate( den_diag_s(nstates) )
+    allocate( den_mch_s(nstates) )
+    allocate( hopprob_s(nstates), switchprob_s(nstates) )
     allocate( A_ss(nstates,nstates) )
     allocate( expec_s(nstates),expec_dm(nstates),expec_dm_mch(nstates),expec_dm_act(nstates) )
     allocate( expec_ion_diag(nstates),expec_ion_mch(nstates),expec_pop(nstates) )
@@ -536,6 +623,32 @@ program data_extractor
     ! else we have the format of SHARC 2.0, which is list-based
     ! =====================================================
     call read_input_list_from_file(u_dat)
+
+    ! look up method keyword
+    line=get_value_from_key('method',io)
+    if (io==0) then
+      read(line,*) method
+    endif
+
+    ! look up decay of mixing keyword
+    line=get_value_from_key('decoherence',io)
+    if (io==0) then
+      read(line,*) decoherence
+    endif
+
+    ! look up switching procedure keyword
+    line=get_value_from_key('switch',io)
+    if (io==0) then
+      read(line,*) switch
+    endif
+
+    ! disable coherent coefficients and density if not CSDM.
+    if (method.ne.1 .or. decoherence.ne.11 .or. switch.ne.1) then 
+      write_ccoeffdiag=.false.
+      write_cdendiag=.false.
+      write_crdendiag=.false.
+      write(6,*) 'WARNING: Not CSDM, coherent coefficients and density disabled' 
+    endif
 
     ! look up nstates keyword
     line=get_value_from_key('nstates_m',io)
@@ -596,7 +709,14 @@ program data_extractor
     allocate( proj_vec_pd(nprojections,3) )
     allocate( norm_proj_vec_p(nprojections) )
     allocate( coeff_diag_s(nstates), coeff_MCH_s(nstates), coeff_diab_s(nstates) )
-    allocate( hopprob_s(nstates) )
+    if (method==1 .and. decoherence==11 .and. switch==1) then
+      allocate( ccoeff_diag_s(nstates), cden_diag_ss((nstates+1)*nstates/2), cden_diag_s(nstates) )
+    endif
+    allocate( den_diag_ss((nstates+1)*nstates/2) )
+    allocate( den_mch_ss((nstates+1)*nstates/2) )
+    allocate( den_diag_s(nstates) )
+    allocate( den_mch_s(nstates) )
+    allocate( hopprob_s(nstates), switchprob_s(nstates) )
     allocate( A_ss(nstates,nstates) )
     allocate( expec_s(nstates),expec_dm(nstates),expec_dm_mch(nstates),expec_dm_act(nstates) )
     allocate( expec_ion_diag(nstates),expec_ion_mch(nstates),expec_pop(nstates) )
@@ -615,6 +735,12 @@ program data_extractor
     else
       ! dtstep is needed
       stop 'Error! Time step (keyword: dtstep) is required!'
+    endif
+
+    ! look up coupling keyword
+    line=get_value_from_key('coupling',io)
+    if (io==0) then
+      read(line,*) coupling
     endif
 
     ! look up have_overlap keyword
@@ -743,6 +869,15 @@ program data_extractor
   if (write_coeffdiag) open(unit=u_cmixd, file='output_data/coeff_mixed_diag.out', status='replace', action='write')      ! -cd
   if (write_coeffmch)  open(unit=u_cmixm, file='output_data/coeff_mixed_MCH.out', status='replace', action='write')       ! -cm
   if (write_coeffdiab) open(unit=u_cmixdiab, file='output_data/coeff_mixed_diab.out', status='replace', action='write')   ! -cb
+
+  if (write_ccoeffdiag) open(unit=u_ccoef, file='output_data/ccoeff_diag.out', status='replace', action='write')    ! -ccd
+
+  if (write_dendiag)   open(unit=u_dend, file='output_data/density_diag.out', status='replace', action='write')           ! -dend
+  if (write_cdendiag)  open(unit=u_cdend, file='output_data/cdensity_diag.out', status='replace', action='write')         ! -cdend
+  if (write_rdendiag)  open(unit=u_rdd, file='output_data/den_state_diag.out', status='replace', action='write')           ! -rdd
+  if (write_crdendiag) open(unit=u_crdd, file='output_data/cden_state_diag.out', status='replace', action='write')         ! -crdd
+  if (write_denmch)    open(unit=u_denm, file='output_data/density_mch.out', status='replace', action='write')           ! -denm
+  if (write_rdenmch)   open(unit=u_rdm, file='output_data/den_state_mch.out', status='replace', action='write')        ! -rdm
 
   if (write_prob)      open(unit=u_prob, file='output_data/prob.out', status='replace', action='write')             ! -p
   if (write_expec)     open(unit=u_expec, file='output_data/expec.out', status='replace', action='write')           ! -x
@@ -882,7 +1017,49 @@ program data_extractor
     write(u_cmixdiab,'(A1,1X,3(A20,1X))') '#','Time |','Sum c**2 |','=== coeff_diab ===>'
     write(u_cmixdiab,'(A1,1X,3(A20,1X))') '#','[fs] |','[] |','[] |'
   endif
-  
+
+  if (write_ccoeffdiag) then
+    write(u_ccoef,'(A1,1X,1000(I20,1X))') '#',(i,i=1,2*nstates+2)
+    write(u_ccoef,'(A1,1X,3(A20,1X))') '#','Time |','Sum c**2 |','=== ccoeff_diag ===>'
+    write(u_ccoef,'(A1,1X,3(A20,1X))') '#','[fs] |','[] |','[] |'
+  endif
+
+  if (write_dendiag) then
+    write(u_dend,'(A1,1X,10000(I20,1X))') '#',(i,i=1,((nstates+1)*nstates)/2+1)
+    write(u_dend,'(A1,1X,2(A20,1X))') '#','Time |','=== den_diag ===>'
+    write(u_dend,'(A1,1X,2(A20,1X))') '#','[fs] |','[] |'
+  endif
+
+  if (write_cdendiag) then
+    write(u_cdend,'(A1,1X,10000(I20,1X))') '#',(i,i=1,((nstates+1)*nstates)/2+1)
+    write(u_cdend,'(A1,1X,2(A20,1X))') '#','Time |','=== cden_diag ===>'
+    write(u_cdend,'(A1,1X,2(A20,1X))') '#','[fs] |','[] |'
+  endif
+ 
+  if (write_rdendiag) then
+    write(u_rdd,'(A1,1X,10000(I20,1X))') '#',(i,i=1,nstates)
+    write(u_rdd,'(A1,1X,2(A30,1X))') '#','Time |','=== den_state_diag ===>'
+    write(u_rdd,'(A1,1X,2(A30,1X))') '#','[fs] |','[] |'
+  endif
+
+  if (write_crdendiag) then
+    write(u_crdd,'(A1,1X,10000(I20,1X))') '#',(i,i=1,nstates)
+    write(u_crdd,'(A1,1X,2(A30,1X))') '#','Time |','=== cden_state_diag ===>'
+    write(u_crdd,'(A1,1X,2(A30,1X))') '#','[fs] |','[] |'
+  endif
+
+  if (write_denmch) then
+    write(u_denm,'(A1,1X,10000(I20,1X))') '#',(i,i=1,((nstates+1)*nstates)/2+1)
+    write(u_denm,'(A1,1X,2(A20,1X))') '#','Time |','=== den_mch ===>'
+    write(u_denm,'(A1,1X,2(A20,1X))') '#','[fs] |','[] |'
+  endif
+
+  if (write_rdenmch) then
+    write(u_rdm,'(A1,1X,10000(I20,1X))') '#',(i,i=1,nstates)
+    write(u_rdm,'(A1,1X,2(A30,1X))') '#','Time |','=== den_state_mch ===>'
+    write(u_rdm,'(A1,1X,2(A30,1X))') '#','[fs] |','[] |'
+  endif
+
   if (write_prob) then
     write(u_prob,'(A1,1X,1000(I20,1X))') '#',(i,i=1,nstates+2)
     write(u_prob,'(A1,1X,3(A20,1X))') '#','Time |','Random Number |','=== cumu Prob ===>'
@@ -981,11 +1158,17 @@ program data_extractor
   write(6,*) 
   write(6,*) 'Running...'
   do
-    ! read everything: H, U, DM, overlap, coeff_diag, hopprob, Ekin, active states
+    ! read everything: step, dt, time, H, U, DM, overlap, coeff_diag, coherent coefficient
+    ! hopprob/switchprob, Ekin, Epot, active states/pointer states
     ! random number, runtime for the timestep, geometry, velocity, property matrix
+    ! gradient, NAC
     read(u_dat,*,iostat=io) string1
     if (io/=0) exit
     read(u_dat,*) step
+    read(u_dat,*)
+    read(u_dat,*) dtstep
+    read(u_dat,*)
+    read(u_dat,*) time
     call matread(nstates,H_MCH_ss,u_dat,string1)
     call matread(nstates,U_ss,u_dat,string1)
     do idir=1,3
@@ -995,9 +1178,20 @@ program data_extractor
       call matread(nstates,overlaps_ss,u_dat,string1)
     endif
     call vecread(nstates,coeff_diag_s,u_dat,string1)
-    call vecread(nstates,hopprob_s,u_dat,string1)
+    if (method==1 .and. decoherence==11 .and. switch==1) then
+      call vecread(nstates,ccoeff_diag_s,u_dat,string1)
+    endif
+    if (method==0) then
+      call vecread(nstates,hopprob_s,u_dat,string1)
+    elseif (method==1) then
+      if (decoherence==11) then
+        call vecread(nstates,switchprob_s,u_dat,string1)
+      endif
+    endif
     read(u_dat,*)
     read(u_dat,*) Ekin
+    read(u_dat,*)
+    read(u_dat,*) Epot
     read(u_dat,*)
     read(u_dat,*) state_diag,state_MCH
     read(u_dat,*)
@@ -1050,6 +1244,7 @@ program data_extractor
         enddo
       endif
     endif
+
     ! ========== Reading is done for this time step =============
 
 
@@ -1067,7 +1262,7 @@ program data_extractor
 
     ! calculate MCH coefficients and potential energy
     call matvecmultiply(nstates,U_ss,coeff_diag_s,coeff_MCH_s,'n')
-    Epot=real(H_diag_ss(state_diag,state_diag))
+    !Epot=real(H_diag_ss(state_diag,state_diag))
     
     if (write_coeffdiab) then
       ! calculate diabatic coefficients
@@ -1076,6 +1271,34 @@ program data_extractor
         ref_ovl_ss=A_ss
       endif
       call matvecmultiply(nstates,ref_ovl_ss,coeff_MCH_s,coeff_diab_s,'n')
+    endif
+
+    ! calculate density matrix
+    do istate=1, nstates
+      do jstate=istate, nstates
+        i=nstates*(istate-1)+jstate-istate+1
+        den_diag_ss(i)=coeff_diag_s(istate)*conjg(coeff_diag_s(jstate))
+        den_mch_ss(i)=coeff_mch_s(istate)*conjg(coeff_mch_s(jstate))
+      enddo
+    enddo
+    if (method==1 .and. decoherence==11 .and. switch==1) then
+      do istate=1, nstates
+        do jstate=istate, nstates
+          i=nstates*(istate-1)+jstate-istate+1
+          cden_diag_ss(i)=ccoeff_diag_s(istate)*conjg(ccoeff_diag_s(jstate))
+        enddo
+      enddo
+    endif
+
+    ! calculate density of states
+    do istate=1, nstates
+      den_diag_s(istate)=real(coeff_diag_s(istate)*conjg(coeff_diag_s(istate)))
+      den_mch_s(istate)=real(coeff_mch_s(istate)*conjg(coeff_mch_s(istate)))
+    enddo
+    if (method==1 .and. decoherence==11 .and. switch==1) then
+      do istate=1, nstates
+        cden_diag_s(i)=real(ccoeff_diag_s(istate)*conjg(ccoeff_diag_s(istate)))
+      enddo
     endif
 
     ! calculate oscillator strengths
@@ -1164,7 +1387,8 @@ program data_extractor
     if (write_energy) then
       ! write to energy.out
       write(u_ener,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, Ekin*au2eV, Epot*au2eV, (Epot+Ekin)*au2eV,&
+      &time, Ekin*au2eV, Epot*au2eV, (Epot+Ekin)*au2eV,&
+!      &step*dtstep, Ekin*au2eV, Epot*au2eV, (Epot+Ekin)*au2eV,&
       (real(H_diag_ss(istate,istate)*au2eV),istate=1,nstates)
     endif
 
@@ -1172,13 +1396,15 @@ program data_extractor
     if (write_dip) then
       ! write to fosc.out
       write(u_dm,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, expec_dm(state_diag),&
+      time, expec_dm(state_diag),&
+!      &step*dtstep, expec_dm(state_diag),&
       (expec_dm(istate),istate=1,nstates)
     endif
     if (write_dipact)  then
       ! write to fosc_act.out
       write(u_fosc_act,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep,(abs(real(H_diag_ss(istate,istate)-H_diag_ss(state_diag,state_diag)))*au2eV,istate=1,nstates),&
+      &time,(abs(real(H_diag_ss(istate,istate)-H_diag_ss(state_diag,state_diag)))*au2eV,istate=1,nstates),&
+!      &step*dtstep,(abs(real(H_diag_ss(istate,istate)-H_diag_ss(state_diag,state_diag)))*au2eV,istate=1,nstates),&
       (expec_dm_act(istate),istate=1,nstates)
 !       write(u_fosc_act,'(2X,1000(ES20.12E3,1X))') &
 !       &step*dtstep,(real(H_diag_ss(istate,istate)-H_diag_ss(state_diag,state_diag))*au2eV,istate=1,nstates),&
@@ -1189,13 +1415,15 @@ program data_extractor
     if (write_iondiag) then
       ! write to ion_diag.out
       write(u_ion_diag,'(2X,ES20.12E3,1X,I20,1X,1000(ES20.12E3,1X))') &
-      &step*dtstep,state_diag,(real(H_diag_ss(istate,istate)-H_diag_ss(state_diag,state_diag))*au2eV,istate=1,nstates),&
+      &time,state_diag,(real(H_diag_ss(istate,istate)-H_diag_ss(state_diag,state_diag))*au2eV,istate=1,nstates),&
+!      &step*dtstep,state_diag,(real(H_diag_ss(istate,istate)-H_diag_ss(state_diag,state_diag))*au2eV,istate=1,nstates),&
       (expec_ion_diag(istate),istate=1,nstates)
     endif
     if (write_ionmch) then
       ! write to ion_mch.out
       write(u_ion_mch,'(2X,ES20.12E3,1X,I20,1X,1000(ES20.12E3,1X))') &
-      &step*dtstep,state_diag,(real(H_mch_ss(istate,istate)-H_mch_ss(state_mch,state_mch))*au2eV,istate=1,nstates),&
+      &time,state_diag,(real(H_mch_ss(istate,istate)-H_mch_ss(state_mch,state_mch))*au2eV,istate=1,nstates),&
+!      &step*dtstep,state_diag,(real(H_mch_ss(istate,istate)-H_mch_ss(state_mch,state_mch))*au2eV,istate=1,nstates),&
       (expec_ion_mch(istate),istate=1,nstates)
     endif
 
@@ -1203,7 +1431,8 @@ program data_extractor
     if (write_spin) then
       ! write to spin.out
       write(u_spin,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, expec_s(state_diag),&
+      &time, expec_s(state_diag),&
+!      &step*dtstep, expec_s(state_diag),&
       (expec_s(istate),istate=1,nstates)
     endif
 
@@ -1216,15 +1445,18 @@ program data_extractor
       enddo
       ! write to coeff_diag.out
       write(u_coefd,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, sumc,&
+      &time,  sumc,&
+!      &step*dtstep, sumc,&
       (coeff_diag_s(istate),istate=1,nstates)
       ! write to coeff_class_diag.out
       write(u_classd,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, 1.d0,&
+      &time, 1.d0,&
+!      &step*dtstep, 1.d0,&
       (delta(istate,state_diag),istate=1,nstates)
       ! write to coeff_mixed_diag.out
       write(u_cmixd,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, 1.d0,&
+      &time, 1.d0,&
+!      &step*dtstep, 1.d0,&
       (delta(istate,state_diag),istate=1,nstates)
     endif
 
@@ -1237,11 +1469,13 @@ program data_extractor
       enddo
       ! write to coeff_MCH.out
       write(u_coefm,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, sumc,&
+      &time, sumc,&
+!      &step*dtstep, sumc,&
       (coeff_MCH_s(istate),istate=1,nstates)
       ! write to coeff_class_MCH.out
       write(u_classm,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, 1.d0,&
+      &time, 1.d0,&
+!      &step*dtstep, 1.d0,&
       (real(abs(U_ss(istate,state_diag))**2),istate=1,nstates)
       ! write to coeff_mixed_MCH.out
       expec_pop=0.d0
@@ -1260,7 +1494,8 @@ program data_extractor
         enddo
       enddo
       write(u_cmixm,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, 1.d0,&
+      &time, 1.d0,&
+!      &step*dtstep, 1.d0,&
       (expec_pop(istate),istate=1,nstates)
     endif
 
@@ -1269,16 +1504,18 @@ program data_extractor
       ! calculate sumsq of diabatic coefficients
       sumc=0.d0
       do istate=1,nstates
-        sumc=sumc + dconjg(coeff_diab_s(istate))*coeff_diab_s(istate)
+        sumc=sumc + real(conjg(coeff_diab_s(istate))*coeff_diab_s(istate))
       enddo
       ! write to coeff_diab.out
       write(u_coefdiab,'(2X,1000(ES20.12E3,X))') &
-      &step*dtstep, sumc,&
+      &time, sumc,&
+!      &step*dtstep, sumc,&
       (coeff_diab_s(istate),istate=1,nstates)
       ! write to coeff_class_diab.out
       call matmultiply(nstates,ref_ovl_ss,U_ss,A_ss,'nn')
       write(u_classdiab,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, 1.d0,&
+      &time, 1.d0,&
+!      &step*dtstep, 1.d0,&
       (real(abs(A_ss(istate,state_diag))**2),istate=1,nstates)
       ! write to coeff_mixed_diab.out
       expec_pop=0.d0
@@ -1297,20 +1534,83 @@ program data_extractor
         enddo
       enddo
       write(u_cmixdiab,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, 1.d0,&
+      &time, 1.d0,&
+!      &step*dtstep, 1.d0,&
       (expec_pop(istate),istate=1,nstates)
     endif
 
+    if (write_ccoeffdiag) then
+      ! calculate sumsq of diagonal coefficients
+      sumc=0.d0
+      do istate=1,nstates
+        sumc=sumc + real(conjg(ccoeff_diag_s(istate))*ccoeff_diag_s(istate))
+      enddo
+      ! write to coeff_diag.out
+      write(u_ccoef,'(2X,1000(ES20.12E3,1X))') &
+      &time,  sumc,&
+!      &step*dtstep, sumc,&
+      (ccoeff_diag_s(istate),istate=1,nstates)
+    endif
+
+    if (write_dendiag) then
+      ! write to density_diag.out
+      write(u_dend,'(2X,10000(ES20.12E3,X))') &
+      &time,(den_diag_ss(i),i=1,(nstates+1)*nstates/2)
+    endif
+
+    if (write_cdendiag) then
+      ! write to cdensity_diag.out
+      write(u_cdend,'(2X,10000(ES20.12E3,X))') &
+      &time,(cden_diag_ss(i),i=1,(nstates+1)*nstates/2)
+    endif
+
+    if (write_rdendiag) then
+      ! write to den_state_diag.out
+      write(u_rdd,'(2X,10000(ES20.12E3,X))') &
+      &time,(den_diag_s(i),i=1,nstates)
+    endif
+
+    if (write_crdendiag) then
+      ! write to cden_state_diag.out
+      write(u_crdd,'(2X,10000(ES20.12E3,X))') &
+      &time,(cden_diag_s(i),i=1,nstates)
+    endif
+
+    if (write_denmch) then
+      ! write to density_mch.out
+      write(u_denm,'(2X,10000(ES20.12E3,X))') &
+      &time,(den_mch_ss(i),i=1,(nstates+1)*nstates/2)
+    endif
+
+    if (write_rdenmch) then
+      ! write to den_state_mch.out
+      write(u_rdm,'(2X,10000(ES20.12E3,X))') &
+      &time,(den_mch_s(i),i=1,nstates)
+    endif
 
     if (write_prob) then
       ! calculate cumulative hopping probabilities
-      do istate=2,nstates
-        hopprob_s(istate)=hopprob_s(istate)+hopprob_s(istate-1)
-      enddo
-      ! write to prob.out
-      write(u_prob,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, randnum,&
-      (hopprob_s(istate),istate=1,nstates)
+      if (method==0) then
+        do istate=2,nstates
+          hopprob_s(istate)=hopprob_s(istate)+hopprob_s(istate-1)
+        enddo
+        ! write to prob.out
+        write(u_prob,'(2X,1000(ES20.12E3,1X))') &
+        &time, randnum,&
+!        &step*dtstep, randnum,&
+        (hopprob_s(istate),istate=1,nstates)
+      elseif (method==1) then
+        if (decoherence==11) then
+          do istate=2,nstates
+            switchprob_s(istate)=switchprob_s(istate)+switchprob_s(istate-1)
+          enddo
+          ! write to prob.out
+          write(u_prob,'(2X,1000(ES20.12E3,1X))') &
+          &time, randnum,&
+!          &step*dtstep, randnum,&
+          (switchprob_s(istate),istate=1,nstates)
+        endif
+      endif
     endif
 
 
@@ -1319,7 +1619,8 @@ program data_extractor
       ! this infos are also in energy.out, spin.out and fosc.out
       ! but in order to plot them together they are also written in one file
       write(u_expec,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, Ekin*au2eV, Epot*au2eV, (Epot+Ekin)*au2eV,&
+      &time, Ekin*au2eV, Epot*au2eV, (Epot+Ekin)*au2eV,&
+!      &step*dtstep, Ekin*au2eV, Epot*au2eV, (Epot+Ekin)*au2eV,&
       &(real(H_diag_ss(istate,istate)*au2eV),istate=1,nstates),&
       &(expec_s(istate),istate=1,nstates),&
       &(expec_dm(istate),istate=1,nstates)
@@ -1328,7 +1629,8 @@ program data_extractor
 
     if (write_expecmch) then
       write(u_expec_mch,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, Ekin*au2eV, Epot*au2eV, (Epot+Ekin)*au2eV,&
+      &time, Ekin*au2eV, Epot*au2eV, (Epot+Ekin)*au2eV,&
+!      &step*dtstep, Ekin*au2eV, Epot*au2eV, (Epot+Ekin)*au2eV,&
       &(real(H_MCH_ss(istate,istate)*au2eV),istate=1,nstates),&
       &(spin0_s(istate),istate=1,nstates),&
       &(expec_dm_mch(istate),istate=1,nstates)
@@ -1337,6 +1639,8 @@ program data_extractor
     if (write_DM_diag) then
       write(u_dm_diag,'(A)') '! 0 Step'
       write(u_dm_diag,'(I12)') step
+      write(u_dm_diag,'(A)') '! 1 Time'
+      write(u_dm_diag,'(ES20.12E3)') time
       call matwrite(nstates, DM_diag_ssd(:,:,1), u_dm_diag, '! 1 Dipole moments X (diag) in a.u.', 'F12.8')
       call matwrite(nstates, DM_diag_ssd(:,:,2), u_dm_diag, '! 1 Dipole moments Y (diag) in a.u.', 'F12.8')
       call matwrite(nstates, DM_diag_ssd(:,:,3), u_dm_diag, '! 1 Dipole moments Z (diag) in a.u.', 'F12.8')
@@ -1344,6 +1648,7 @@ program data_extractor
     
     if (write_dm_proj) then
       write(u_dm_proj,'(A,I12)') '# ',step
+      write(u_dm_proj,'(A,ES20.12E3)') 'time ', time
       do i=1,nstates
         write(u_dm_proj,'(2X,1000(F12.8,1X))') (dm_proj_sp(i,iproj), iproj=1,nprojections)
       enddo
@@ -1356,10 +1661,53 @@ program data_extractor
 
 
     ! write progress to screen
-    write(*,'(A,A,F9.2,A)',advance='no') achar(13), 't=',step*dtstep,' fs'
+    write(6,'(A,A,I10,A,F14.4,A)',advance='no') achar(13), 'step=',step,' t=',time,' fs'
+!    write(*,'(A,A,F9.2,A)',advance='no') achar(13), 't=',step*dtstep,' fs'
   enddo
-  write(*,*)
 
+  write(6,*) 'Data Extraction Finished.'
+
+    
+    ! ========== Deallocate everything ==========
+    if (allocated(H_MCH_ss))                  deallocate(H_MCH_ss)
+    if (allocated(H_diag_ss))                 deallocate(H_diag_ss)
+    if (allocated(U_ss))                      deallocate(U_ss)
+    if (allocated(Prop2d_xss))                deallocate(Prop2d_xss)
+    if (allocated(Prop1d_ys))                 deallocate(Prop1d_ys)
+    if (allocated(overlaps_ss))               deallocate(overlaps_ss)
+    if (allocated(ref_ovl_ss))                deallocate(ref_ovl_ss)
+    if (allocated(DM_mch_ssd))                deallocate(DM_mch_ssd)
+    if (allocated(DM_diag_ssd))               deallocate(DM_diag_ssd)
+    if (allocated(dm_proj_sp))                deallocate(dm_proj_sp)
+    if (allocated(proj_vec_pd))               deallocate(proj_vec_pd)
+    if (allocated(norm_proj_vec_p))           deallocate(norm_proj_vec_p)
+    if (allocated(coeff_diag_s))              deallocate(coeff_diag_s)
+    if (allocated(coeff_MCH_s))               deallocate(coeff_MCH_s)
+    if (allocated(coeff_diab_s))              deallocate(coeff_diab_s)
+    if (allocated(ccoeff_diag_s))             deallocate(ccoeff_diag_s)
+    if (allocated(den_diag_ss))               deallocate(den_diag_ss)
+    if (allocated(cden_diag_ss))              deallocate(cden_diag_ss)
+    if (allocated(den_mch_ss))                deallocate(den_mch_ss)
+    if (allocated(den_diag_s))                deallocate(den_diag_s)
+    if (allocated(cden_diag_s))               deallocate(cden_diag_s)
+    if (allocated(den_mch_s))                 deallocate(den_mch_s)
+    if (allocated(hopprob_s))                 deallocate(hopprob_s)
+    if (allocated(switchprob_s))              deallocate(switchprob_s)
+    if (allocated(A_ss))                      deallocate(A_ss)
+    if (allocated(expec_s))                   deallocate(expec_s)
+    if (allocated(expec_dm))                  deallocate(expec_dm)
+    if (allocated(expec_dm_mch))              deallocate(expec_dm_mch)
+    if (allocated(expec_dm_act))              deallocate(expec_dm_act)
+    if (allocated(expec_ion_diag))            deallocate(expec_ion_diag)
+    if (allocated(expec_ion_mch))             deallocate(expec_ion_mch)
+    if (allocated(expec_pop))                 deallocate(expec_pop)
+    if (allocated(spin0_s))                   deallocate(spin0_s)
+    if (allocated(geom_ad))                   deallocate(geom_ad)
+    if (allocated(veloc_ad))                  deallocate(veloc_ad)
+    if (allocated(grad_mch_sad))              deallocate(grad_mch_sad)
+    if (allocated(NAC_ssad))                  deallocate(NAC_ssad)
+    if (allocated(laser_td))                  deallocate(laser_td)
+    ! ========== Finish Deallocation ==========
 
 
 ! subroutines for data extractor
@@ -1369,31 +1717,38 @@ program data_extractor
     implicit none
     integer :: u
     write(u,*) 'Usage: ./data_extractor <flags> <data-file>'
-    write(u,*) '       -xl : extralarge = write all output files'
-    write(u,*) '       -l  : large = write all output files except diagonal dipole and projection'
-    write(u,*) '       -s  : small = write all output files except ionization data, diagonal dipole/projection'
-    write(u,*) '       -xs : extrasmall = energy (-e), coeffdiag (-cd), coeffmch (-cm), prob (-p), expec (-x), dip (-d), skip (-sk)'
-    write(u,*) '       -e  : write energy file              (output_data/energy.out)'
-    write(u,*) '       -d  : write dipole file              (output_data/fosc.out)'
-    write(u,*) '       -sp : write spin expec file          (output_data/spin.out)'
-    write(u,*) '       -cd : write diag coefficient file    (output_data/coeff_diag.out,'
-    write(u,*) '                                             output_data/coeff_class_diag.out,'
-    write(u,*) '                                             output_data/coeff_mixed_diag.out)'
-    write(u,*) '       -cm : write MCH coefficient file     (output_data/coeff_MCH.out,'
-    write(u,*) '                                             output_data/coeff_class_MCH.out,'
-    write(u,*) '                                             output_data/coeff_mixed_MCH.out)'
-    write(u,*) '       -cb : write diab coefficient file    (output_data/coeff_diab.out,'
-    write(u,*) '                                             output_data/coeff_class_diab.out,'
-    write(u,*) '                                             output_data/coeff_mixed_diab.out)'
-    write(u,*) '       -p  : write hop probability file     (output_data/prob.out)'
-    write(u,*) '       -x  : write expec (E,S^2,mu) file    (output_data/expec.out)'
-    write(u,*) '       -xm : write MCH expec file           (output_data/expec_MCH.out)'
-    write(u,*) '       -da : write dip of active state file (output_data/fosc_act.out)'
-    write(u,*) '       -dd : write dip in diag. represent.  (output_data/dip_mom_diag.out)'
-!     write(u,*) '       -dp : write projection of dip diag   (output_data/dip_mom_proj.out)'
-    write(u,*) '       -id : write diag ion file            (output_data/ion_diag.out)'
-    write(u,*) '       -im : write MCH ion file             (output_data/ion_mch.out)'
-    write(u,*) '       -sk : skip reading geometries, velocities, gradients, NACs'
+    write(u,*) '       -xl   : extralarge = write all output files'
+    write(u,*) '       -l    : large = write all output files except diagonal dipole and projection'
+    write(u,*) '       -s    : small = write all output files except ionization data, diagonal dipole/projection'
+    write(u,*) '       -xs   : extrasmall = energy (-e), coeffdiag (-cd), coeffmch (-cm), prob (-p), expec (-x), dip (-d), skip (-sk)'
+    write(u,*) '       -e    : write energy file               (output_data/energy.out)'
+    write(u,*) '       -d    : write dipole file               (output_data/fosc.out)'
+    write(u,*) '       -sp   : write spin expec file           (output_data/spin.out)'
+    write(u,*) '       -cd   : write diag coefficient file     (output_data/coeff_diag.out,'
+    write(u,*) '                                               output_data/coeff_class_diag.out,'
+    write(u,*) '                                               output_data/coeff_mixed_diag.out)'
+    write(u,*) '       -cm   : write MCH coefficient file      (output_data/coeff_MCH.out,'
+    write(u,*) '                                               output_data/coeff_class_MCH.out,'
+    write(u,*) '                                               output_data/coeff_mixed_MCH.out)'
+    write(u,*) '       -cb   : write diab coefficient file     (output_data/coeff_diab.out,'
+    write(u,*) '                                               output_data/coeff_class_diab.out,'
+    write(u,*) '                                               output_data/coeff_mixed_diab.out)'
+    write(u,*) '       -ccd  : write coherent coefficient file (output_data/ccoeff_diag.out)'
+    write(u,*) '       -dend : write density file              (output_data/density_diag.out)'
+    write(u,*) '       -cdend: write coherent density file     (output_data/cdensity_diag.out)'
+    write(u,*) '       -denm : write density file              (output_data/density_mch.out)'
+    write(u,*) '       -rdd  : write density file              (output_data/den_state_diag.out)'
+    write(u,*) '       -crdd : write coherent density file     (output_data/cden_state_diag.out)'
+    write(u,*) '       -rdm  : write density file              (output_data/den_state_mch.out)'
+    write(u,*) '       -p    : write hop probability file      (output_data/prob.out)'
+    write(u,*) '       -x    : write expec (E,S^2,mu) file     (output_data/expec.out)'
+    write(u,*) '       -xm   : write MCH expec file            (output_data/expec_MCH.out)'
+    write(u,*) '       -da   : write dip of active state file  (output_data/fosc_act.out)'
+    write(u,*) '       -dd   : write dip in diag. represent.   (output_data/dip_mom_diag.out)'
+!     write(u,*) '       -dp   : write projection of dip diag    (output_data/dip_mom_proj.out)'
+    write(u,*) '       -id   : write diag ion file             (output_data/ion_diag.out)'
+    write(u,*) '       -im   : write MCH ion file              (output_data/ion_mch.out)'
+    write(u,*) '       -sk   : skip reading geometries, velocities, gradients, NACs'
   endsubroutine
 
 
