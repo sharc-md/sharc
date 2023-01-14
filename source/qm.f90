@@ -1159,7 +1159,7 @@ module qm
       do istate=1,ctrl%nstates
         do jstate=1,ctrl%nstates
           write(string,'(A46,I3,1X,I3)') 'Non-adiabatic coupling DDR (diag basis) state ',istate,jstate
-          call vec3write(ctrl%natom,traj%NACdR_diag_ssad(istate,jstate,:,:),u_log,trim(string),'F14.9')
+          call vec3write(ctrl%natom,traj%NACdR_diag_ssad(istate,jstate,:,:),u_log,trim(string),'F12.9')
         enddo
       enddo
     endif
@@ -1205,7 +1205,7 @@ module qm
       do istate=1,ctrl%nstates
         do jstate=1,ctrl%nstates
           write(string,'(A56,I3,1X,I3)') 'Projected Non-adiabatic coupling DDR (diag basis) state ',istate,jstate
-          call vec3write(ctrl%natom,traj%pNACdR_diag_ssad(istate,jstate,:,:),u_log,trim(string),'F14.9')
+          call vec3write(ctrl%natom,traj%pNACdR_diag_ssad(istate,jstate,:,:),u_log,trim(string),'F12.9')
         enddo
       enddo
     endif
@@ -2399,8 +2399,8 @@ module qm
   
         if (printlevel>6) then
           write(u_log,'(A,1X,I4,1X,A,1X,I4)') 'Gmatrix calculation... iatom=',iatom,'idir=',idir
-          call matwrite(ctrl%nstates,G1matrix_ss,u_log,'G1matrix MCH','F20.14')
-          call matwrite(ctrl%nstates,G2matrix_ss,u_log,'G2matrix MCH','F20.14')
+          call matwrite(ctrl%nstates,G1matrix_ss,u_log,'G1matrix MCH','F12.9')
+          call matwrite(ctrl%nstates,G2matrix_ss,u_log,'G2matrix MCH','F12.9')
           write(u_log,*)
         endif
 
@@ -2413,8 +2413,8 @@ module qm
         G2matrix_ssad(:,:,iatom,idir)=G1matrix_ss
 
         if (printlevel>6) then
-          call matwrite(ctrl%nstates,G1matrix_ss,u_log,'G1matrix diag','F20.14')
-          call matwrite(ctrl%nstates,G2matrix_ss,u_log,'G2matrix diag','F20.14')
+          call matwrite(ctrl%nstates,G1matrix_ss,u_log,'G1matrix diag','F12.9')
+          call matwrite(ctrl%nstates,G2matrix_ss,u_log,'G2matrix diag','F12.9')
           write(u_log,*)
         endif
 
@@ -2443,7 +2443,7 @@ module qm
         do istate=1,ctrl%nstates
           do jstate=1,ctrl%nstates
             write(string,'(A46,I3,1X,I3)') 'Non-adiabatic coupling DDR (diag basis) state ',istate,jstate
-            call vec3write(ctrl%natom,traj%NACdR_diag_ssad(istate,jstate,:,:),u_log,trim(string),'F14.9')
+            call vec3write(ctrl%natom,traj%NACdR_diag_ssad(istate,jstate,:,:),u_log,trim(string),'F12.9')
           enddo
         enddo
       endif
@@ -2468,7 +2468,7 @@ module qm
         do istate=1,ctrl%nstates
           do jstate=1,ctrl%nstates
             write(string,'(A56,I3,1X,I3)') 'Effective non-adiabatic coupling DDR (diag basis) state ',istate,jstate
-            call vec3write(ctrl%natom,traj%NACGV_diag_ssad(istate,jstate,:,:),u_log,trim(string),'F30.10')
+            call vec3write(ctrl%natom,traj%NACGV_diag_ssad(istate,jstate,:,:),u_log,trim(string),'F12.9')
           enddo
         enddo
       endif
