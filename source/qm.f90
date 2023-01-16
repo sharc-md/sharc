@@ -1798,6 +1798,9 @@ module qm
     real*8 :: overlap_sum
     ! npi variables
     complex*16 :: w(ctrl%nstates,ctrl%nstates),tw(ctrl%nstates,ctrl%nstates),dw(ctrl%nstates,ctrl%nstates)
+    ! npi new variables
+    complex*16 :: wv1,wv2,wv3,wv4,wa,wb,wc,wd,we
+    complex*16 :: w_lj,w_lk
     ! ktdc variables
     real*8 :: gv_old(ctrl%nstates), gv(ctrl%nstates)
     complex*16 :: eh(ctrl%nstates)
@@ -1892,6 +1895,29 @@ module qm
           enddo
           call matmultiply(ctrl%nstates, tw, dw, traj%NACdt_ss, 'nn')
         endif
+        !if (printlevel>3)  call matwrite(ctrl%nstates,traj%NACdt_ss,u_log,'NPI Time Derivative Coupling in MCH basis...','F12.9')
+        !traj%NACdt_ss=dcmplx(0.d0,0.d0)
+        !if (traj%step>=1) then
+        !  do istate=1,ctrl%nstates
+        !    do jstate=1,ctrl%nstates
+        !      wv1=acos(traj%overlaps_ss(jstate,jstate))-asin(traj%overlaps_ss(jstate,istate))
+        !      wa=-sin(wv1)/wv1
+        !      wv2=acos(traj%overlaps_ss(jstate,jstate))+asin(traj%overlaps_ss(jstate,istate))
+        !      wb=sin(wv2)/wv2
+        !      wv3=acos(traj%overlaps_ss(istate,istate))-asin(traj%overlaps_ss(istate,jstate))
+        !      wc=sin(wv3)/wv3
+        !      wv4=acos(traj%overlaps_ss(istate,istate))+asin(traj%overlaps_ss(istate,jstate))
+        !      wd=sin(wv4)/wv4
+        !      w_lj=sqrt(1-traj%overlaps_ss(jstate,jstate)**2-traj%overlaps_ss(istate,jstate)**2)
+        !      w_lk=(-traj%overlaps_ss(jstate,istate)*traj%overlaps_ss(jstate,jstate)-traj%overlaps_ss(istate,istate)*traj%overlaps_ss(istate,jstate))&
+        !           &/w_lj
+        !      we=2*asin(w_lj)*(w_lj*w_lk*asin(w_lj)+(sqrt((1-w_lj**2)*(1-w_lk**2))-1)*asin(w_lk))&
+        !         &/((asin(w_lj))**2-(asin(w_lk))**2)
+        !      traj%NACdt_ss(istate,jstate)=(acos(traj%overlaps_ss(jstate,jstate))*(wa+wb)+(asin(traj%overlaps_ss(istate,jstate))*(wc+wd))+we)/2/ctrl%dtstep
+        !    enddo
+        !  enddo
+        !endif
+        !if (printlevel>3)  call matwrite(ctrl%nstates,traj%NACdt_ss,u_log,'NPI (at t+0.5dt) Time Derivative Coupling in MCH basis...','F12.9')
       case(3) ! coupling using approximated TDC, NACdt is computed by approximation.
         if (printlevel>3) write(u_log,*) 'Computing time derivative coupling by Curvature Approximation'
         traj%NACdt_ss=dcmplx(0.d0,0.d0)
@@ -1941,14 +1967,21 @@ module qm
           if (printlevel>4) write(u_log,*) 'Curvature TDC is computed by second order difference of energies'
           do istate=1, ctrl%nstates
             do jstate=1, ctrl%nstates
-              de(istate,jstate)=traj%H_MCH_ss(istate,istate)-traj%H_MCH_ss(jstate,jstate)
-              if (de(istate,jstate).eq.0.d0) then
-                write(u_log,*) "WARNING, two MCH states ", istate, jstate, "reach exact degeneracy, set de=1.d-8"
-                de(istate,jstate)=1.d-8
+              if (istate.ne.jstate) then 
+                de(istate,jstate)=traj%H_MCH_ss(istate,istate)-traj%H_MCH_ss(jstate,jstate)
+                de_old(istate,jstate)=traj%H_MCH_old_ss(istate,istate)-traj%H_MCH_old_ss(jstate,jstate)
+                de_old2(istate,jstate)=traj%H_MCH_old2_ss(istate,istate)-traj%H_MCH_old2_ss(jstate,jstate)
+                de_old3(istate,jstate)=traj%H_MCH_old3_ss(istate,istate)-traj%H_MCH_old3_ss(jstate,jstate)
+                if (de(istate,jstate).eq.0.d0) then
+                  if (printlevel>4)  write(u_log,*) "WARNING, two MCH states ", istate, jstate, "reach exact degeneracy, set de=1.d-8"
+                  de(istate,jstate)=1.d-8
+                endif
+              else
+                de(istate,jstate)=0.d0
+                de_old(istate,jstate)=0.d0
+                de_old2(istate,jstate)=0.d0
+                de_old3(istate,jstate)=0.d0
               endif
-              de_old(istate,jstate)=traj%H_MCH_old_ss(istate,istate)-traj%H_MCH_old_ss(jstate,jstate)
-              de_old2(istate,jstate)=traj%H_MCH_old2_ss(istate,istate)-traj%H_MCH_old2_ss(jstate,jstate)
-              de_old3(istate,jstate)=traj%H_MCH_old3_ss(istate,istate)-traj%H_MCH_old3_ss(jstate,jstate)
             enddo
           enddo
           if (ctrl%integrator==2) then ! fixed time step.
@@ -2410,7 +2443,7 @@ module qm
 
         ! save full G matrix
         G1matrix_ssad(:,:,iatom,idir)=G1matrix_ss
-        G2matrix_ssad(:,:,iatom,idir)=G1matrix_ss
+        G2matrix_ssad(:,:,iatom,idir)=G2matrix_ss
 
         if (printlevel>6) then
           call matwrite(ctrl%nstates,G1matrix_ss,u_log,'G1matrix diag','F12.9')
@@ -2713,7 +2746,7 @@ module qm
 
           if (printlevel>4) then
             write(u_log,'(A,1X,I4,1X,A,1X,I4)') 'Gmatrix calculation... iatom=',iatom,'idir=',idir
-            call matwrite(ctrl%nstates,Gmatrix_ss,u_log,'Gmatrix MCH','F20.14')
+            call matwrite(ctrl%nstates,Gmatrix_ss,u_log,'Gmatrix MCH','F12.9')
           endif
 
           ! transform G matrix to diagonal basis
@@ -2722,7 +2755,7 @@ module qm
           traj%Gmatrix_ssad(:,:,iatom,idir)=Gmatrix_ss
 
           if (printlevel>4) then
-            call matwrite(ctrl%nstates,Gmatrix_ss,u_log,'Gmatrix diag','F20.14')
+            call matwrite(ctrl%nstates,Gmatrix_ss,u_log,'Gmatrix diag','F12.9')
             write(u_log,*)
           endif
 
@@ -2777,7 +2810,7 @@ module qm
         do iatom=1,ctrl%natom
           do idir=1,3
             write(u_log,'(A,1X,I4,1X,A,1X,I4)') 'Gmatrix calculation... iatom=',iatom,'idir=',idir
-            call matwrite(ctrl%nstates,traj%Gmatrix_ssad(:,:,iatom,idir),u_log,'Gmatrix diag','F20.14')
+            call matwrite(ctrl%nstates,traj%Gmatrix_ssad(:,:,iatom,idir),u_log,'Gmatrix diag','F12.9')
           enddo
         enddo
       endif

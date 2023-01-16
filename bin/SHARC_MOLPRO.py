@@ -2051,7 +2051,7 @@ def readQMin(QMinfilename):
   if 'overlap' in QMin or 'ion' in QMin or 'docicas' in QMin:
     #QMin['wfoverlap']=get_sh2pro_environ(sh2pro,'wfoverlap')
     QMin['wfoverlap']=get_sh2pro_environ(sh2pro,'wfoverlap',False,False)
-    if QMin['wfoverlap']==None:
+    if QMin['wfoverlap']=='':
       ciopath=os.path.join(os.path.expandvars(os.path.expanduser('$SHARC')),'wfoverlap.x')
       if os.path.isfile(ciopath):
         QMin['wfoverlap']=ciopath
@@ -3613,6 +3613,7 @@ def run_wfoverlap(QMin,errorcodes):
              'mo.a':  'mo.%i' % job,
              'mo.b':  'mo.%i' % job }
       setupWORKDIR_WF(WORKDIR,QMin,files)
+      print QMin['wfoverlap']
       errorcodes['CI_CAS_%i_%i' % (m,job)]=runWFOVERLAP(WORKDIR,QMin['wfoverlap'],memory=QMin['memory'],ncpu=QMin['ncpu'])
 
   # do overlap calculations
