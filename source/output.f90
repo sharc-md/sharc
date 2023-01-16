@@ -84,7 +84,6 @@ subroutine write_logheader(u,version,versionmn)
 
   write(u,'(A)')      '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
   write(u,'(A)')      '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<   Program SHARC started    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
-  write(u,'(A)')      '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  with Minnesta Extention   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
   write(u,'(A)')      '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
   write(u,*)
   write(u,*) 'Version: ', trim(version)
@@ -199,27 +198,19 @@ endsubroutine
     write(u,'(A)') '**********************************************************'
     write(u,'(A)') '* SHARC -- Surface Hopping including ARbitrary Couplings *'
     write(u,'(A)') '*        Ab initio non-adiabatic dynamics program        *'
-    write(u,'(A)') '* with Minnesota Extention                               *'
     write(u,'(A)') '**********************************************************'
     write(u,'(A)') 
     write(u,'(A,A)') 'Version: ', trim(version)
     write(u,'(A)') 
     write(u,'(A)') 
-    write(u,'(A)') 'Authors: Sebastian Mai, Martin Richter, Matthias Ruckenbauer,'
-    write(u,'(A)') 'Markus Oppel, Philipp Marquetand, and Leticia González'
-    write(u,'(A)')
-    write(u,'(A)') 'MN extention authors: Yinan Shu, Linyao Zhang,'
-    write(u,'(A)') '                      and Donald G. Truhlar'
+    write(u,'(A)') 'Authors: Sebastian Mai, Yinan Shu, Martin Richter, '
+    write(u,'(A)') 'Matthias Ruckenbauer,Markus Oppel, Philipp Marquetand,' 
+    write(u,'(A)') 'Donald Truhlar, and Leticia González'
     write(u,'(A)')
     write(u,'(A)') 'Institute of Theoretical Chemistry, University of Vienna'
     write(u,'(A)') 'Währinger Straße 17'
     write(u,'(A)') '1090 Vienna, Austria'
     write(u,'(A)')
-    write(u,'(A)') 'Department of Chemistry, Chemical Theory Center, University of Minnesota'
-    write(u,'(A)') 'Smith Hall, 207 Pleasant St SE'
-    write(u,'(A)') 'Minneapolis, MN 55414-0431, United States'
-    write(u,'(A)')  
-    write(u,'(A)') 
     write(u,'(A)') 'Please cite the following:'
     write(u,'(A)') 
     write(u,'(A)') '* M. Richter, P. Marquetand, J. González-Vázquez, '
@@ -232,22 +223,11 @@ endsubroutine
     write(u,'(A)') '  Program Package for Non-Adiabatic Dynamics" (2014),'
     write(u,'(A)') '  sharc-md.org'
     write(u,'(A)')
-    write(u,'(A)') 'Please cite the following if you are using Minnesota extention:'
-    write(u,'(A)')
-    write(u,'(A)') '* Y. Shu, L. Zhang, S. Mai, S. Sun, L. Gonzalez, and D. G. Truhlar:' 
-    write(u,'(A)') '  J. Chem. Theory Comput., 16, 3464--3475 (2020).'
-    write(u,'(A)') 
     write(u,'(A)') 'Please report bugs and feature suggestions to:'
     write(u,'(A)') 'sharc@univie.ac.at'
     write(u,'(A)') 'philipp.marquetand@univie.ac.at'
     write(u,'(A)')
-    write(u,'(A)') 'Please report Minnesota extention related bugs and feature suggestions to:'
-    write(u,'(A)') 'yinan.shu.0728@gmail.com'
-    write(u,'(A)') 'truhlar@umn.edu'
-    write(u,'(A)') 
-    write(u,'(A)') 
-    write(u,'(A)') 'Copyright (c) 2014, University of Vienna'
-    write(u,'(A)') 'Copyright (c) 2020, University of Minnesota'
+    write(u,'(A)') 'Copyright (c) 2023, University of Vienna'
     write(u,'(A)') 
     write(u,'(A)') 'Permission is hereby granted, free of charge, to any person obtaining a copy '
     write(u,'(A)') 'of this software and associated documentation files (the "Software"), to deal'
