@@ -4,11 +4,9 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2019 University of Vienna
-#    Copyright (c) 2022 University of Minnesota
+#    Copyright (c) 2023 University of Vienna
 #
 #    This file is part of SHARC
-#                     and SHARC-MN extenstion.
 #
 #    SHARC is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -244,16 +242,16 @@ Method={
 
 Couplings={
   1: {'name':        'nacdt',
-      'description': 'DDT     =  < a|d/dt|b >        Hammes-Schiffer-Tully scheme   '
+      'description': 'DDT     =  < a|d/dt|b >                  Hammes-Schiffer-Tully scheme   '
      },
   2: {'name':        'nacdr',
-      'description': 'DDR     =  < a|d/dR|b >        Original Tully scheme          '
+      'description': 'DDR     =  < a|d/dR|b >                  Original Tully scheme          '
      },
   3: {'name':        'overlap',
-      'description': 'overlap = < a(t0)|b(t) >       Local Diabatization scheme     '
+      'description': 'overlap = < a(t0)|b(t) >                 Local Diabatization scheme/Norm-Preserving Interpolation scheme     '
      },
   4: {'name':        'ktdc',
-      'description': 'ktdc = (d2(deltaV)/dQ2/(deltaV) Energy approximated TDC scheme     '
+      'description': 'ktdc = 0.5*sqrt(d2(deltaV)/dt2/(deltaV)) Curvature Driven TDC scheme     '
      }
   }
 
@@ -267,16 +265,22 @@ Neom={
   }
 
 Integrator={
-  1: {'name':        'bsh',
-      'description': 'Bulisrch-Stoer-Hack integrator'
-     },
-  2: {'name':        'avv',
+  1: {'name':        'avv',
       'description': 'adaptive timestep Velocity-Verlet integrator'
      },
-  3: {'name':        'fvv',
+  2: {'name':        'fvv',
       'description': 'fixed timestep Velocity-Verlet integrator'
      }
   }
+
+GradCorrect={
+  1: {'name':        'ngh',
+      'description': 'mixed gradients are calculated by correction of MCH gradients with non-adiabatic coupling vector'
+     },
+  2: {'name':        'tdh',
+      'description': 'mixed gradients are calculated by rescaling of the MCH gradients according to time derivatives in diagonal and MCH representations'
+     }
+}
 
 EkinCorrect={
   1: {'name':             'none',
@@ -289,27 +293,32 @@ EkinCorrect={
       'description_refl': 'Reflect the full velocity vector.',
       'required':   []
      },
-  3: {'name':             'parallel_nac',
+  3: {'name':             'parallel_pvel',
+      'description':      'Adjust kinetic energy only with the component of the velocity vector along the vibrational velocity vector.',
+      'description_refl': 'Reflect the vibrational velocity vector.',
+      'required':   []
+     },
+  4: {'name':             'parallel_nac',
       'description':      'Adjust kinetic energy only with the component of the velocity vector along the non-adiabatic coupling vector.',
       'description_refl': 'Reflect only the component of the velocity vector along the non-adiabatic coupling vector.',
       'required':   ['nacdr']
      },
-  4: {'name':             'parallel_diff',
+  5: {'name':             'parallel_diff',
       'description':      'Adjust kinetic energy only with the component of the velocity vector along the gradient difference vector.',
       'description_refl': 'Reflect only the component of the velocity vector along the gradient difference vector.',
       'required':   []
      },
-  5: {'name':             'parallel_pnac',
+  6: {'name':             'parallel_pnac',
       'description':      'Adjust kinetic energy only with the component of the velocity vector along the projected non-adiabatic coupling vector.',
       'description_refl': 'Reflect only the component of the velocity vector along the projected non-adiabatic coupling vector.',
-      'required':   []
+      'required':   ['nacdr']
      },
-  6: {'name':             'parallel_enac',
+  7: {'name':             'parallel_enac',
       'description':      'Adjust kinetic energy only with the component of the velocity vector along the effective non-adiabatic coupling vector.',
       'description_refl': 'Reflect only the component of the velocity vector along the effective non-adiabatic coupling vector.',
       'required':   []
      },
-  7: {'name':             'parallel_penac',
+  8: {'name':             'parallel_penac',
       'description':      'Adjust kinetic energy only with the component of the velocity vector along the projected effective non-adiabatic coupling vector.',
       'description_refl': 'Reflect only the component of the velocity vector along the projected effective non-adiabatic coupling vector.',
       'required':   []
@@ -1211,7 +1220,7 @@ from the initconds.excited files as provided by excite.py.
   INFOS['integrator']=Integrator[itg]['name']
 
   # convergence threshold
-  if INFOS['integrator']=='bsh' or INFOS['integrator']=='avv':
+  if INFOS['integrator']=='avv':
     conv=question('Convergence threshold (eV):',float,[0.00005])[0]
     if conv<=0:
       print 'Must be positive!'
@@ -1318,23 +1327,28 @@ from the initconds.excited files as provided by excite.py.
 
   # Gradient correction (only for SHARC)
   if INFOS['surf']=='diagonal':
-    possible= ('nacdr' in Interfaces[INFOS['interface']]['features'])
-    recommended=Couplings[INFOS['coupling']]['name']=='nacdr'
-    print '\nFor SHARC dynamics, the evaluation of the mixed gradients necessitates to calculate non-adiabatic coupling vectors %s.' % (['(Extra computational cost)',' (Recommended)'][recommended])
-    if possible:
-      #while True:
-        INFOS['gradcorrect']=question('Include non-adiabatic couplings in the gradient transformation?',bool,recommended)
-        #if INFOS['gradcorrect'] and not 'nacdr' in Interfaces[INFOS['interface']]['features']:
-          #print 'Not possible with the chosen interface!'
-        #else:
-          #break
+    print '\nFor SHARC dynamics, the evaluation of the mixed gradients necessitates to be corrected from MCH gradients'
+    print '\nPlease choose the gradient correction scheme you want to use'
+    cando=list(GradCorrect)
+    for i in GradCorrect:
+      print '%i\t%s' % (i, GradCorrect[i]['description'])
+    if Couplings[INFOS['coupling']]['name']=='nacdr':
+      recommended=1
     else:
+      recommended=2
+    while True:
+      gct=question('GradCorrect:',int,[recommended])[0]
+      if gct in GradCorrect and gct in cando:
+        break
+      else:
+        print 'Please input one of the following: %s!' % ([i for i in cando])
+    INFOS['gradcorrect']=GradCorrect[gct]['name']
+    possible= ('nacdr' in Interfaces[INFOS['interface']]['features'])
+    if GradCorrect[gct]['name']=='ngh' and not possible:
       print '... but interface cannot provide non-adiabatic coupling vectors, turning option off.'
-      INFOS['gradcorrect']=False
+      INFOS['gradcorrect']='none'
   else:
-    INFOS['gradcorrect']=False
-  if INFOS['gradcorrect']:
-    INFOS['needed'].extend(Interfaces[INFOS['interface']]['features']['nacdr'])
+    INFOS['gradcorrect']='none'
 
   #===============================
   # Begin Surace hopping details
@@ -1485,7 +1499,7 @@ from the initconds.excited files as provided by excite.py.
     else:
       sel_g=False
     INFOS['sel_g']=sel_g
-    if Couplings[INFOS['coupling']]['name']=='ddr' or INFOS['gradcorrect'] or EkinCorrect[INFOS['ekincorrect']]['name']=='parallel_nac':
+    if Couplings[INFOS['coupling']]['name']=='ddr' or INFOS['gradcorrect']=='ngh' or EkinCorrect[INFOS['ekincorrect']]['name']=='parallel_nac':
       sel_t=question('Select non-adiabatic couplings?',bool,False)
     else:
       sel_t=False
@@ -1504,7 +1518,7 @@ from the initconds.excited files as provided by excite.py.
   #===============================
 
   #========================================
-  # Begin Semi-classical Ehrenfest details 
+  # Begin Self-Consistent Potential Methods details 
   #========================================
   if INFOS['method']=='scp':
 
@@ -1597,7 +1611,7 @@ from the initconds.excited files as provided by excite.py.
       INFOS['damping']=False
 
   #===========================================
-  # End Semi-classical Ehrenfest details 
+  # End Self-Consistent Potential Methods details 
   #===========================================
 
   # Laser file
@@ -4455,7 +4469,7 @@ def writeSHARCinput(INFOS,initobject,iconddir,istate):
 
   s+='tmax %f\nstepsize %f\nnsubsteps %i\n' % (INFOS['tmax'],INFOS['dtstep'],INFOS['nsubstep'])
   s+='integrator %s\n' % (INFOS['integrator'])
-  if INFOS['integrator']=='bsh' or INFOS['integrator']=='avv':
+  if INFOS['integrator']=='avv':
     s+='convthre %s\n' % (INFOS['convthre'])
   if INFOS['kill']:
     s+='killafter %f\n' % (INFOS['killafter'])
@@ -4466,7 +4480,11 @@ def writeSHARCinput(INFOS,initobject,iconddir,istate):
   s+='coupling %s\n' % (Couplings[INFOS['coupling']]['name'])
   if INFOS['method']=='scp':
     s+='neom %s\n' % (INFOS['neom'])
-  s+='%sgradcorrect\n' % (['no',''][INFOS['gradcorrect']])
+  if INFOS['gradcorrect']=='none':
+    s+='nogradcorrect\n'
+  else:
+    s+='gradcorrect %s\n' % (INFOS['gradcorrect'])
+  #s+='%sgradcorrect\n' % (['no',''][INFOS['gradcorrect']])
   if INFOS['method']=='tsh':
     if INFOS['atommaskarray']:
       s+='atommask external\natommaskfile "atommask"\n\n'
@@ -4509,7 +4527,7 @@ def writeSHARCinput(INFOS,initobject,iconddir,istate):
     if INFOS['sel_t']:
       s+='nac_select\n'
     else:
-      if Couplings[INFOS['coupling']]['name']=='ddr' or INFOS['gradcorrect'] or EkinCorrect[INFOS['ekincorrect']]['name']=='parallel_nac':
+      if Couplings[INFOS['coupling']]['name']=='ddr' or INFOS['gradcorrect']=='ngh' or EkinCorrect[INFOS['ekincorrect']]['name']=='parallel_nac':
         s+='nac_all\n'
     if 'eselect' in INFOS:
       s+='eselect %f\n' % (INFOS['eselect'])
