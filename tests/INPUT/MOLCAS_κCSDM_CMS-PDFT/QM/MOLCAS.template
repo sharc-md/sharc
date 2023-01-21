@@ -1,0 +1,10 @@
+basis JUN-CC-PVDZ
+ras2 8
+nactel 6
+inactive 6
+roots 2  0  0 
+
+method cms-pdft
+functional T:PBE
+
+
