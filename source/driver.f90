@@ -190,7 +190,7 @@ do while (traj%microtime.lt.ctrl%tmax)
   else ! else, energy conserves badly, back propagate and reduce step size
     traj%step=traj%step-1
     call Adaptive_Stepsize(traj,ctrl) ! decrease the stepsize for next step
-    call Back_propagate(u_rest,traj,ctrl) ! back propagate to previous step
+    call read_restart_traj(u_resc,u_rest,ctrl,traj) ! back propagate to previous step
   endif
 
   if (ctrl%time_uncertainty==1 .and. traj%in_time_uncertainty==0) then

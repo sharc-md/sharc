@@ -75,6 +75,7 @@ module input
   integer :: narg, io, nlines, selg, selt
   integer :: i,j,k,n
   integer :: imult,ims
+  integer :: dtmin_order, dtmax_order
   real*8 :: a,b,tmax2
   character*24 :: ctime, date
   integer :: idate,time
@@ -548,14 +549,6 @@ module input
       ctrl%tmax=5.0
     endif
 
-    ! minimum timestep allowed in adapative
-    line=get_value_from_key('dtmin',io)
-    if (io==0) then
-      read(line,*) ctrl%dtmin
-    else
-      ctrl%dtmin=0.0001
-    endif
-
     ! stepsize is dt, default is 1 fs
     line=get_value_from_key('stepsize',io)
     if (io==0) then
@@ -563,6 +556,24 @@ module input
     else
       ctrl%dtstep=1.d0
     endif
+
+    ! minimum timestep allowed in adapative
+    line=get_value_from_key('dtmin',io)
+    if (io==0) then
+      read(line,*) dtmin_order
+    else
+      dtmin_order=5
+    endif
+    ctrl%dtmin=ctrl%dtstep/(2**dtmin_order)
+
+    ! maximum timestep allowed in adapative
+    line=get_value_from_key('dtmax',io)
+    if (io==0) then
+      read(line,*) dtmax_order
+    else
+      dtmax_order=1
+    endif
+    ctrl%dtmax=ctrl%dtstep*(2**dtmax_order)
 
     ! nsteps is computed by simulation time/stepsize
     ! nsteps is only used in fixed stepsize Velocity-Verlet integrator
@@ -1107,11 +1118,11 @@ module input
           ctrl%gradcorrect=1
         case ('nac')
           ctrl%gradcorrect=1
-        case ('ngt')
+        case ('ngh')
           ctrl%gradcorrect=1
         case ('kmatrix')
           ctrl%gradcorrect=2
-        case ('tdm')
+        case ('tdh')
           ctrl%gradcorrect=2
         case ('enac')
           ctrl%gradcorrect=3
@@ -1317,12 +1328,12 @@ module input
     if (ctrl%ekincorrect==7 .or. ctrl%ekincorrect==8) then ! for kinetic energy correction parallel to effective nac or projected effective nac, we need effective nac
       ctrl%calc_effectivenac=1
     endif 
-    if (ctrl%reflect_frustrated==2 .or. ctrl%reflect_frustrated==4) then ! for reflection parallel to nac or projected nac, we need nacdr
+    if (ctrl%reflect_frustrated==3 .or. ctrl%reflect_frustrated==5 .or. ctrl%reflect_frustrated==93 .or. ctrl%reflect_frustrated==95) then ! for reflection parallel to nac or projected nac, we need nacdr
       ctrl%calc_nacdr=0
       ctrl%gradcorrect=1        ! NACs must be transformed
     endif
-    if (ctrl%reflect_frustrated==5 .or. ctrl%reflect_frustrated==6) then ! for reflection parallel to effective nac or projected effective nac, we need effective nac
-      ctrl%calc_nacdr=0
+    if (ctrl%reflect_frustrated==7 .or. ctrl%reflect_frustrated==8 .or. ctrl%reflect_frustrated==97 .or. ctrl%reflect_frustrated==98) then ! for reflection parallel to effective nac or projected effective nac, we need effective nac
+      ctrl%calc_effectivenac=1
     endif
 ! !     if (ctrl%decoherence==2) then ! for A-FSSH we need nacdr
 ! !       ctrl%calc_nacdr=0

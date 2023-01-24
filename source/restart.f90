@@ -89,6 +89,7 @@ module restart
     write(u,*) ctrl%nsubsteps
     write(u,*) ctrl%tmax
     write(u,*) ctrl%dtmin
+    write(u,*) ctrl%dtmax
     write(u,*) ctrl%dtstep
     write(u,*) ctrl%dtstep_old
     write(u,*) ctrl%ezero
@@ -555,6 +556,33 @@ module restart
     real*8 :: dummy_randnum
     integer :: time
 
+    ! allocation of trajectory is in read_restart_ctrl
+    call read_restart_ctrl(u_ctrl,u_traj,ctrl,traj)
+    call read_restart_traj(u_ctrl,u_traj,ctrl,traj)
+    call read_restart_miscllaneous(u_ctrl,u_traj,ctrl,traj)
+
+  endsubroutine
+
+! =========================================================== !
+
+!> this routine reads all restart information from restart.ctrl
+!> and initializes the ctrl and traj compounds
+!> it also does:
+!> - allocation of all arrays including traj 
+!> - setting ctrl%restart to .true.
+  subroutine read_restart_ctrl(u_ctrl,u_traj,ctrl,traj)
+    use definitions
+    use matrix
+    use misc
+    use decoherence_afssh
+    implicit none
+    integer :: u_ctrl,u_traj
+    type(trajectory_type) :: traj
+    type(ctrl_type) :: ctrl
+
+    integer :: imult, iatom, i,j,k, istate, ilaser, ipair
+    character(8000) :: string
+
     open(unit=u_ctrl, file='restart.ctrl',status='old',action='read')
 
     ! read the ctrl compound, including all entries (see definition)
@@ -592,6 +620,7 @@ module restart
     read(u_ctrl,*) ctrl%nsubsteps
     read(u_ctrl,*) ctrl%tmax
     read(u_ctrl,*) ctrl%dtmin
+    read(u_ctrl,*) ctrl%dtmax
     read(u_ctrl,*) ctrl%dtstep
     read(u_ctrl,*) ctrl%dtstep_old
     read(u_ctrl,*) ctrl%ezero
@@ -667,7 +696,8 @@ module restart
     read(u_ctrl,*) ctrl%output_format
 
     ! read the laser field
-    ! with an external laser, increasing the simulation time necessitates that the laserfield in
+    ! with an external laser, increasing the simulation time necessitates that
+    ! the laserfield in
     ! the control file is enlarged 
     if (ctrl%laser==2) then
       read(u_ctrl,*) ctrl%laser_bandwidth
@@ -679,7 +709,7 @@ module restart
         call vecread(ctrl%nsteps*ctrl%nsubsteps+1, ctrl%laserenergy_tl(:,ilaser), u_ctrl, string)
       enddo
     endif
-    
+
     read(u_ctrl,*) ctrl%write_soc
     read(u_ctrl,*) ctrl%write_overlap
     read(u_ctrl,*) ctrl%write_grad
@@ -688,12 +718,12 @@ module restart
     read(u_ctrl,*) ctrl%write_property2d
     read(u_ctrl,*) ctrl%n_property1d
     read(u_ctrl,*) ctrl%n_property2d
-    
+
     allocate( ctrl%atommask_a(ctrl%natom))
     do iatom=1,ctrl%natom
       read(u_ctrl,*) ctrl%atommask_a(iatom)
     enddo
-    
+
     close(u_ctrl)
 
     ctrl%restart=.true.
@@ -706,308 +736,347 @@ module restart
     endif
 
     call flush(u_log)
+  endsubroutine
+
+! =========================================================== !
+
+!> this routine reads all restart information from restart.traj
+  subroutine read_restart_traj(u_ctrl,u_traj,ctrl,traj)
+    use definitions
+    use matrix
+    use misc
+    use decoherence_afssh
+    implicit none
+    integer :: u_ctrl,u_traj
+    type(trajectory_type) :: traj
+    type(ctrl_type) :: ctrl
+
+    integer :: imult, iatom, i,j,k, istate, ilaser, ipair
+    character(8000) :: string
 
     open(unit=u_traj, file='restart.traj',status='old',action='read')
+  ! read everything
+  read(u_traj,*) traj%RNGseed
+  read(u_traj,*) traj%traj_hash
+  read(u_traj,*) traj%state_MCH
+  read(u_traj,*) traj%state_MCH_old
+  read(u_traj,*) traj%state_diag
+  read(u_traj,*) traj%state_diag_old
+  read(u_traj,*) traj%state_diag_frust
+  if (ctrl%zpe_correction==1) then
+    read(u_traj,*) (traj%state_pumping_s(i),i=1,ctrl%nstates)
+    read(u_traj,*) (traj%pumping_status_s(i),i=1,ctrl%nstates)
+  else if (ctrl%zpe_correction==2) then
+    read(u_traj,*) (traj%lpzpe_ke_ah(i),i=1,ctrl%lpzpe_nah)
+    read(u_traj,*) (traj%lpzpe_ke_bc(i),i=1,ctrl%lpzpe_nbc)
+    read(u_traj,*) traj%lpzpe_cycle
+    read(u_traj,*) traj%lpzpe_iter_incycle
+    read(u_traj,*) traj%lpzpe_starttime
+    read(u_traj,*) traj%lpzpe_endtime
+    read(u_traj,*) traj%in_cycle
+  endif
+  if (ctrl%time_uncertainty==1) then
+    read(u_traj,*) (traj%uncertainty_time_s(i),i=1,ctrl%nstates)
+    read(u_traj,*) (traj%allowed_hop_s(i),i=1,ctrl%nstates)
+    read(u_traj,*) (traj%allowed_time_s(i),i=1,ctrl%nstates)
+    read(u_traj,*) traj%uncertainty_time_frust
+    read(u_traj,*) traj%incident_time
+    read(u_traj,*) traj%in_time_uncertainty
+    read(u_traj,*) traj%tu_backpropagation
+    read(u_traj,*) traj%travelling_state
+    read(u_traj,*) traj%target_state
+  endif
+  read(u_traj,*) traj%step
+  read(u_traj,*) traj%microtime
+  read(u_traj,*) traj%Ekin
+  read(u_traj,*) traj%Epot
+  read(u_traj,*) traj%Etot
+  read(u_traj,*) traj%Ekin_old
+  read(u_traj,*) traj%Epot_old
+  read(u_traj,*) traj%Etot_old
+  read(u_traj,*) traj%time_start
+  read(u_traj,*) traj%time_last
+  read(u_traj,*) traj%time_step
+  read(u_traj,*) traj%kind_of_jump
+  read(u_traj,*) traj%steps_in_gs
+  read(u_traj,*) (traj%ncids(i),i=1,10)
+  read(u_traj,*) traj%nc_index
+  traj%nc_index=-traj%nc_index
 
-    ! read everything
-    read(u_traj,*) traj%RNGseed
-    read(u_traj,*) traj%traj_hash
-    read(u_traj,*) traj%state_MCH
-    read(u_traj,*) traj%state_MCH_old
-    read(u_traj,*) traj%state_diag
-    read(u_traj,*) traj%state_diag_old
-    read(u_traj,*) traj%state_diag_frust
-    if (ctrl%zpe_correction==1) then
-      read(u_traj,*) (traj%state_pumping_s(i),i=1,ctrl%nstates)
-      read(u_traj,*) (traj%pumping_status_s(i),i=1,ctrl%nstates)
-    else if (ctrl%zpe_correction==2) then
-      read(u_traj,*) (traj%lpzpe_ke_ah(i),i=1,ctrl%lpzpe_nah)
-      read(u_traj,*) (traj%lpzpe_ke_bc(i),i=1,ctrl%lpzpe_nbc)
-      read(u_traj,*) traj%lpzpe_cycle
-      read(u_traj,*) traj%lpzpe_iter_incycle
-      read(u_traj,*) traj%lpzpe_starttime
-      read(u_traj,*) traj%lpzpe_endtime
-      read(u_traj,*) traj%in_cycle
-    endif
-    if (ctrl%time_uncertainty==1) then 
-      read(u_traj,*) (traj%uncertainty_time_s(i),i=1,ctrl%nstates)
-      read(u_traj,*) (traj%allowed_hop_s(i),i=1,ctrl%nstates)
-      read(u_traj,*) (traj%allowed_time_s(i),i=1,ctrl%nstates)
-      read(u_traj,*) traj%uncertainty_time_frust
-      read(u_traj,*) traj%incident_time
-      read(u_traj,*) traj%in_time_uncertainty
-      read(u_traj,*) traj%tu_backpropagation
-      read(u_traj,*) traj%travelling_state
-      read(u_traj,*) traj%target_state
-    endif
-    read(u_traj,*) traj%step
-    read(u_traj,*) traj%microtime
-    read(u_traj,*) traj%Ekin
-    read(u_traj,*) traj%Epot
-    read(u_traj,*) traj%Etot
-    read(u_traj,*) traj%Ekin_old
-    read(u_traj,*) traj%Epot_old
-    read(u_traj,*) traj%Etot_old
-    read(u_traj,*) traj%time_start
-    read(u_traj,*) traj%time_last
-    read(u_traj,*) traj%time_step
-    read(u_traj,*) traj%kind_of_jump
-    read(u_traj,*) traj%steps_in_gs
-    read(u_traj,*) (traj%ncids(i),i=1,10)
-    read(u_traj,*) traj%nc_index
-    traj%nc_index=-traj%nc_index
+  ! read the arrays
+  read(u_traj,*) (traj%atomicnumber_a(iatom),iatom=1,ctrl%natom)
+  read(u_traj,*) (traj%element_a(iatom),iatom=1,ctrl%natom)
+  read(u_traj,*) (traj%mass_a(iatom),iatom=1,ctrl%natom)
+  call vec3read(ctrl%natom, traj%geom_ad,  u_traj, string)
+  call vec3read(ctrl%natom, traj%veloc_ad, u_traj, string)
+  call vec3read(ctrl%natom, traj%veloc_old_ad, u_traj, string)
+  call vec3read(ctrl%natom, traj%veloc_app_ad, u_traj, string)
+  call vec3read(ctrl%natom, traj%accel_ad, u_traj, string)
+  if (ctrl%nac_projection==1) then
+    call matread(3*ctrl%natom, traj%trans_rot_P, u_traj, string)
+  endif
 
-    ! read the arrays
-    read(u_traj,*) (traj%atomicnumber_a(iatom),iatom=1,ctrl%natom)
-    read(u_traj,*) (traj%element_a(iatom),iatom=1,ctrl%natom)
-    read(u_traj,*) (traj%mass_a(iatom),iatom=1,ctrl%natom)
-    call vec3read(ctrl%natom, traj%geom_ad,  u_traj, string)
-    call vec3read(ctrl%natom, traj%veloc_ad, u_traj, string)
-    call vec3read(ctrl%natom, traj%veloc_old_ad, u_traj, string)
-    call vec3read(ctrl%natom, traj%veloc_app_ad, u_traj, string)
-    call vec3read(ctrl%natom, traj%accel_ad, u_traj, string)
-    if (ctrl%nac_projection==1) then
-      call matread(3*ctrl%natom, traj%trans_rot_P, u_traj, string)
-    endif
-
-    call matread(ctrl%nstates, traj%H_MCH_ss,     u_traj,   string)
-    call matread(ctrl%nstates, traj%dH_MCH_ss,    u_traj,   string)
-    call matread(ctrl%nstates, traj%dH_MCH_old_ss,u_traj,   string)
-    call matread(ctrl%nstates, traj%H_MCH_old_ss, u_traj,   string)
-    call matread(ctrl%nstates, traj%H_MCH_old2_ss,u_traj,   string)
-    call matread(ctrl%nstates, traj%H_MCH_old3_ss,u_traj,   string)
-    call matread(ctrl%nstates, traj%H_diag_ss,    u_traj,   string)
-    call matread(ctrl%nstates, traj%H_diag_old_ss,    u_traj,   string)
-    call matread(ctrl%nstates, traj%H_diag_old2_ss,    u_traj,   string)
-    call matread(ctrl%nstates, traj%H_diag_old3_ss,    u_traj,   string)
-    if (ctrl%zpe_correction==1) then
-      call vecread(ctrl%nstates, traj%Evib_local_s, u_traj,   string)
-      call vecread(ctrl%nstates, traj%Ezpe_local_s, u_traj,   string)
-    endif
-    call matread(ctrl%nstates, traj%U_ss,         u_traj,   string)
-    call matread(ctrl%nstates, traj%U_old_ss,     u_traj,   string)
-    call matread(ctrl%nstates, traj%NACdt_ss,     u_traj,   string)
-    call matread(ctrl%nstates, traj%NACdt_old_ss, u_traj,   string)
-    call matread(ctrl%nstates, traj%overlaps_ss,  u_traj,   string)
-    call matread(ctrl%nstates, traj%DM_ssd(:,:,1),  u_traj, string)
-    call matread(ctrl%nstates, traj%DM_ssd(:,:,2),  u_traj, string)
-    call matread(ctrl%nstates, traj%DM_ssd(:,:,3),  u_traj, string)
-    call matread(ctrl%nstates, traj%DM_old_ssd(:,:,1),  u_traj, string)
-    call matread(ctrl%nstates, traj%DM_old_ssd(:,:,2),  u_traj, string)
-    call matread(ctrl%nstates, traj%DM_old_ssd(:,:,3),  u_traj, string)
-    call matread(ctrl%nstates, traj%DM_print_ssd(:,:,1),  u_traj, string)
-    call matread(ctrl%nstates, traj%DM_print_ssd(:,:,2),  u_traj, string)
-    call matread(ctrl%nstates, traj%DM_print_ssd(:,:,3),  u_traj, string)
+  call matread(ctrl%nstates, traj%H_MCH_ss,     u_traj,   string)
+  call matread(ctrl%nstates, traj%dH_MCH_ss,    u_traj,   string)
+  call matread(ctrl%nstates, traj%dH_MCH_old_ss,u_traj,   string)
+  call matread(ctrl%nstates, traj%H_MCH_old_ss, u_traj,   string)
+  call matread(ctrl%nstates, traj%H_MCH_old2_ss,u_traj,   string)
+  call matread(ctrl%nstates, traj%H_MCH_old3_ss,u_traj,   string)
+  call matread(ctrl%nstates, traj%H_diag_ss,    u_traj,   string)
+  call matread(ctrl%nstates, traj%H_diag_old_ss,    u_traj,   string)
+  call matread(ctrl%nstates, traj%H_diag_old2_ss,    u_traj,   string)
+  call matread(ctrl%nstates, traj%H_diag_old3_ss,    u_traj,   string)
+  if (ctrl%zpe_correction==1) then
+    call vecread(ctrl%nstates, traj%Evib_local_s, u_traj,   string)
+    call vecread(ctrl%nstates, traj%Ezpe_local_s, u_traj,   string)
+  endif
+  call matread(ctrl%nstates, traj%U_ss,         u_traj,   string)
+  call matread(ctrl%nstates, traj%U_old_ss,     u_traj,   string)
+  call matread(ctrl%nstates, traj%NACdt_ss,     u_traj,   string)
+  call matread(ctrl%nstates, traj%NACdt_old_ss, u_traj,   string)
+  call matread(ctrl%nstates, traj%overlaps_ss,  u_traj,   string)
+  call matread(ctrl%nstates, traj%DM_ssd(:,:,1),  u_traj, string)
+  call matread(ctrl%nstates, traj%DM_ssd(:,:,2),  u_traj, string)
+  call matread(ctrl%nstates, traj%DM_ssd(:,:,3),  u_traj, string)
+  call matread(ctrl%nstates, traj%DM_old_ssd(:,:,1),  u_traj, string)
+  call matread(ctrl%nstates, traj%DM_old_ssd(:,:,2),  u_traj, string)
+  call matread(ctrl%nstates, traj%DM_old_ssd(:,:,3),  u_traj, string)
+  call matread(ctrl%nstates, traj%DM_print_ssd(:,:,1),  u_traj, string)
+  call matread(ctrl%nstates, traj%DM_print_ssd(:,:,2),  u_traj, string)
+  call matread(ctrl%nstates, traj%DM_print_ssd(:,:,3),  u_traj, string)
 !     call matread(ctrl%nstates, traj%Property_ss,  u_traj,   string)
-    call matread(ctrl%nstates, traj%Rtotal_ss,    u_traj,   string)
-    call matread(ctrl%nstates, traj%RDtotal_ss,    u_traj,   string)
-    call matread(ctrl%nstates, traj%Dtotal_ss,    u_traj,   string)
-    call matread(ctrl%nstates, traj%dendt_MCH_ss,    u_traj,   string)
-    call matread(ctrl%nstates, traj%dendt_diag_ss,    u_traj,   string)
-    call matread(ctrl%nstates, traj%Kmatrix_MCH_ss,    u_traj,   string)
-    call matread(ctrl%nstates, traj%Kmatrix_diag_ss,    u_traj,   string)
-    call vecread(ctrl%nstates, traj%phases_s, u_traj,       string)
-    call vecread(ctrl%nstates, traj%phases_old_s, u_traj,   string)
-    call vecread(ctrl%nstates, traj%hopprob_s, u_traj,      string)
-    call vecread(ctrl%nstates, traj%switchprob_s, u_traj,      string)
-    call vec3read(ctrl%nstates, traj%gpreprob_s3,  u_traj, string)
-    call vec3read(ctrl%nstates, traj%preprob_s3,  u_traj, string)
-    call vec3read(ctrl%nstates, traj%preprob_old_s3,  u_traj, string)
-    call vecread(ctrl%nstates, traj%decotime_diag_s, u_traj,       string)
-    call vecread(ctrl%nstates, traj%decotime_diag_old_s, u_traj,   string)
-    call vecread(ctrl%nstates, traj%decotime_MCH_s, u_traj,       string)
-    call vecread(ctrl%nstates, traj%decotime_MCH_old_s, u_traj,   string)
-    do i=1,ctrl%nstates
-      call vec3read(ctrl%natom,traj%svec_MCH_sad(i,:,:),u_traj,string)
-    enddo
-    do i=1,ctrl%nstates
-      call vec3read(ctrl%natom,traj%svec_diag_sad(i,:,:),u_traj,string)
-    enddo
-    do i=1,ctrl%nstates
-      call vec3read(ctrl%natom,traj%psvec_MCH_sad(i,:,:),u_traj,string)
-    enddo
-    do i=1,ctrl%nstates
-      call vec3read(ctrl%natom,traj%psvec_diag_sad(i,:,:),u_traj,string)
-    enddo
+  call matread(ctrl%nstates, traj%Rtotal_ss,    u_traj,   string)
+  call matread(ctrl%nstates, traj%RDtotal_ss,    u_traj,   string)
+  call matread(ctrl%nstates, traj%Dtotal_ss,    u_traj,   string)
+  call matread(ctrl%nstates, traj%dendt_MCH_ss,    u_traj,   string)
+  call matread(ctrl%nstates, traj%dendt_diag_ss,    u_traj,   string)
+  call matread(ctrl%nstates, traj%Kmatrix_MCH_ss,    u_traj,   string)
+  call matread(ctrl%nstates, traj%Kmatrix_diag_ss,    u_traj,   string)
+  call vecread(ctrl%nstates, traj%phases_s, u_traj,       string)
+  call vecread(ctrl%nstates, traj%phases_old_s, u_traj,   string)
+  call vecread(ctrl%nstates, traj%hopprob_s, u_traj,      string)
+  call vecread(ctrl%nstates, traj%switchprob_s, u_traj,      string)
+  call vec3read(ctrl%nstates, traj%gpreprob_s3,  u_traj, string)
+  call vec3read(ctrl%nstates, traj%preprob_s3,  u_traj, string)
+  call vec3read(ctrl%nstates, traj%preprob_old_s3,  u_traj, string)
+  call vecread(ctrl%nstates, traj%decotime_diag_s, u_traj,       string)
+  call vecread(ctrl%nstates, traj%decotime_diag_old_s, u_traj,   string)
+  call vecread(ctrl%nstates, traj%decotime_MCH_s, u_traj,       string)
+  call vecread(ctrl%nstates, traj%decotime_MCH_old_s, u_traj,   string)
+  do i=1,ctrl%nstates
+    call vec3read(ctrl%natom,traj%svec_MCH_sad(i,:,:),u_traj,string)
+  enddo
+  do i=1,ctrl%nstates
+    call vec3read(ctrl%natom,traj%svec_diag_sad(i,:,:),u_traj,string)
+  enddo
+  do i=1,ctrl%nstates
+    call vec3read(ctrl%natom,traj%psvec_MCH_sad(i,:,:),u_traj,string)
+  enddo
+  do i=1,ctrl%nstates
+    call vec3read(ctrl%natom,traj%psvec_diag_sad(i,:,:),u_traj,string)
+  enddo
 
-    read(u_traj,*) traj%randnum
-    read(u_traj,*) traj%randnum2
-    read(u_traj,*) traj%dmag
-    read(u_traj,*) traj%dmag1
-    read(u_traj,*) traj%dmag2
+  read(u_traj,*) traj%randnum
+  read(u_traj,*) traj%randnum2
+  read(u_traj,*) traj%dmag
+  read(u_traj,*) traj%dmag1
+  read(u_traj,*) traj%dmag2
 
-    if (ctrl%calc_dipolegrad>-1) then
-      do i=1,ctrl%nstates
-        do j=1,ctrl%nstates
-          do k=1,3
-            call vec3read(ctrl%natom,traj%DMgrad_ssdad(i,j,k,:,:),u_traj,string)
-          enddo
-        enddo
-      enddo
-    endif
-    if (ctrl%calc_nacdr>-1) then
-      do i=1,ctrl%nstates
-        do j=1,ctrl%nstates
-          call vec3read(ctrl%natom,traj%NACdr_ssad(i,j,:,:),u_traj,string)
-        enddo
-      enddo
-      do i=1,ctrl%nstates
-        do j=1,ctrl%nstates
-          call vec3read(ctrl%natom,traj%NACdr_old_ssad(i,j,:,:),u_traj,string)
-        enddo
-      enddo
-      do i=1,ctrl%nstates
-        do j=1,ctrl%nstates
-          call vec3read(ctrl%natom,traj%NACdr_diag_ssad(i,j,:,:),u_traj,string)
-        enddo
-      enddo
-      if (ctrl%nac_projection==1) then
-        do i=1,ctrl%nstates
-          do j=1,ctrl%nstates
-            call vec3read(ctrl%natom,traj%pNACdr_MCH_ssad(i,j,:,:),u_traj,string)
-          enddo
-        enddo
-        do i=1,ctrl%nstates
-          do j=1,ctrl%nstates
-            call vec3read(ctrl%natom,traj%pNACdr_diag_ssad(i,j,:,:),u_traj,string)
-          enddo
-        enddo
-      endif
-    endif
-    do i=1,ctrl%nstates
-      call vec3read(ctrl%natom,traj%grad_MCH_sad(i,:,:),u_traj,string)
-    enddo
-    do i=1,ctrl%nstates
-      call vec3read(ctrl%natom,traj%grad_MCH_old_sad(i,:,:),u_traj,string)
-    enddo
-    if (ctrl%zpe_correction==1) then
-      do i=1,ctrl%nstates
-        call vec3read(ctrl%natom,traj%grad_MCH_old2_sad(i,:,:),u_traj,string)
-      enddo
-      do i=1,ctrl%nstates
-        call vec3read(ctrl%natom,traj%grad_Ezpe_local_sad(i,:,:),u_traj,string)
-      enddo
-    endif
+  if (ctrl%calc_dipolegrad>-1) then
     do i=1,ctrl%nstates
       do j=1,ctrl%nstates
-        call vec3read(ctrl%natom,traj%hopping_direction_ssad(i,j,:,:),u_traj,string)
+        do k=1,3
+          call vec3read(ctrl%natom,traj%DMgrad_ssdad(i,j,k,:,:),u_traj,string)
+        enddo
+      enddo
+    enddo
+  endif
+  if (ctrl%calc_nacdr>-1) then
+    do i=1,ctrl%nstates
+      do j=1,ctrl%nstates
+        call vec3read(ctrl%natom,traj%NACdr_ssad(i,j,:,:),u_traj,string)
       enddo
     enddo
     do i=1,ctrl%nstates
       do j=1,ctrl%nstates
-        call vec3read(ctrl%natom,traj%frustrated_hop_vec_ssad(i,j,:,:),u_traj,string)
+        call vec3read(ctrl%natom,traj%NACdr_old_ssad(i,j,:,:),u_traj,string)
       enddo
     enddo
     do i=1,ctrl%nstates
       do j=1,ctrl%nstates
-        call vec3read(ctrl%natom,traj%Gmatrix_ssad(i,j,:,:),u_traj,string)
+        call vec3read(ctrl%natom,traj%NACdr_diag_ssad(i,j,:,:),u_traj,string)
       enddo
     enddo
-    if (ctrl%calc_effectivenac==1) then
+    if (ctrl%nac_projection==1) then
       do i=1,ctrl%nstates
-        do j=1,ctrl%nstates
-          call vec3read(ctrl%natom,traj%NACGV_MCH_ssad(i,j,:,:),u_traj,string)
-        enddo
+         do j=1,ctrl%nstates
+          call vec3read(ctrl%natom,traj%pNACdr_MCH_ssad(i,j,:,:),u_traj,string)
+         enddo
       enddo
       do i=1,ctrl%nstates
         do j=1,ctrl%nstates
-          call vec3read(ctrl%natom,traj%NACGV_diag_ssad(i,j,:,:),u_traj,string)
+          call vec3read(ctrl%natom,traj%pNACdr_diag_ssad(i,j,:,:),u_traj,string)
         enddo
       enddo
-      if (ctrl%nac_projection==1) then
-        do i=1,ctrl%nstates
-          do j=1,ctrl%nstates
-            call vec3read(ctrl%natom,traj%pNACGV_MCH_ssad(i,j,:,:),u_traj,string)
-          enddo
-        enddo
-        do i=1,ctrl%nstates
-          do j=1,ctrl%nstates
-            call vec3read(ctrl%natom,traj%pNACGV_diag_ssad(i,j,:,:),u_traj,string)
-          enddo
-        enddo
-      endif
     endif
-    call vec3read(ctrl%natom,traj%grad_ad(:,:),u_traj,string)
-    call vec3read(ctrl%natom,traj%decograd_ad(:,:),u_traj,string)
-
-    call vecread(ctrl%nstates, traj%coeff_diag_s, u_traj, string)
-    call vecread(ctrl%nstates, traj%coeff_diag_old_s, u_traj, string)
-    call vecread(ctrl%nstates, traj%coeff_mch_s, u_traj, string)
-    call vecread(ctrl%nstates, traj%coeff_mch_old_s, u_traj, string)
-    call vecread(ctrl%nstates, traj%ccoeff_diag_s, u_traj, string)
-    call vecread(ctrl%nstates, traj%ccoeff_diag_old_s, u_traj, string)
-    call vecread(ctrl%nstates, traj%ccoeff_mch_s, u_traj, string)
-    if (ctrl%zpe_correction==1) then
-      call vec2read(ctrl%nstates, traj%coeff_zpe_s2, u_traj, string)
-    endif
-    if (ctrl%integrator==0) then
-      call vecread(ctrl%nstates, traj%gRcoeff_mch_s, u_traj, string)
-      call vecread(ctrl%nstates, traj%gIcoeff_mch_s, u_traj, string)
-      call vecread(ctrl%nstates, traj%gRccoeff_mch_s, u_traj, string)
-      call vecread(ctrl%nstates, traj%gIccoeff_mch_s, u_traj, string)
-      call vecread(ctrl%nstates, traj%ephase_s, u_traj, string)
-      call vecread(ctrl%nstates, traj%gephase_s, u_traj, string)
-    endif
-
-    read(u_traj,*) (traj%selg_s(i),i=1,ctrl%nstates)
+  endif
+  do i=1,ctrl%nstates
+    call vec3read(ctrl%natom,traj%grad_MCH_sad(i,:,:),u_traj,string)
+  enddo
+  do i=1,ctrl%nstates
+    call vec3read(ctrl%natom,traj%grad_MCH_old_sad(i,:,:),u_traj,string)
+  enddo
+  if (ctrl%zpe_correction==1) then
     do i=1,ctrl%nstates
-      read(u_traj,*) (traj%selt_ss(i,j),j=1,ctrl%nstates)
+      call vec3read(ctrl%natom,traj%grad_MCH_old2_sad(i,:,:),u_traj,string)
     enddo
-    if (ctrl%calc_dipolegrad>-1) then
+    do i=1,ctrl%nstates
+      call vec3read(ctrl%natom,traj%grad_Ezpe_local_sad(i,:,:),u_traj,string)
+    enddo
+  endif
+  do i=1,ctrl%nstates
+    do j=1,ctrl%nstates
+      call vec3read(ctrl%natom,traj%hopping_direction_ssad(i,j,:,:),u_traj,string)
+    enddo
+  enddo
+  do i=1,ctrl%nstates
+    do j=1,ctrl%nstates
+      call vec3read(ctrl%natom,traj%frustrated_hop_vec_ssad(i,j,:,:),u_traj,string)
+    enddo
+  enddo
+  do i=1,ctrl%nstates
+    do j=1,ctrl%nstates
+      call vec3read(ctrl%natom,traj%Gmatrix_ssad(i,j,:,:),u_traj,string)
+    enddo
+  enddo
+  if (ctrl%calc_effectivenac==1) then
+    do i=1,ctrl%nstates
+      do j=1,ctrl%nstates
+        call vec3read(ctrl%natom,traj%NACGV_MCH_ssad(i,j,:,:),u_traj,string)
+      enddo
+    enddo
+    do i=1,ctrl%nstates
+      do j=1,ctrl%nstates
+        call vec3read(ctrl%natom,traj%NACGV_diag_ssad(i,j,:,:),u_traj,string)
+      enddo
+    enddo
+    if (ctrl%nac_projection==1) then
       do i=1,ctrl%nstates
-        read(u_traj,*) (traj%seldm_ss(i,j),j=1,ctrl%nstates)
+        do j=1,ctrl%nstates
+          call vec3read(ctrl%natom,traj%pNACGV_MCH_ssad(i,j,:,:),u_traj,string)
+        enddo
+      enddo
+      do i=1,ctrl%nstates
+        do j=1,ctrl%nstates
+          call vec3read(ctrl%natom,traj%pNACGV_diag_ssad(i,j,:,:),u_traj,string)
+        enddo
       enddo
     endif
-    read(u_traj,*) traj%phases_found
+  endif
+  call vec3read(ctrl%natom,traj%grad_ad(:,:),u_traj,string)
+  call vec3read(ctrl%natom,traj%decograd_ad(:,:),u_traj,string)
 
-    call vecread(ctrl%n_property1d, traj%Property1d_labels_y, u_traj, string)
-    call vecread(ctrl%n_property2d, traj%Property2d_labels_x, u_traj, string)
-    do i=1,ctrl%n_property1d
-      call vecread(ctrl%nstates, traj%Property1d_ys(i,:), u_traj, string)
+  call vecread(ctrl%nstates, traj%coeff_diag_s, u_traj, string)
+  call vecread(ctrl%nstates, traj%coeff_diag_old_s, u_traj, string)
+  call vecread(ctrl%nstates, traj%coeff_mch_s, u_traj, string)
+  call vecread(ctrl%nstates, traj%coeff_mch_old_s, u_traj, string)
+  call vecread(ctrl%nstates, traj%ccoeff_diag_s, u_traj, string)
+  call vecread(ctrl%nstates, traj%ccoeff_diag_old_s, u_traj, string)
+  call vecread(ctrl%nstates, traj%ccoeff_mch_s, u_traj, string)
+  if (ctrl%zpe_correction==1) then
+    call vec2read(ctrl%nstates, traj%coeff_zpe_s2, u_traj, string)
+  endif
+  if (ctrl%integrator==0) then
+    call vecread(ctrl%nstates, traj%gRcoeff_mch_s, u_traj, string)
+    call vecread(ctrl%nstates, traj%gIcoeff_mch_s, u_traj, string)
+    call vecread(ctrl%nstates, traj%gRccoeff_mch_s, u_traj, string)
+    call vecread(ctrl%nstates, traj%gIccoeff_mch_s, u_traj, string)
+    call vecread(ctrl%nstates, traj%ephase_s, u_traj, string)
+    call vecread(ctrl%nstates, traj%gephase_s, u_traj, string)
+  endif
+
+  read(u_traj,*) (traj%selg_s(i),i=1,ctrl%nstates)
+  do i=1,ctrl%nstates
+    read(u_traj,*) (traj%selt_ss(i,j),j=1,ctrl%nstates)
+  enddo
+  if (ctrl%calc_dipolegrad>-1) then
+    do i=1,ctrl%nstates
+      read(u_traj,*) (traj%seldm_ss(i,j),j=1,ctrl%nstates)
     enddo
-    do i=1,ctrl%n_property2d
-      call matread(ctrl%nstates, traj%Property2d_xss(i,:,:), u_traj, string)
+  endif
+  read(u_traj,*) traj%phases_found
+
+  call vecread(ctrl%n_property1d, traj%Property1d_labels_y, u_traj, string)
+  call vecread(ctrl%n_property2d, traj%Property2d_labels_x, u_traj, string)
+  do i=1,ctrl%n_property1d
+    call vecread(ctrl%nstates, traj%Property1d_ys(i,:), u_traj, string)
+  enddo
+  do i=1,ctrl%n_property2d
+    call matread(ctrl%nstates, traj%Property2d_xss(i,:,:), u_traj, string)
+  enddo
+
+  ! read restart info for the auxilliary trajectories
+  if (ctrl%decoherence==2) then
+    call allocate_afssh(traj, ctrl)
+    do i=1,ctrl%nstates
+      read(u_traj,*) traj%auxtrajs_s(i)%istate
+      read(u_traj,*) traj%auxtrajs_s(i)%rate1
+      read(u_traj,*) traj%auxtrajs_s(i)%rate2
+      call vec3read(ctrl%natom, traj%auxtrajs_s(i)%geom_ad,   u_traj, string)
+      call vec3read(ctrl%natom, traj%auxtrajs_s(i)%veloc_ad,  u_traj, string)
+      call vec3read(ctrl%natom, traj%auxtrajs_s(i)%accel_ad,  u_traj, string)
+      call vec3read(ctrl%natom, traj%auxtrajs_s(i)%grad_ad,   u_traj, string)
+      call vec3read(ctrl%natom, traj%auxtrajs_s(i)%geom_tmp_ad,   u_traj, string)
+      call vec3read(ctrl%natom, traj%auxtrajs_s(i)%veloc_tmp_ad,  u_traj, string)
     enddo
+  endif
 
-    ! read restart info for the auxilliary trajectories
-    if (ctrl%decoherence==2) then
-      call allocate_afssh(traj, ctrl)
-      do i=1,ctrl%nstates
-        read(u_traj,*) traj%auxtrajs_s(i)%istate
-        read(u_traj,*) traj%auxtrajs_s(i)%rate1
-        read(u_traj,*) traj%auxtrajs_s(i)%rate2
-        call vec3read(ctrl%natom, traj%auxtrajs_s(i)%geom_ad,   u_traj, string)
-        call vec3read(ctrl%natom, traj%auxtrajs_s(i)%veloc_ad,  u_traj, string)
-        call vec3read(ctrl%natom, traj%auxtrajs_s(i)%accel_ad,  u_traj, string)
-        call vec3read(ctrl%natom, traj%auxtrajs_s(i)%grad_ad,   u_traj, string)
-        call vec3read(ctrl%natom, traj%auxtrajs_s(i)%geom_tmp_ad,   u_traj, string)
-        call vec3read(ctrl%natom, traj%auxtrajs_s(i)%veloc_tmp_ad,  u_traj, string)
-      enddo
-    endif
+  if (ctrl%army_ants==1) then
+    read(u_traj,*) traj%army_ants_weight
+    read(u_traj,*) traj%randnum_branching
+    read(u_traj,*) traj%branching_likehood
+  endif
 
-    if (ctrl%army_ants==1) then 
-      read(u_traj,*) traj%army_ants_weight
-      read(u_traj,*) traj%randnum_branching
-      read(u_traj,*) traj%branching_likehood
-    endif
+  if (ctrl%pointer_basis==2) then
+    read(u_traj,*) traj%entropy
+    read(u_traj,*) traj%entropy_old
+    read(u_traj,*) traj%linear_entropy
+    read(u_traj,*) traj%linear_entropy_old
+    read(u_traj,*) traj%entropy_grad
+    read(u_traj,*) traj%linear_entropy_grad
+    call matread(ctrl%nstates, traj%U_pointer_ss,  u_traj,   string)
+    call matread(ctrl%nstates, traj%U_pointer_old_ss,  u_traj,   string)
+  endif
 
-    if (ctrl%pointer_basis==2) then
-      read(u_traj,*) traj%entropy
-      read(u_traj,*) traj%entropy_old
-      read(u_traj,*) traj%linear_entropy
-      read(u_traj,*) traj%linear_entropy_old
-      read(u_traj,*) traj%entropy_grad
-      read(u_traj,*) traj%linear_entropy_grad
-      call matread(ctrl%nstates, traj%U_pointer_ss,  u_traj,   string)
-      call matread(ctrl%nstates, traj%U_pointer_old_ss,  u_traj,   string)
-    endif
+  ! Trajectory consistency
+  read(u_traj,*) traj%discrepancy
 
-    ! Trajectory consistency
-    read(u_traj,*) traj%discrepancy
+  close(u_traj)
+  ! Now everything about trajectory has been read from the restart file
+  endsubroutine
 
-    close(u_traj)
+! =========================================================== !
+!> - fast-forwards the random number generator so that the 
+!>     restarted trajectory uses the same random number sequence as if it was not restarted
+!> - sets steps_in_gs correctly
+!> - sets the wallclock timing 
+  subroutine read_restart_miscllaneous(u_ctrl,u_traj,ctrl,traj)
+    use definitions
+    use matrix
+    use misc
+    use decoherence_afssh
+    implicit none
+    integer :: u_ctrl,u_traj
+    type(trajectory_type) :: traj
+    type(ctrl_type) :: ctrl
 
-    ! call the random number generator until it is in the same status as before the restart
+    integer :: imult, iatom, i,j,k, istate, ilaser, ipair
+    character(8000) :: string
+    real*8 :: dummy_randnum
+    integer :: time
+
+    ! call the random number generator until it is in the same status as before
+    ! the restart
     call init_random_seed(traj%RNGseed)
     do i=1,2*traj%step
       call random_number(dummy_randnum)
@@ -1022,5 +1091,6 @@ module restart
     traj%time_last=time()
 
   endsubroutine
+
 
 endmodule
