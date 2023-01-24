@@ -1781,6 +1781,8 @@ module input
         write(u_log,'(a,1x,f15.9,1x,a)') 'Bulirsch-Stoer convergence threshold:',ctrl%convthre, 'a.u.'
       else if (ctrl%integrator==1) then
         write(u_log,'(a,1x,f15.9,1x,a)') 'Adaptive Velocity Verlet convergence threshold:',ctrl%convthre,'eV'
+        write(u_log,*) 'Minimum time step:',ctrl%dtmin,"fs"
+        write(u_log,*) 'Maximum time step:',ctrl%dtmax,"fs"
       endif
     endif
 
@@ -2702,6 +2704,7 @@ module input
   ! convert all numbers to atomic units
     ctrl%tmax=ctrl%tmax/au2fs
     ctrl%dtmin=ctrl%dtmin/au2fs
+    ctrl%dtmax=ctrl%dtmax/au2fs
     ctrl%dtstep=ctrl%dtstep/au2fs
     ctrl%eselect_grad=ctrl%eselect_grad/au2eV
     ctrl%eselect_nac=ctrl%eselect_nac/au2eV
