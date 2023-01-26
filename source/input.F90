@@ -75,7 +75,6 @@ module input
   integer :: narg, io, nlines, selg, selt
   integer :: i,j,k,n
   integer :: imult,ims
-  integer :: dtmin_order, dtmax_order
   real*8 :: a,b,tmax2
   character*24 :: ctime, date
   integer :: idate,time
@@ -558,22 +557,20 @@ module input
     endif
 
     ! minimum timestep allowed in adapative
-    line=get_value_from_key('dtmin',io)
+    line=get_value_from_key('stepsize_min',io)
     if (io==0) then
-      read(line,*) dtmin_order
+      read(line,*) ctrl%dtstep_min
     else
-      dtmin_order=5
+      ctrl%dtstep_min=ctrl%dtstep/16
     endif
-    ctrl%dtmin=ctrl%dtstep/(2**dtmin_order)
 
     ! maximum timestep allowed in adapative
-    line=get_value_from_key('dtmax',io)
+    line=get_value_from_key('stepsize_max',io)
     if (io==0) then
-      read(line,*) dtmax_order
+      read(line,*) ctrl%dtstep_max
     else
-      dtmax_order=1
+      ctrl%dtstep_max=ctrl%dtstep*2
     endif
-    ctrl%dtmax=ctrl%dtstep*(2**dtmax_order)
 
     ! nsteps is computed by simulation time/stepsize
     ! nsteps is only used in fixed stepsize Velocity-Verlet integrator
@@ -772,6 +769,14 @@ module input
       endselect
     else
       ctrl%coupling=2
+    endif
+
+    ! turn program off if adaptive is used for overlap
+    if (ctrl%integrator==0 .or. ctrl%integrator==1) then
+      if (ctrl%coupling==2) then 
+        write(0,*) 'Adaptive integrator is not yet working for coupling overlap'
+        stop 1
+      endif
     endif
 
     ! method to compute kappa TDC
@@ -1781,8 +1786,8 @@ module input
         write(u_log,'(a,1x,f15.9,1x,a)') 'Bulirsch-Stoer convergence threshold:',ctrl%convthre, 'a.u.'
       else if (ctrl%integrator==1) then
         write(u_log,'(a,1x,f15.9,1x,a)') 'Adaptive Velocity Verlet convergence threshold:',ctrl%convthre,'eV'
-        write(u_log,*) 'Minimum time step:',ctrl%dtmin,"fs"
-        write(u_log,*) 'Maximum time step:',ctrl%dtmax,"fs"
+        write(u_log,'(a,1x,f15.9,1x,a)') 'Minimum time step:',ctrl%dtstep_min,"fs"
+        write(u_log,'(a,1x,f15.9,1x,a)') 'Maximum time step:',ctrl%dtstep_max,"fs"
       endif
     endif
 
@@ -2703,8 +2708,8 @@ module input
 
   ! convert all numbers to atomic units
     ctrl%tmax=ctrl%tmax/au2fs
-    ctrl%dtmin=ctrl%dtmin/au2fs
-    ctrl%dtmax=ctrl%dtmax/au2fs
+    ctrl%dtstep_min=ctrl%dtstep_min/au2fs
+    ctrl%dtstep_max=ctrl%dtstep_max/au2fs
     ctrl%dtstep=ctrl%dtstep/au2fs
     ctrl%eselect_grad=ctrl%eselect_grad/au2eV
     ctrl%eselect_nac=ctrl%eselect_nac/au2eV

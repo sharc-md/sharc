@@ -726,18 +726,18 @@ subroutine Adaptive_Stepsize(traj,ctrl)
     write(u_log,'(A,1X,F9.6)') ' Old step size in fs:', oldstep*au2fs
     write(u_log,'(A,1X,F9.6)') ' New step size in fs:', ctrl%dtstep*au2fs
   endif
-  if (ctrl%dtstep.lt.ctrl%dtmin) then
+  if (ctrl%dtstep.lt.ctrl%dtstep_min) then
     if (printlevel>2) then
-      write(u_log,*) "adaptive time step bellow minimum value:",ctrl%dtmin*au2fs,"fs"
+      write(u_log,*) "adaptive time step bellow minimum value:",ctrl%dtstep_min*au2fs,"fs"
     endif
-    ctrl%dtstep=ctrl%dtmin
+    ctrl%dtstep=ctrl%dtstep_min
   endif
 
-  if (ctrl%dtstep.gt.ctrl%dtmax) then
+  if (ctrl%dtstep.gt.ctrl%dtstep_max) then
     if (printlevel>2) then
-      write(u_log,*) "adaptive time step exceeds maximum value:",ctrl%dtmax*au2fs,"fs"
+      write(u_log,*) "adaptive time step exceeds maximum value:",ctrl%dtstep_max*au2fs,"fs"
     endif
-    ctrl%dtstep=ctrl%dtmax
+    ctrl%dtstep=ctrl%dtstep_max
   endif
 
 endsubroutine

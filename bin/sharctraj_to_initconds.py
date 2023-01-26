@@ -767,7 +767,7 @@ def remove_rotations(ic):
       #print 'No default mass for atom %s' % (symb)
       #sys.exit(1)
 
-def check_output_dat(data):
+def check_output_dat(data, timepoints):
   inf={}
   line=data[0].lower()
   if 'sharc_version' in line:
@@ -775,7 +775,8 @@ def check_output_dat(data):
   else:
     inf['version']=1.0
 
-  integers=['maxmult',
+  integers=['integrator',
+            'maxmult',
             'natom',
             'calc_overlap',
             'laser',
@@ -844,6 +845,8 @@ def check_output_dat(data):
       inf['masses'].append( float(data[ilines]) )
       ilines+=1
 
+  head_end=ilines
+
   nmax=-1
   while True:
     ilines+=1
@@ -851,10 +854,57 @@ def check_output_dat(data):
       break
     line=data[ilines]
     if '! 0 Step' in line:
-      nmax=int(data[ilines+1])
+      line1=data[ilines+1].split()
+      nmax=int(line1[0])
   inf['nmax']=nmax
 
-  return inf
+  # now figure out the steps corredpond to time
+  ilines=head_end
+  last_step=0
+  last_time=0.0
+  while True:
+    ilines+=1
+    if ilines>=len(data):
+      break
+    line=data[ilines]
+    if '! 0 Step' in line:
+      line1=data[ilines+1].split()
+      if inf['integrator']==1 or inf['integrator']==0:
+        current_time=float(line1[1])
+        current_step=int(line1[0])
+        if current_time>timepoints[0]:
+          break
+        last_step=current_step
+        last_time=current_time
+ 
+  a=int(last_step)
+
+  ilines=head_end
+  while True:
+    ilines+=1
+    if ilines>=len(data):
+      break
+    line=data[ilines]
+    if '! 0 Step' in line:
+      line1=data[ilines+1].split()
+      if inf['integrator']==1 or inf['integrator']==0:
+        current_time=float(line1[1])
+        current_step=int(line1[0])
+        if current_time>timepoints[1]:
+          break
+
+  b=int(current_step)
+ 
+  if timepoints[0]<0.0:
+    a=nmax
+  if timepoints[1]<0.0:
+    b=nmax
+  if not (0<=a<=b<=nmax):
+    print 'reset a=b=last step'
+    a=nmax
+    b=nmax
+
+  return inf, a, b
 
 # ======================================================================================================================
 def get_atoms_step(data,step,inf):
@@ -865,7 +915,8 @@ def get_atoms_step(data,step,inf):
   while True:
     ilines+=1
     line=data[ilines]
-    if '! 0 Step' in data[ilines] and int(data[ilines+1])==step:
+    line1=data[ilines+1].split()
+    if '! 0 Step' in data[ilines] and int(line1[0])==step:
       break
   while True:
     ilines+=1
@@ -945,22 +996,14 @@ def get_coords(INFOS):
     data=readfile(filename)
     if INFOS['debug']:
       print '%-40s'%'  header ...',datetime.datetime.now()-starttime
-    inf=check_output_dat(data)
+
+    # a and b may be updated because of setting up time 
+    inf, a, b=check_output_dat(data, INFOS['time'])
     if inf['version']==1.0:
       print '(skipping version 1.0 file)'
       continue
 
     # choose the step:
-    a=INFOS['step'][0]
-    b=INFOS['step'][1]
-    n=inf['nmax']
-    if a<0:
-      a=n+1+a
-    if b<0:
-      b=n+1+b
-    if not (0<=a<=b<=n):
-      print '(skipping, problems in steps: 0<=%i<=%i<=%i)' % (a,b,n)
-      continue
     step=random.randint( a,b )
 
     # get the atoms
@@ -1058,7 +1101,8 @@ The data is then transformed and written to initconds format.
   description=''
   parser = OptionParser(usage=usage, description=description)
   parser.add_option('-r', dest='r', type=int, nargs=1, default=16661, help="Seed for the random number generator (integer, default=16661)")
-  parser.add_option('-S', dest='S', type=int, nargs=2, default=(-1,-1), help="Range of time steps from which to randomly choose the step to extract (from/to)")
+  parser.add_option('-T', dest='T', type=float, nargs=2, default=(-1.0,-1.0), help="Range of time from which to randomly choose the step to extract (from/to)")
+  #parser.add_option('-S', dest='S', type=int, nargs=2, default=(-1,-1), help="Range of time steps from which to randomly choose the step to extract (from/to)")
   parser.add_option('-o', dest='o', type=str, nargs=1, default='initconds', help="Output filename (string, default=""initconds"")")
   parser.add_option('-x', dest='X', action='store_true',help="Generate a xyz file with the sampled geometries in addition to the initconds file")
   #parser.add_option('-m', dest='m', action='store_true',help="Enter non-default atom masses")
@@ -1077,7 +1121,8 @@ The data is then transformed and written to initconds format.
   # options
   INFOS={}
   INFOS['dirs']=args[0:]
-  INFOS['step']=options.S
+  #INFOS['step']=options.S
+  INFOS['time']=options.T
   INFOS['outfile']=options.o
   INFOS['KTR']=options.KTR
   INFOS['UZV']=options.UZV
@@ -1091,13 +1136,16 @@ The data is then transformed and written to initconds format.
   print '''Initial condition generation started...
 directories                    = "%s"
 Random number generator seed   = %i
-Pick randomly from these steps = %i to %i  %s
+Pick randomly from these times = %f to %f  %s
 OUTPUT file                    = "%s"''' % (INFOS['dirs'], 
                                          options.r,
-                                         options.S[0],options.S[1],
-                                         ['','(negative indices are counted from the end)'][any(i<0 for i in options.S)],
+                                         #options.S[0],options.S[1],
+                                         #['','(negative indices are counted from the end)'][any(i<0 for i in options.S)],
+                                         options.T[0],options.T[1],
+                                         ['','(negative times are counted from the end)'][any(i<0.0 for i in options.T)],
                                         INFOS['outfile']
                                         )
+
 
 
   #print 'Generating %i initial conditions' % amount

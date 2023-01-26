@@ -365,7 +365,8 @@ type ctrl_type
   integer :: nsteps                         !< total number of simulation steps
   integer :: nsubsteps                      !< number of steps for the electron propagation
   real*8 :: tmax                            !< maximum time step in a.u (atu)
-  real*8 :: dtmin                           !< minimum time step allowed in adapative algorithm (atu)
+  real*8 :: dtstep_min                      !< minimum time step allowed in adapative algorithm (atu)
+  real*8 :: dtstep_max                      !< maximum time step allowed in adapative algorithm (atu)
   real*8 :: dtstep                          !< length of timestep in a.u (atu)
   real*8 :: dtstep_old                      !< length of timestep in a.u (atu) of last timestep
   real*8 :: ezero                           !< energy offset in a.u. (e.g. ground state equilibrium energy)

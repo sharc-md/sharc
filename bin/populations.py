@@ -525,7 +525,12 @@ It can also compute diabatic populations:
   INFOS['mode']=num
   print ''
 
-
+  if INFOS['mode'] in [10,11]:
+    adaptive=question('Were adaptive timestep integrator used in dynamics?', bool, False)
+    if adaptive:
+      print 'Adaptive timestep integrator is not compatible with mode 10 or 11'
+      sys.exit(0)
+    
 
   if INFOS['mode'] in [6,7,8,9,12,13,14,15,20,21,22]:
     print 'Run data_extractor.x for each trajectory prior to performing the analysis?\nFor many or long trajectories, this might take some time.'

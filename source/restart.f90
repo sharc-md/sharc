@@ -88,8 +88,8 @@ module restart
     write(u,*) ctrl%nsteps
     write(u,*) ctrl%nsubsteps
     write(u,*) ctrl%tmax
-    write(u,*) ctrl%dtmin
-    write(u,*) ctrl%dtmax
+    write(u,*) ctrl%dtstep_min
+    write(u,*) ctrl%dtstep_max
     write(u,*) ctrl%dtstep
     write(u,*) ctrl%dtstep_old
     write(u,*) ctrl%ezero
@@ -619,8 +619,8 @@ module restart
     read(u_ctrl,*) ctrl%nsteps
     read(u_ctrl,*) ctrl%nsubsteps
     read(u_ctrl,*) ctrl%tmax
-    read(u_ctrl,*) ctrl%dtmin
-    read(u_ctrl,*) ctrl%dtmax
+    read(u_ctrl,*) ctrl%dtstep_min
+    read(u_ctrl,*) ctrl%dtstep_max
     read(u_ctrl,*) ctrl%dtstep
     read(u_ctrl,*) ctrl%dtstep_old
     read(u_ctrl,*) ctrl%ezero

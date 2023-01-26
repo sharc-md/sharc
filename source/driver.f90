@@ -159,9 +159,9 @@ do while (traj%microtime.lt.ctrl%tmax)
     call Calculate_etot(traj,ctrl)
   endif
 
-  if (ctrl%dtstep.gt.ctrl%dtmin) then
+  if (ctrl%dtstep.gt.ctrl%dtstep_min) then
     call Check_Consistency(traj,ctrl) ! check total energy conservation
-  else if (ctrl%dtstep.eq.ctrl%dtmin) then
+  else if (ctrl%dtstep.eq.ctrl%dtstep_min) then
     call Check_Consistency(traj,ctrl)
     traj%consistency=1
   else
