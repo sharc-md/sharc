@@ -497,8 +497,7 @@ character*20,parameter :: multnames(8)=(/'Singlet','Doublet','Triplet','Quartet'
 !< strings used to represent the multiplicities
 ! =========================================================== !
 
-character*255, parameter :: version='2.2 (January 1, 2020)'    !< string holding the version number
-character*255, parameter :: versionmn='MN1.3 (October 3, 2022)'   !< string holding the SHARC-MN version number
+character*255, parameter :: version='3.0 (January 26, 2023)'    !< string holding the version number
 
 integer, parameter :: u_log=1                !< long output file
 integer, parameter :: u_lis=2                !< short output file

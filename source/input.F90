@@ -74,6 +74,7 @@ module input
   character*8000, allocatable :: values(:)
   integer :: narg, io, nlines, selg, selt
   integer :: i,j,k,n
+  integer :: min_order, max_order
   integer :: imult,ims
   real*8 :: a,b,tmax2
   character*24 :: ctime, date
@@ -195,7 +196,7 @@ module input
 
   ! =====================================================
 
-  call write_logheader(u_log,version,versionmn)
+  call write_logheader(u_log,version)
 
   ! =====================================================
 
@@ -571,6 +572,25 @@ module input
     else
       ctrl%dtstep_max=ctrl%dtstep*2
     endif
+ 
+    ! Alternative step for minimum timestep allowed in adapative
+    line=get_value_from_key('stepsize_min_exp',io)
+    if (io==0) then
+      read(line,*) min_order
+    else
+      min_order=-4
+    endif
+    ctrl%dtstep_min=ctrl%dtstep*2**(min_order)
+
+    ! Alternative step for maximum timestep allowed in adapative
+    line=get_value_from_key('stepsize_max_exp',io)
+    if (io==0) then
+      read(line,*) max_order
+    else
+      max_order=1
+    endif
+    ctrl%dtstep_max=ctrl%dtstep*2**(max_order)
+
 
     ! nsteps is computed by simulation time/stepsize
     ! nsteps is only used in fixed stepsize Velocity-Verlet integrator

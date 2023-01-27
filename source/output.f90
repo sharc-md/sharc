@@ -50,12 +50,12 @@ module output
 !> - Logo
 !> - Build/verson information
 !> 
-subroutine write_logheader(u,version,versionmn)
+subroutine write_logheader(u,version)
   implicit none
   character*1023 :: hostname, cwd
   character*24 :: ctime, date
   integer :: idate, u
-  character(len=*) :: version, versionmn
+  character(len=*) :: version
   integer :: time
 
   ! build_info.inc is written by the Makefile and contains the 
@@ -87,7 +87,6 @@ subroutine write_logheader(u,version,versionmn)
   write(u,'(A)')      '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<============================>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
   write(u,*)
   write(u,*) 'Version: ', trim(version)
-  write(u,*) '         ', trim(versionmn)
   write(u,*) ''
 
 endsubroutine
