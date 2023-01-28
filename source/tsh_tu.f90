@@ -89,10 +89,10 @@ contains
 
     ! check frustration for each state
     call check_frustration(traj,ctrl)
-    ! after check, we copy the last time step restart file to true restart file.
-    call save_time_travelling_point(traj,ctrl)
 
     if (traj%in_time_uncertainty==0) then
+      ! saving is only done when outside the time uncertainty region 
+      call save_time_travelling_point(traj,ctrl)
       ! record time travelling point, and check for hop
       !call record_time_travelling_point(traj,ctrl)
       if (ctrl%army_ants==0) then
@@ -760,7 +760,7 @@ contains
       write(u_log,*) "target state:", traj%target_state
       write(u_log,*) "incident time:", traj%incident_time*au2fs, "fs"
       write(u_log,*) "uncertainty time for frustrated state:", traj%uncertainty_time_frust*au2fs, "fs"
-      write(u_log,*) "time travelling records for active state", traj%allowed_time_s(traj%state_diag)*au2fs, "fs"
+      !write(u_log,*) "time travelling records for active state", traj%allowed_time_s(traj%state_diag)*au2fs, "fs"
       write(u_log,*) "time travelling records for frustrated state:", traj%allowed_time_s(traj%state_diag_frust)*au2fs, "fs"
       write(u_log,*) "current time:", traj%microtime*au2fs, "fs"
       write(u_log,*) "backward travelling time:", time_back*au2fs, "fs"
@@ -772,6 +772,7 @@ contains
       traj%travelling_state=traj%state_diag_frust
       if (printlevel>2) write(u_log,*) "Backward time travelling to an energetically available record point"
       if (printlevel>2) write(u_log,*) "travelling state:", traj%travelling_state
+
     else if (time_forward.le.traj%uncertainty_time_frust) then ! do forward hop 
       if (printlevel>2) write(u_log,*) "In forward time travelling"
       if (traj%allowed_hop_s(traj%state_diag_frust)==1) then ! the frustrated state is now allowed
@@ -782,6 +783,7 @@ contains
         traj%kind_of_jump=1
         traj%in_time_uncertainty=0        
       endif  
+
     else if (time_forward.gt.traj%uncertainty_time_frust) then ! do frustrated hop at original position
       ! travel back to original position, and turn off time uncertainty process
       traj%tu_backpropagation=1
