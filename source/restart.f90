@@ -124,6 +124,16 @@ module restart
     write(u,*) ctrl%hopping_procedure
     write(u,*) ctrl%output_format, '! output_format'
 
+    ! thermostat
+    write(u,*) ctrl%thermostat
+    if (ctrl%thermostat/=0) then
+      write(u,*) ctrl%temperature
+      if (ctrl%thermostat==1) then   !Langevin: only 1 Thermostat constant
+        write(u,*) ctrl%thermostat_const(1)
+      endif
+      write(u,*) ctrl%restart_thermostat_random
+    endif
+
     ! constraints
     write(u,*) ctrl%do_constraints
     write(u,*) ctrl%constraints_tol
@@ -186,6 +196,7 @@ module restart
 
     ! write everything
     write(u,*) traj%RNGseed
+    write(u,*) traj%RNGseed_thermostat
     write(u,*) traj%traj_hash
     write(u,*) traj%state_MCH
     write(u,*) traj%state_diag
@@ -420,6 +431,16 @@ module restart
     read(u_ctrl,*) ctrl%hopping_procedure
     read(u_ctrl,*) ctrl%output_format
 
+    ! thermostat
+    read(u_ctrl,*) ctrl%thermostat
+    if (ctrl%thermostat/=0) then
+      read(u_ctrl,*) ctrl%temperature
+      if (ctrl%thermostat==1) then   !Langevin: only 1 Thermostat constant
+        allocate(ctrl%thermostat_const(1))
+        read(u_ctrl,*) ctrl%thermostat_const(1)
+      endif
+      read(u_ctrl,*) ctrl%restart_thermostat_random
+    endif
 
 
     ! constraints
@@ -485,6 +506,7 @@ module restart
 
     ! read everything
     read(u_traj,*) traj%RNGseed
+    read(u_traj,*) traj%RNGseed_thermostat
     read(u_traj,*) traj%traj_hash
     read(u_traj,*) traj%state_MCH
     read(u_traj,*) traj%state_diag
@@ -615,6 +637,18 @@ module restart
     do i=1,2*traj%step
       call random_number(dummy_randnum)
     enddo
+    
+    ! set up thermostat randomnes
+    if (ctrl%thermostat==1 .and. ctrl%restart_thermostat_random .eqv. .true.) then
+       ! call the old random number generator (used for thermostat) until it is in the same status as before the restart
+       call init_random_seed_thermostat(traj%rngseed_thermostat)
+       !call srand(traj%RNGseed_thermostat) alternatively (if like this in input.F90)
+       do i=1,2*((3*ctrl%natom+1)/2)*traj%step
+         dummy_randnum=rand()
+       enddo
+       
+       allocate (traj%thermostat_random(2*((3*ctrl%natom+1)/2))) ! allocate randomnes for all atoms in all directions
+     endif
 
     ! since the relaxation check is done after writing the restart file,
     ! add one to the relaxation counter

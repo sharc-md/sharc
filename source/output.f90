@@ -394,7 +394,7 @@ subroutine write_dat_initial(u, ctrl, traj)
     ! header for SHARC v2.0
     write(u,'(a14,f5.1)') 'SHARC_version ',  ctrl%output_version
     write(u,*) 'maxmult',          ctrl%maxmult
-    write(u,*) 'nstates_m',        ctrl%nstates_m
+    write(u,'(1X,A9,64(1X,I4))') 'nstates_m',        ctrl%nstates_m
     write(u,*) 'natom',            ctrl%natom
     write(u,*) 'dtstep',           ctrl%dtstep 
     write(u,*) 'nsteps',           ctrl%nsteps

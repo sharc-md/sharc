@@ -47,6 +47,9 @@ subroutine VelocityVerlet_xstep(traj,ctrl)
   type(ctrl_type) :: ctrl
   integer :: iatom, idir
 
+  ! variables for thermostat
+  real*8 :: b
+
   ! variables for constraints
   real*8 :: initdistvec(ctrl%n_constraints,3)
   logical :: check_constraints(ctrl%n_constraints)
@@ -73,17 +76,36 @@ subroutine VelocityVerlet_xstep(traj,ctrl)
   endif
 
   ! propagate positions
-  do iatom=1,ctrl%natom
-    do idir=1,3
-      traj%accel_ad(iatom,idir)=&
-      &-traj%grad_ad(iatom,idir)/traj%mass_a(iatom)
+  select case (ctrl%thermostat)
+    case (0) ! no thermostat
+      do iatom=1,ctrl%natom
+        do idir=1,3
+          traj%accel_ad(iatom,idir)=&
+          &-traj%grad_ad(iatom,idir)/traj%mass_a(iatom)
+    
+          traj%geom_ad(iatom,idir)=&
+          & traj%geom_ad(iatom,idir)&
+          &+traj%veloc_ad(iatom,idir)*ctrl%dtstep&
+          &+0.5d0*traj%accel_ad(iatom,idir)*ctrl%dtstep**2
+        enddo
+      enddo
+    case (1) ! Langevin thermostat
+      traj%thermostat_random=gaussian_random(ctrl%natom,real(0,8),ctrl%temperature) !ctrl%temperature is variance here
+      !write(u_log,*) traj%thermostat_random
+      do iatom=1,ctrl%natom
+        b=1/(1+ctrl%thermostat_const(1)*ctrl%dtstep/(2*traj%mass_a(iatom)))
+        do idir=1,3                 ! propagate positions according to Langevin equation
+          traj%accel_ad(iatom,idir)=&
+          &-traj%grad_ad(iatom,idir)/traj%mass_a(iatom)
 
-      traj%geom_ad(iatom,idir)=&
-      & traj%geom_ad(iatom,idir)&
-      &+traj%veloc_ad(iatom,idir)*ctrl%dtstep&
-      &+0.5d0*traj%accel_ad(iatom,idir)*ctrl%dtstep**2
-    enddo
-  enddo
+          traj%geom_ad(iatom,idir)=&
+          & traj%geom_ad(iatom,idir)&
+          &+b*traj%veloc_ad(iatom,idir)*ctrl%dtstep&
+          &+0.5d0*b*traj%accel_ad(iatom,idir)*ctrl%dtstep**2&
+          &+0.5d0*b*traj%thermostat_random(3*(iatom-1)+idir)*ctrl%dtstep/traj%mass_a(iatom)
+        enddo
+      enddo
+  end select
 
   ! carry out RATTLE
   if (ctrl%do_constraints==1) then
@@ -155,12 +177,14 @@ subroutine VelocityVerlet_vstep(traj,ctrl)
   type(ctrl_type) :: ctrl
   integer :: iatom, idir
 
+  ! variables for thermostat
+  real*8 :: a, b
+
   ! variables for constraints
   logical :: check_constraints(ctrl%n_constraints)
   integer :: iconstr, iA, iB, iiter
   real*8 :: relpos(3), relvel(3)
   real*8 :: d2t, coeff
-
 
   if (printlevel>2) then
     write(u_log,*) '============================================================='
@@ -170,16 +194,35 @@ subroutine VelocityVerlet_vstep(traj,ctrl)
     call vec3write(ctrl%natom,traj%veloc_ad,u_log,'Old veloc','F12.9')
   endif
 
-  do iatom=1,ctrl%natom
-    do idir=1,3
-      traj%accel_ad(iatom,idir)=0.5d0*(traj%accel_ad(iatom,idir)&
-      &-traj%grad_ad(iatom,idir)/traj%mass_a(iatom) )
-
-      traj%veloc_ad(iatom,idir)=&
-      & traj%veloc_ad(iatom,idir)&
-      &+traj%accel_ad(iatom,idir)*ctrl%dtstep
-    enddo
-  enddo
+  ! propagate velocities
+  select case (ctrl%thermostat)
+    case (0) ! no thermostat
+      do iatom=1,ctrl%natom
+        do idir=1,3
+          traj%accel_ad(iatom,idir)=0.5d0*(traj%accel_ad(iatom,idir)&
+          &-traj%grad_ad(iatom,idir)/traj%mass_a(iatom) )
+    
+          traj%veloc_ad(iatom,idir)=&
+          & traj%veloc_ad(iatom,idir)&
+          &+traj%accel_ad(iatom,idir)*ctrl%dtstep
+        enddo
+      enddo
+    case (1) ! Langevin thermostat
+      do iatom=1,ctrl%natom
+        a=ctrl%thermostat_const(1)*ctrl%dtstep/(2*traj%mass_a(iatom))
+        b=1/(1+a)
+        a=(1-a)*b
+        do idir=1,3
+          traj%accel_ad(iatom,idir)=0.5d0*(a*traj%accel_ad(iatom,idir)&
+          &-traj%grad_ad(iatom,idir)/traj%mass_a(iatom) )
+    
+          traj%veloc_ad(iatom,idir)=&
+          & a*traj%veloc_ad(iatom,idir)&
+          &+traj%accel_ad(iatom,idir)*ctrl%dtstep&
+          &+b*traj%thermostat_random(3*(iatom-1)+idir)/traj%mass_a(iatom)
+        enddo
+      enddo
+  endselect    
 
   ! carry out RATTLE
   if (ctrl%do_constraints==1) then
@@ -517,20 +560,27 @@ endsubroutine
 
 ! ===========================================================
 
+!> returns 3*natoms gaussian distributed random numbers with mean=mu and variance=var
+function gaussian_random(natoms,mu,var)
+  use definitions
+  implicit none
+  integer,intent(in) :: natoms
+  integer :: i
+  real*8,intent(in) :: mu, var
+  real*8 :: gaussian_random(2*((natoms*3+1)/2))   !note:fortran integer division -> truncation
+  real*8 :: theta,r
+  
+  do i=1,(3*natoms+1)/2
+    theta=rand()
+    r=rand()
+    theta=2*pi*rand()
+    r=sqrt(-2*log(rand())*var)
+    gaussian_random(2*i-1)=r*dcos(theta) +mu
+    gaussian_random(2*i)=r*dsin(theta) +mu
+  end do
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+  return
+endfunction
 
 
 endmodule

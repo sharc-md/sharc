@@ -94,6 +94,7 @@ type trajectory_type
 
   ! general information
   integer :: RNGseed                                     !< seed for random nuber generator
+  integer :: RNGseed_thermostat                          !< seed for random number generator used in thermostat
   integer :: step                                        !< current timestep (step=0 => t=0)
   integer*8 :: traj_hash                                 !< Trajectory ID based on hashing the input files
 
@@ -192,6 +193,9 @@ type trajectory_type
   ! Auxiliary trajectories for A-FSSH
   type(aux_trajectory_type),allocatable :: auxtrajs_s(:)
 
+  ! Thermostat randomness
+  real*8,allocatable :: thermostat_random(:)
+
 endtype
 
 ! =========================================================== !
@@ -243,11 +247,13 @@ type ctrl_type
   integer :: laser                          !< 0=none, 1=internal, 2=external
   integer :: coupling                       !< 0=ddt, 1=ddr, 2=overlap
   integer :: surf                           !< 0=propagation in diag surfaces (SHARC), 1=on MCH surfaces (regular SH)
-  integer :: decoherence                    !< 0=off, 1=EDC, 2=AFSSH
+  integer :: decoherence                    !< 0=off, 1=EDC, 2=AFSSH, -1=EDC legacy
   integer :: ekincorrect                    !< 0=none, 1=adjust momentum along velocity, 2=adjust momentum along nac vector
   integer :: reflect_frustrated             !< 0=none, 1=reflect along velocity, 2=reflect along nac vector
   integer :: gradcorrect                    !< 0=no, 1=include nac vectors in gradient transformation
   integer :: dipolegrad                     !< 0=no, 1=include dipole gradients in gradient transformation
+  integer :: thermostat                     !< 0=none, 1=Langevin thermostat
+  logical :: restart_thermostat_random      !< F=no, T=yes (default) to use same random number sequence if restarted
 
   integer :: calc_soc                       !< request SOC, otherwise only the diagonal elements of H (plus any laser interactions) are taken into account\n 0=no soc, 1=soc enabled
   integer :: calc_grad                      !< request gradients:   \n        0=all in step 1, 1=select in step 1, 2=select in step 2
@@ -281,17 +287,22 @@ type ctrl_type
 !   real*8 :: min_dynamic_substep=1.d-5             ! In dynamic substepping, the shortest substep allowed                                        in atomic time units
 !   real*8 :: diagonalize_degeneracy_diff=1.d-9     ! Energy difference threshold for treating states as degenerate                                in hartree
 
+  ! RATTLE
   integer :: do_constraints                    !< 0=none, 1=rattle
   real*8 :: constraints_tol                    !< tolerance for RATTLE
   integer :: n_constraints                     !< number of constraints
   integer, allocatable :: constraints_ca(:,:)  !< atom pairs, first index is constraint, second is atom (1 or 2)
   real*8, allocatable :: constraints_dist_c(:) !< squared distance for each constraint pair
 
-  ! only array in ctrl
+  ! laser
   real*8 :: laser_bandwidth                       !< for detecting induced hops (in a.u.)
   integer :: nlasers
   complex*16, allocatable :: laserfield_td(:,:)   !< complex valued laser field
-  complex*16, allocatable :: laserenergy_tl(:,:)     !< momentary central energy of laser (for detecting induced hops)
+  complex*16, allocatable :: laserenergy_tl(:,:)  !< momentary central energy of laser (for detecting induced hops)
+
+  ! thermostat
+  real*8 :: temperature                     !< temperature used for thermostat
+  real*8,allocatable :: thermostat_const(:) !< constants needed for thermostat. Langevin: friction coeffitient
 
 endtype
 
@@ -528,6 +539,7 @@ integer, parameter :: u_qm_QMout=42          !< here SHARC retrieves the results
       if (allocated(ctrl%atommask_a))                 deallocate(ctrl%atommask_a)
       if (allocated(ctrl%laserfield_td))              deallocate(ctrl%laserfield_td)
       if (allocated(ctrl%laserenergy_tl))             deallocate(ctrl%laserenergy_tl)
+      if (allocated(ctrl%thermostat_const))           deallocate(ctrl%thermostat_const)
 
     endsubroutine
 
@@ -543,7 +555,7 @@ integer, parameter :: u_qm_QMout=42          !< here SHARC retrieves the results
     if (associated(traj%overlaps_ss))               deallocate(traj%overlaps_ss)
     if (associated(traj%grad_MCH_sad))              deallocate(traj%grad_MCH_sad)
     if (associated(traj%NACdR_ssad))                deallocate(traj%NACdR_ssad)
-    if (associated(traj%geom_ad))                    deallocate(traj%geom_ad)
+    if (associated(traj%geom_ad))                   deallocate(traj%geom_ad)
 #else
     if (allocated(traj%H_MCH_ss))                   deallocate(traj%H_MCH_ss)
     if (allocated(traj%DM_ssd))                     deallocate(traj%DM_ssd)
@@ -583,6 +595,7 @@ integer, parameter :: u_qm_QMout=42          !< here SHARC retrieves the results
     if (allocated(traj%coeff_MCH_s))                deallocate(traj%coeff_MCH_s)
     if (allocated(traj%selG_s))                     deallocate(traj%selG_s)
     if (allocated(traj%selT_ss))                    deallocate(traj%selT_ss)
+    if (allocated(traj%thermostat_random))          deallocate(traj%thermostat_random)
   endsubroutine
 
 

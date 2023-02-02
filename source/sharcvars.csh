@@ -1,4 +1,4 @@
-setenv SHARC=/user/oppel/sharc_git_2.1/sharc/source/../bin
-setenv SHARCLIB=/user/oppel/sharc_git_2.1/sharc/source/../lib
+setenv SHARC=/user/phchm/software/sharc_main/bin
+setenv SHARCLIB=/user/phchm/software/sharc_main/lib
 setenv PYTHONPATH=$SHARCLIB:$PYTHONPATH
 setenv LD_LIBRARY_PATH=$SHARCLIB:$LD_LIBRARY_PATH
