@@ -1,0 +1,24 @@
+geomfile     "geom"
+veloc        external
+velocfile    "veloc"
+
+nstates      2 0 1
+actstates    2 0 1
+state        2 mch
+coeff        auto
+rngseed      26933
+
+ezero        -329.5062895400
+tmax         3.0
+stepsize     0.5
+nsubsteps    25
+integrator   avv
+convthre     0.0001
+dtmin        0.0001
+
+method       scp
+surf         sharc
+coupling     overlap
+gradcorrect
+grad_all
+nac_all

@@ -2,7 +2,7 @@
 !
 !    SHARC Program Suite
 !
-!    Copyright (c) 2019 University of Vienna
+!    Copyright (c) 2023 University of Vienna
 !
 !    This file is part of SHARC.
 !
@@ -26,6 +26,17 @@
 !> \author Sebastian Mai
 !> \date 27.02.2015, modified 27.02.2017 by Philipp Marquetand
 !>
+!>                   modified 11.13.2019 by Yinan Shu
+!>                       add keyword "method" 
+!>                       put "tmax" into global variable
+!>                       modified keyword "surf", option ehrenfest is deleted
+!>                       modified keyword "decoherence", add option decay of mixng
+!>                       add keyword "switching_procedure"
+!>                       add keyword "integrator"
+!>                       add keyword "convthre"
+!>                       add keyword "dtmin"
+!>                       add keyword "nac_projection"
+!>                       
 !> This module provides the central input parsing routine and some 
 !> auxilliary routines for input parsing
 !> 
@@ -63,13 +74,15 @@ module input
   character*8000, allocatable :: values(:)
   integer :: narg, io, nlines, selg, selt
   integer :: i,j,k,n
+  integer :: min_order, max_order
   integer :: imult,ims
-  real*8 :: a,b,tmax
+  real*8 :: a,b,tmax2
   character*24 :: ctime, date
   integer :: idate,time
   character*8000 :: string1
   character*8000, allocatable :: string2(:)
   logical :: selectdirectly_bool
+
   
 #ifndef __PYSHARC__
   ! get the input filename from the command line argument
@@ -234,28 +247,50 @@ module input
 !       close(u_i_input)
       call read_restart(u_resc,u_rest,ctrl,traj)
 
-      ! if explicit laser field is used, the simulation time cannot be changed
-      ! otherwise, the simulation time is read from the input file instead of the restart file
-      if (ctrl%laser/=2) then
-        line=get_value_from_key('nsteps',io)
-        if (io==0) then
-          read(line,*) ctrl%nsteps
-        else
-          line=get_value_from_key('tmax',io)
+      if (ctrl%integrator==2) then
+        ! if explicit laser field is used, the simulation time cannot be changed
+        ! otherwise, the simulation time is read from the input file instead of
+        ! the restart file
+        if (ctrl%laser/=2) then
+          line=get_value_from_key('nsteps',io)
           if (io==0) then
-            read(line,*) tmax
-            ctrl%nsteps=int(tmax/ctrl%dtstep/au2fs+0.01d0)
+            read(line,*) ctrl%nsteps
+          else
+            line=get_value_from_key('tmax',io)
+            if (io==0) then
+              read(line,*) ctrl%tmax
+              ctrl%nsteps=int(ctrl%tmax/ctrl%dtstep/au2fs+0.01d0)
+            endif
           endif
+          if (printlevel>0) then
+            write(u_log,*) '============================================================='
+            write(u_log,*) '                       Simulation Time'
+            write(u_log,*) '============================================================='
+            write(u_log,*) 'Using Fixed stepsize Velocity-Verlet integrator'
+            write(u_log,'(a,1x,i6,1x,a,1x,f6.3,1x,a)') 'Found nsteps=',ctrl%nsteps,'and stepsize=',ctrl%dtstep*au2fs,'fs.'
+            if (printlevel>1) then
+              write(u_log,'(a,1x,f9.3,1x,a)') 'This makes a total simulation time of ',ctrl%dtstep*ctrl%nsteps*au2fs,'fs.'
+              write(u_log,'(a,1x,f7.4,1x,a)') 'The electronic wavefunction will be propagated using a ',&
+              &ctrl%dtstep/ctrl%nsubsteps*au2fs, 'fs step.'
+            endif
+            write(u_log,*)
+          endif
+        endif
+      elseif (ctrl%integrator==0 .or. ctrl%integrator==1) then
+        line=get_value_from_key('tmax',io)
+        if (io==0) then
+          read(line,*) ctrl%tmax
         endif
         if (printlevel>0) then
           write(u_log,*) '============================================================='
           write(u_log,*) '                       Simulation Time'
           write(u_log,*) '============================================================='
-          write(u_log,'(a,1x,i6,1x,a,1x,f6.3,1x,a)') 'Found nsteps=',ctrl%nsteps,'and stepsize=',ctrl%dtstep*au2fs,'fs.'
-          if (printlevel>1) then
-            write(u_log,'(a,1x,f9.3,1x,a)') 'This makes a total simulation time of ',ctrl%dtstep*ctrl%nsteps*au2fs,'fs.'
-            write(u_log,'(a,1x,f7.4,1x,a)') 'The electronic wavefunction will be propagated using a ',&
-            &ctrl%dtstep/ctrl%nsubsteps*au2fs, 'fs step.'
+          write(u_log,'(a,1x,f9.3,1x,a)') 'Found trial stepsize: ',ctrl%dtstep*au2fs,'fs.'
+          write(u_log,'(a,1x,f9.3,1x,a)') 'Total simulation time: ',ctrl%tmax,'fs.'
+          if (ctrl%integrator .eq. 0) then
+            write(u_log,'(a,1x,f20.10,1x,a)') 'Using Bulirsch-Stoer integrator, threshold:',ctrl%convthre, 'a.u.'
+          else if (ctrl%integrator .eq. 1) then
+            write(u_log,'(a,1x,f20.10,1x,a)') 'Using adaptive Velocity-Verlet integrator, threshold:', ctrl%convthre*au2eV, 'eV'
           endif
           write(u_log,*)
         endif
@@ -276,6 +311,9 @@ module input
           stop
         endif
       endif
+
+      ! convert tmax to atomic unit 
+      ctrl%tmax=ctrl%tmax/au2fs
 
       ! rest of this routine is skipped
       return
@@ -520,6 +558,14 @@ module input
 
   ! setting up simulation time and time step
 
+    ! total simulation time
+    line=get_value_from_key('tmax',io)
+    if (io==0) then
+      read(line,*) ctrl%tmax
+    else
+      ctrl%tmax=5.0
+    endif
+
     ! stepsize is dt, default is 1 fs
     line=get_value_from_key('stepsize',io)
     if (io==0) then
@@ -527,6 +573,45 @@ module input
     else
       ctrl%dtstep=1.d0
     endif
+
+    ! minimum timestep allowed in adapative
+    line=get_value_from_key('stepsize_min',io)
+    if (io==0) then
+      read(line,*) ctrl%dtstep_min
+    else
+      ctrl%dtstep_min=ctrl%dtstep/16
+    endif
+
+    ! maximum timestep allowed in adapative
+    line=get_value_from_key('stepsize_max',io)
+    if (io==0) then
+      read(line,*) ctrl%dtstep_max
+    else
+      ctrl%dtstep_max=ctrl%dtstep*2
+    endif
+ 
+    ! Alternative step for minimum timestep allowed in adapative
+    line=get_value_from_key('stepsize_min_exp',io)
+    if (io==0) then
+      read(line,*) min_order
+    else
+      min_order=-4
+    endif
+    ctrl%dtstep_min=ctrl%dtstep*2**(min_order)
+
+    ! Alternative step for maximum timestep allowed in adapative
+    line=get_value_from_key('stepsize_max_exp',io)
+    if (io==0) then
+      read(line,*) max_order
+    else
+      max_order=1
+    endif
+    ctrl%dtstep_max=ctrl%dtstep*2**(max_order)
+
+
+    ! nsteps is computed by simulation time/stepsize
+    ! nsteps is only used in fixed stepsize Velocity-Verlet integrator
+    ctrl%nsteps=int(ctrl%tmax/ctrl%dtstep)
 
     ! number of substeps for electronic interpolation
     line=get_value_from_key('nsubsteps',io)
@@ -536,31 +621,49 @@ module input
       ctrl%nsubsteps=25
     endif
 
-    ! nsteps is either taken from input 
-    ! or calculated based on maximum simulation time
-    ! detault is 3 steps
-    line=get_value_from_key('nsteps',io)
+    ! integrator
+    line=get_value_from_key('integrator',io)
     if (io==0) then
-      read(line,*) ctrl%nsteps
+      select case (trim(line))
+        case ('bsh')
+          ctrl%integrator=0
+        case ('avv')
+          ctrl%integrator=1
+        case ('fvv')
+          ctrl%integrator=2
+        case default
+          write(0,*) 'Unknown keyword "',trim(line),'" to "integrator"!'
+          stop 1
+      endselect
     else
-      line=get_value_from_key('tmax',io)
-      if (io==0) then
-        read(line,*) tmax
-        ctrl%nsteps=int(tmax/ctrl%dtstep)
-      else
-        ctrl%nsteps=3
-      endif
+      ctrl%integrator=2
     endif
 
+
     if (printlevel>0) then
-      write(u_log,*) '============================================================='
-      write(u_log,*) '                       Simulation Time'
-      write(u_log,*) '============================================================='
-      write(u_log,'(a,1x,i6,1x,a,1x,f6.3,1x,a)') 'Found nsteps=',ctrl%nsteps,'and stepsize=',ctrl%dtstep,'fs.'
-      if (printlevel>1) then
-        write(u_log,'(a,1x,f9.3,1x,a)') 'This makes a total simulation time of ',ctrl%dtstep*ctrl%nsteps,'fs.'
-        write(u_log,'(a,1x,f7.4,1x,a)') 'The electronic wavefunction will be propagated using a ',&
-        &ctrl%dtstep/ctrl%nsubsteps, 'fs step.'
+      if (ctrl%integrator .eq. 2) then
+        write(u_log,*) '============================================================='
+        write(u_log,*) '                       Simulation Time'
+        write(u_log,*) '============================================================='
+        write(u_log,'(a)') 'Using fixed stepsize Velocity-Verlet integrator'
+        write(u_log,'(a,1x,i6,1x,a,1x,f9.3,1x,a)') 'Found nsteps=',ctrl%nsteps,'and stepsize=',ctrl%dtstep,'fs.'
+        if (printlevel>1) then
+          write(u_log,'(a,1x,f9.3,1x,a)') 'This makes a total simulation time of ',ctrl%dtstep*ctrl%nsteps,'fs.'
+          write(u_log,'(a,1x,f7.4,1x,a)') 'The electronic wavefunction will be propagated using a ',&
+          &ctrl%dtstep/ctrl%nsubsteps, 'fs step.'
+        endif
+        write(u_log,*)
+      elseif (ctrl%integrator==0 .or. ctrl%integrator==1) then
+        write(u_log,*) '============================================================='
+        write(u_log,*) '                       Simulation Time'
+        write(u_log,*) '============================================================='
+        write(u_log,'(a,1x,f9.3,1x,a)') 'Found trial stepsize: ',ctrl%dtstep,'fs.'
+        write(u_log,'(a,1x,f9.3,1x,a)') 'Total simulation time: ',ctrl%tmax,'fs.'
+        if (ctrl%integrator .eq. 0) then
+          write(u_log,'(a)') 'Using Bulirsch-Stoer integrator'
+        elseif (ctrl%integrator .eq. 1) then
+          write(u_log,'(a)') 'Using adaptive Velocity-Verlet integrator'
+        endif
       endif
       write(u_log,*)
     endif
@@ -569,12 +672,12 @@ module input
 
     line=get_value_from_key('killafter',io)
     if (io==0) then
-      read(line,*) tmax
-      if (tmax<=0) then
+      read(line,*) tmax2
+      if (tmax2<=0) then
         ctrl%killafter=-1
         traj%steps_in_gs=-123
       else
-        ctrl%killafter=int(anint(tmax/ctrl%dtstep))
+        ctrl%killafter=int(anint(tmax2/ctrl%dtstep))
         traj%steps_in_gs=0
       endif
     else
@@ -634,6 +737,32 @@ module input
 
   ! =====================================================
 
+  ! setting up simulation method
+  ! either trajectory surface hopping or self-consistent potential
+  ! notice self-consistent potential is same as semi-classical Ehrenfest 
+
+   ! Method type
+    line=get_value_from_key('method',io)
+    if (io==0) then
+      select case (trim(line))
+        case ('tsh')
+          ctrl%method=0
+        case ('scp')
+          ctrl%method=1
+        case ('ehrenfest')
+          ctrl%method=1
+        case ('csdm')
+          ctrl%method=1
+        case default
+          write(0,*) 'Unknown keyword "',trim(line),'" to "method"!'
+          stop 1
+      endselect
+    else ! set the default as surface hopping
+      ctrl%method=0 
+    endif
+
+  ! =====================================================
+
   ! other keywords, including consistency checks
 
     ! Dynamics type
@@ -673,12 +802,325 @@ module input
           ctrl%coupling=1
         case ('overlap')
           ctrl%coupling=2
+        case ('ktdc') ! kappa tdc
+          ctrl%coupling=3
         case default
           write(0,*) 'Unknown keyword ',trim(line),' to "coupling"!'
           stop 1
       endselect
     else
       ctrl%coupling=2
+    endif
+
+    ! turn program off if adaptive is used for overlap
+    if (ctrl%integrator==0 .or. ctrl%integrator==1) then
+      if (ctrl%coupling==2) then 
+        write(0,*) 'Adaptive integrator is not yet working for coupling overlap'
+        stop 1
+      endif
+    endif
+
+    ! method to compute kappa TDC
+    if (ctrl%coupling==3) then
+      line=get_value_from_key('ktdc_method',io)
+      if (io==0) then
+        select case (trim(line))
+          case ('gradient')
+            ctrl%ktdc_method=0
+          case ('energy')
+            ctrl%ktdc_method=1
+          case default
+            write(0,*) 'Unknown keyword ',trim(line),' to "ktdc_method"!'
+            stop 1
+        endselect
+      else  ! set default
+        if (ctrl%method==0) then ! for TSH, use energy based
+          ctrl%ktdc_method=1
+        else if (ctrl%method==1) then ! for SCP, use gradient based 
+          ctrl%ktdc_method=0
+        endif 
+      endif
+    endif
+
+    ! method to compute kmatrix
+    line=get_value_from_key('kmatrix_method',io)
+    if (io==0) then
+      select case (trim(line))
+        case ('gradient')
+          ctrl%kmatrix_method=0
+        case ('energy')
+          ctrl%kmatrix_method=1
+        case default
+          write(0,*) 'Unknown keyword ',trim(line),' to "kmatrix_method"!'
+          stop 1
+      endselect
+    else ! set the default
+      if (ctrl%coupling==1 .or. ctrl%coupling==2) then 
+        ctrl%kmatrix_method=0
+      else if (ctrl%coupling==3) then 
+        ctrl%kmatrix_method=1
+      endif 
+    endif
+
+    ! method to compute kmatrix, another keyword
+    line=get_value_from_key('tdh_method',io)
+    if (io==0) then
+      select case (trim(line))
+        case ('gradient')
+          ctrl%kmatrix_method=0
+        case ('energy')
+          ctrl%kmatrix_method=1
+        case default
+          write(0,*) 'Unknown keyword ',trim(line),' to "kmatrix_method"!'
+          stop 1
+      endselect
+    else ! set the default
+      if (ctrl%coupling==1 .or. ctrl%coupling==2) then
+        ctrl%kmatrix_method=0
+      else if (ctrl%coupling==3) then
+        ctrl%kmatrix_method=1
+      endif
+    endif
+
+    ! electronic eom method for TSH and SCP
+    line=get_value_from_key('eeom',io)
+    if (io==0) then
+      select case (trim(line))
+        case ('ci')
+          ctrl%eeom=0
+        case ('li')
+          ctrl%eeom=1
+        case ('ld')
+          ctrl%eeom=2
+        case ('npi')
+          ctrl%eeom=3
+        case default
+          write(0,*) 'Unknown keyword ',trim(line),' to "neom"!'
+          stop 1
+      endselect
+    else ! set the default nuclear propagators
+      if (ctrl%coupling==0) then
+        ctrl%eeom=0
+      elseif (ctrl%coupling==1 .or. ctrl%coupling==3) then
+        ctrl%eeom=1
+      elseif (ctrl%method==0 .and. ctrl%coupling==2) then
+        ctrl%eeom=2
+      elseif (ctrl%method==1 .and. ctrl%coupling==2) then
+        ctrl%eeom=3
+      endif
+    endif
+
+    ! nuclear eom method for scp
+    line=get_value_from_key('neom',io)
+    if (io==0) then
+      select case (trim(line))
+        case ('ddr')
+          ctrl%neom=0
+        case ('nacdr')
+          ctrl%neom=0
+        case ('gdiff')
+          ctrl%neom=1
+        case default
+          write(0,*) 'Unknown keyword ',trim(line),' to "neom"!'
+          stop 1
+      endselect
+    else ! set the default nuclear propagators
+      if (ctrl%coupling==0) then
+        ctrl%neom=0
+      elseif (ctrl%coupling==1) then
+        ctrl%neom=0
+      elseif (ctrl%coupling==2) then
+        ctrl%neom=1
+      elseif (ctrl%coupling==3) then
+        ctrl%neom=1
+      endif
+    endif
+
+    line=get_value_from_key('neom_rep',io)
+    if (io==0) then
+      select case (trim(line))
+        case ('diag')
+          ctrl%neom_rep=0
+        case ('mch')
+          ctrl%neom_rep=1
+        case default
+          write(0,*) 'Unknown keyword ',trim(line),' to "neom"!'
+          stop 1
+      endselect
+    else ! set the default 
+      ctrl%neom_rep=0
+    endif
+
+    ! default is do projection for system with more than 4 atoms
+    if (ctrl%natom.ge.4) then
+      ctrl%nac_projection=1
+    else
+      ctrl%nac_projection=0
+    endif
+    line=get_value_from_key('nac_projection',io)
+    if (io==0) then
+      ctrl%nac_projection=1
+    endif
+    line=get_value_from_key('nonac_projection',io)
+    if (io==0) then
+      ctrl%nac_projection=0
+    endif
+
+    ! method to maintain ZPE
+    ctrl%zpe_correction=0
+    line=get_value_from_key('zpe_correction',io)
+    if (io==0) then
+      select case (trim(line))
+        case ('pumping')
+          ctrl%zpe_correction=1
+        case ('lp')
+          ctrl%zpe_correction=2
+        case default
+          write(0,*) 'Unknown keyword ',trim(line),' to "zpe_correction"!'
+          stop 1
+      endselect
+    endif
+
+    ! LP-ZPE correction scheme input
+ 
+    ! LP-ZPE correction scheme
+    line=get_value_from_key('lpzpe_scheme',io)
+    if (io==0) then
+      read(line,*) ctrl%lpzpe_scheme
+    else
+      ! default: using original scheme
+      ctrl%lpzpe_scheme=0
+    endif
+
+    ! number of AH bonds
+    line=get_value_from_key('number_ah',io)
+    if (io==0) then
+      read(line,*) ctrl%lpzpe_nah
+    endif
+
+    ! number of BC bonds
+    line=get_value_from_key('number_bc',io)
+    if (io==0) then
+      read(line,*) ctrl%lpzpe_nbc
+    endif
+
+    ! list of AH bonds
+    line=get_value_from_key('ah_list',io)
+    if (io==0) then
+      ! value needs to be split into values (each one is a string)
+      call split(line,' ',values,n)
+      ! n is twice the number of AH bonds
+      ctrl%lpzpe_nah=n/2
+      allocate(ctrl%lpzpe_ah(ctrl%lpzpe_nah,2)) 
+      ! read AH bonds 
+      do i=1,ctrl%lpzpe_nah
+        do j=1,2
+          k=(i-1)*2+j
+          read(values(k),*) ctrl%lpzpe_ah(i,j)
+        enddo
+      enddo
+      ! values is not needed anymore
+      deallocate(values)
+    endif
+
+    ! list of BC bonds
+    line=get_value_from_key('bc_list',io)
+    if (io==0) then
+      ! value needs to be split into values (each one is a string)
+      call split(line,' ',values,n)
+      ! n is twice the number of AH bonds
+      ctrl%lpzpe_nbc=n/2
+      allocate(ctrl%lpzpe_bc(ctrl%lpzpe_nbc,2))
+      ! read AH bonds 
+      do i=1,ctrl%lpzpe_nbc
+        do j=1,2
+          k=(i-1)*2+j
+          read(values(k),*) ctrl%lpzpe_bc(i,j)
+        enddo
+      enddo
+      ! values is not needed anymore
+      deallocate(values)
+    endif
+
+    ! zpe of AH bonds
+    line=get_value_from_key('ah_zpe',io)
+    if (io==0) then
+      ! value needs to be split into values (each one is a string)
+      call split(line,' ',values,n)
+      allocate(ctrl%lpzpe_ke_zpe_ah(n))
+      ! read AH bonds 
+      do i=1,n
+        read(values(i),*) ctrl%lpzpe_ke_zpe_ah(i)
+      enddo
+      ! values is not needed anymore
+      deallocate(values)
+    endif
+
+    ! zpe of BC bonds
+    line=get_value_from_key('bc_zpe',io)
+    if (io==0) then
+      ! value needs to be split into values (each one is a string)
+      call split(line,' ',values,n)
+      allocate(ctrl%lpzpe_ke_zpe_bc(n))
+      ! read AH bonds 
+      do i=1,n
+        read(values(i),*) ctrl%lpzpe_ke_zpe_bc(i)
+      enddo
+      ! values is not needed anymore
+      deallocate(values)
+    else 
+      allocate(ctrl%lpzpe_ke_zpe_bc(ctrl%lpzpe_nbc))
+      do i=1,ctrl%lpzpe_nbc
+        ctrl%lpzpe_ke_zpe_bc(i)=0.0
+      enddo
+    endif
+
+    ! read kinetic energy threshold
+    line=get_value_from_key('ke_threshold',io)
+    if (io==0) then
+      read(line,*) ctrl%ke_threshold
+    endif
+
+    ! read time cycle of zpe checking
+    line=get_value_from_key('t_cycle',io)
+    if (io==0) then
+      read(line,*) ctrl%t_cycle
+    endif
+    ctrl%t_cycle=ctrl%t_cycle/au2fs
+
+    ! read period of time for kinetic energy averaging
+    line=get_value_from_key('t_check',io)
+    if (io==0) then
+      read(line,*) ctrl%t_check
+    endif
+    ctrl%t_check=ctrl%t_check/au2fs
+
+    ! Done LP-ZPE correction scheme input
+   
+    ! pointer basis selection
+    line=get_value_from_key('pointer_basis',io)
+    if (io==0) then
+      select case (trim(line))
+        case ('diag')
+          ctrl%pointer_basis=0
+        case ('mch')
+          ctrl%pointer_basis=1
+        case ('opt')
+          ctrl%pointer_basis=2
+        case default
+          write(0,*) 'Unknown keyword ',trim(line),' to "pointer_basis"!'
+          stop 1
+      endselect
+    else
+      ctrl%pointer_basis=0
+    endif
+
+    ! maximum iteration of pointer basis optimization
+    line=get_value_from_key('pointer_maxiter',io)
+    if (io==0) then
+      read(line,*) ctrl%pointer_maxiter
+    else
+      ctrl%pointer_maxiter=1000
     endif
 
     ! spin-orbit couplings
@@ -693,7 +1135,11 @@ module input
     endif
 
     ! request phase corrections from interface
-    ctrl%calc_phases=1
+    if (ctrl%coupling.ne.3) then 
+      ctrl%calc_phases=1
+    elseif (ctrl%coupling==3) then
+      ctrl%calc_phases=0
+    endif
     line=get_value_from_key('nophases_from_interface',io)
     if (io==0) then
       ctrl%calc_phases=0
@@ -713,7 +1159,23 @@ module input
     ! non-adiabatic couplings for gradients
     line=get_value_from_key('gradcorrect',io)
     if (io==0) then
-      ctrl%gradcorrect=1
+      select case (trim(line))
+        case ('')
+          ctrl%gradcorrect=1
+        case ('nac')
+          ctrl%gradcorrect=1
+        case ('ngh')
+          ctrl%gradcorrect=1
+        case ('kmatrix')
+          ctrl%gradcorrect=2
+        case ('tdh')
+          ctrl%gradcorrect=2
+        case ('enac')
+          ctrl%gradcorrect=3
+        case default
+          write(0,*) 'Unknown keyword ',trim(line),' to "gradcorrect"!'
+          stop 1
+      endselect
     else
       ctrl%gradcorrect=0
     endif
@@ -730,10 +1192,20 @@ module input
           ctrl%ekincorrect=0
         case ('parallel_vel')
           ctrl%ekincorrect=1
-        case ('parallel_nac')
+        case ('parallel_pvel')
           ctrl%ekincorrect=2
-        case ('parallel_diff')
+        case ('parallel_nac')
           ctrl%ekincorrect=3
+        case ('parallel_diff')
+          ctrl%ekincorrect=4
+        case ('parallel_pnac')
+          ctrl%ekincorrect=5
+        case ('parallel_pdiff')
+          ctrl%ekincorrect=6
+        case ('parallel_enac') ! effective NAC
+          ctrl%ekincorrect=7
+        case ('parallel_penac') ! projected effective NAC
+          ctrl%ekincorrect=8
         case default
           write(0,*) 'Unknown keyword ',trim(line),' to "ekincorrect"!'
           stop 1
@@ -750,10 +1222,36 @@ module input
           ctrl%reflect_frustrated=0
         case ('parallel_vel') 
           ctrl%reflect_frustrated=1
-        case ('parallel_nac') 
+        case ('parallel_pvel')
           ctrl%reflect_frustrated=2
-        case ('parallel_diff') 
+        case ('parallel_nac') 
           ctrl%reflect_frustrated=3
+        case ('parallel_diff') 
+          ctrl%reflect_frustrated=4
+        case ('parallel_pnac')
+          ctrl%reflect_frustrated=5
+        case ('parallel_pdiff')
+          ctrl%reflect_frustrated=6
+        case ('parallel_enac') ! effective NAC
+          ctrl%reflect_frustrated=7
+        case ('parallel_penac') ! projected effective NAC
+          ctrl%reflect_frustrated=8
+        case ('deltaV_vel')
+          ctrl%reflect_frustrated=91
+        case ('deltaV_pvel')
+          ctrl%reflect_frustrated=92
+        case ('deltaV_nac')
+          ctrl%reflect_frustrated=93
+        case ('deltaV_diff')
+          ctrl%reflect_frustrated=94
+        case ('deltaV_pnac')
+          ctrl%reflect_frustrated=95
+        case ('deltaV_pdiff')
+          ctrl%reflect_frustrated=96
+        case ('deltaV_enac')
+          ctrl%reflect_frustrated=97
+        case ('deltaV_penac')
+          ctrl%reflect_frustrated=98
         case default
           write(0,*) 'Unknown keyword ',trim(line),' to "reflect_frustrated"!'
           stop 1
@@ -761,6 +1259,22 @@ module input
     else
       ctrl%reflect_frustrated=0
     endif
+
+    ! initialize time uncertainty
+    ctrl%time_uncertainty=0
+  
+    ! do time uncertainty or not
+    line=get_value_from_key('time_uncertainty',io)
+    if (io==0) then
+      ctrl%time_uncertainty=1
+    endif
+    line=get_value_from_key('notime_uncertainty',io)
+    if (io==0) then
+      ctrl%time_uncertainty=0
+    endif
+
+    ! initialize time uncertainty process
+    traj%in_time_uncertainty=0
 
     ! selection of gradients/non-adiabatic couplings
     selg=0
@@ -800,6 +1314,17 @@ module input
     ctrl%calc_nacdr=-1
     ctrl%calc_overlap=0
     ctrl%calc_second=0
+    ctrl%calc_effectivenac=0
+
+    ! for debug purposes, direct set up of keywords 
+    line=get_value_from_key('calc_overlap',io)
+    if (io==0) then
+      ctrl%calc_overlap=1
+    endif
+    line=get_value_from_key('calc_effectivenac',io)
+    if (io==0) then
+      ctrl%calc_effectivenac=1
+    endif
 
     ! calculate the active coupling quantity (nacdr, nacdt, overlaps)
     select case (ctrl%coupling)
@@ -809,10 +1334,24 @@ module input
         ctrl%calc_nacdr=0
       case (2)  ! overlap
         ctrl%calc_overlap=1
+      case (3)  ! ktdc
+        ctrl%calc_effectivenac=1
       case default
         write(0,*) 'Internal error 1!'
         stop 1
     endselect
+
+    if (ctrl%method==1) then 
+      select case (ctrl%neom)
+        case (0)  ! ddr
+          ctrl%calc_nacdr=0
+        case (1)  ! effective nac
+          ctrl%calc_effectivenac=1
+        case default
+          write(0,*) 'Internal error 1!'
+          stop 1
+      endselect
+    endif 
 
 !     if (ctrl%coupling==1) then   ! having ddr couplings
 !       ctrl%gradcorrect=1         ! they can be used for gradient correction
@@ -828,13 +1367,19 @@ module input
     if (ctrl%gradcorrect==1) then ! for gradcorrect
       ctrl%calc_nacdr=0           ! we need nacdr
     endif
-    if (ctrl%ekincorrect==2) then ! for kinetic energy correction parallel to nac, we need nacdr
+    if (ctrl%ekincorrect==3 .or. ctrl%ekincorrect==5) then ! for kinetic energy correction parallel to nac or projected nac, we need nacdr
       ctrl%calc_nacdr=0
       ctrl%gradcorrect=1        ! NACs must be transformed
     endif
-    if (ctrl%reflect_frustrated==2) then ! for reflection parallel to nac, we need nacdr
+    if (ctrl%ekincorrect==7 .or. ctrl%ekincorrect==8) then ! for kinetic energy correction parallel to effective nac or projected effective nac, we need effective nac
+      ctrl%calc_effectivenac=1
+    endif 
+    if (ctrl%reflect_frustrated==3 .or. ctrl%reflect_frustrated==5 .or. ctrl%reflect_frustrated==93 .or. ctrl%reflect_frustrated==95) then ! for reflection parallel to nac or projected nac, we need nacdr
       ctrl%calc_nacdr=0
       ctrl%gradcorrect=1        ! NACs must be transformed
+    endif
+    if (ctrl%reflect_frustrated==7 .or. ctrl%reflect_frustrated==8 .or. ctrl%reflect_frustrated==97 .or. ctrl%reflect_frustrated==98) then ! for reflection parallel to effective nac or projected effective nac, we need effective nac
+      ctrl%calc_effectivenac=1
     endif
 ! !     if (ctrl%decoherence==2) then ! for A-FSSH we need nacdr
 ! !       ctrl%calc_nacdr=0
@@ -1029,22 +1574,64 @@ module input
       write(u_log,*) '                       Dynamics options'
       write(u_log,*) '============================================================='
       if (printlevel>1) then
+        select case (ctrl%method)
+          case (0)
+            write(u_log,'(a)') 'Doing Trajectory Surface Hopping Dynamics.'
+          case (1)
+            write(u_log,'(a)') 'Doing semi-classical Ehrenfest Dynamics using self-consistent potentials'
+        endselect
+        if (ctrl%time_uncertainty==1) then
+            write(u_log,'(a)') 'Doing Trajectory Surface Hopping with Time Uncertainty'
+        endif
         select case (ctrl%surf)
           case (0)
             write(u_log,'(a)') 'Doing SHARC dynamics (on diagonal surfaces).'
           case (1)
             write(u_log,'(a)') 'Doing dynamics on MCH surfaces.'
         endselect
+        select case (ctrl%zpe_correction)
+          case (0)
+            write(u_log,'(a)') 'No Zero Point Energy correction scheme employed'
+          case (1)
+            write(u_log,'(a)') 'Using Zero Point Energy pumping method tomaintain ZPE'
+          case (2)
+            write(u_log,'(a)') 'Using Local Pair Zero Point Energy to maintain ZPE'
+            if (ctrl%lpzpe_scheme==0) then 
+              write(u_log,'(a)') 'Using original LP-ZPE scheme: skip correction if BC kinetic energy is not enough'
+            else if (ctrl%lpzpe_scheme==1) then
+              write(u_log,'(a)') 'Using new LP-ZPE scheme: adjust the correction energy based on BC kinetic energy'
+            endif
+        endselect
         select case (ctrl%coupling)
           case (0)
-            write(u_log,'(a)') 'Using TIME DERIVATIVES <a|d/dt|b> for wavefunction propagation.'
+            write(u_log,'(a)') 'Using TIME DERIVATIVES <a|d/dt|b> as wavefunction coupling.'
           case (1)
-            write(u_log,'(a)') 'Using SPATIAL DERIVATIVES <a|d/dR|b> for wavefunction propagation.'
+            write(u_log,'(a)') 'Using SPATIAL DERIVATIVES <a|d/dR|b> as wavefunction coupling.'
+          case (2)
+            write(u_log,'(a)') 'Using OVERLAPS as wavefunction coupling.'
+          case (3)
+            write(u_log,'(a)') 'Using curvature TDC approximation as wavefunction coupling.'
+        endselect
+        select case (ctrl%eeom)
+          case (0)
+            write(u_log,'(a)') 'Using constant interpolation of TDC for wavefunction propagation.'
+          case (1)
+            write(u_log,'(a)') 'Using linear interpolation of TDC for wavefunction propagation.'
           case (2)
             write(u_log,'(a)') 'Doing LOCAL DIABATISATION propagation.'
+          case (3)
+            write(u_log,'(a)') 'Using norm perserving interpolation of TDC for wavefunction propagation.'
+        endselect
+        select case (ctrl%neom)
+          case (0)
+            write(u_log,'(a)') 'Using NAC for nuclear equation of motion.'
+          case (1)
+            write(u_log,'(a)') 'Using effective NAC for nuclear equation of motion.'
         endselect
         if (ctrl%gradcorrect==1) then
           write(u_log,'(a)') 'Including non-adiabatic coupling vectors in the gradient transformation.'
+        elseif (ctrl%gradcorrect==2) then
+          write(u_log,'(a)') 'Using Kmatrix in the gradient transformation.'
         endif
         select case (ctrl%ekincorrect)
           case (0)
@@ -1052,9 +1639,19 @@ module input
           case (1)
             write(u_log,'(a)') 'Correction to the kinetic energy after surface hop parallel to velocity vector.'
           case (2)
-            write(u_log,'(a)') 'Correction to the kinetic energy after surface hop parallel to non-adiabatic coupling vector.'
+            write(u_log,'(a)') 'Correction to the kinetic energy after surface hop parallel to projected velocity vector.'
           case (3)
+            write(u_log,'(a)') 'Correction to the kinetic energy after surface hop parallel to non-adiabatic coupling vector.'
+          case (4)
             write(u_log,'(a)') 'Correction to the kinetic energy after surface hop parallel to gradient difference vector.'
+          case (5)
+            write(u_log,'(a)') 'Correction to the kinetic energy after surface hop parallel to projected non-adiabatic coupling vector.'
+          case (6)
+            write(u_log,'(a)') 'Correction to the kinetic energy after surface hop parallel to projected gradient difference vector.'
+          case (7)
+            write(u_log,'(a)') 'Correction to the kinetic energy after surface hop parallel to effective non-adiabatic coupling vector.'
+          case (8)
+            write(u_log,'(a)') 'Correction to the kinetic energy after surface hop parallel to projected effective non-adiabatic coupling vector.'
         endselect
         write(u_log,*)
         select case (ctrl%calc_grad)
@@ -1216,6 +1813,25 @@ module input
 
     if (printlevel>1) write(u_log,'(a,1x,f15.9)') 'Shift to the diagonal energies is',ctrl%ezero
 
+    ! convergence threshold ============================================
+
+    line=get_value_from_key('convthre',io)
+    if (io==0) then
+      read(line,*) ctrl%convthre
+    else
+      ctrl%convthre=0.0001
+    endif
+
+    if (printlevel>1) then
+      if (ctrl%integrator==0) then
+        write(u_log,'(a,1x,f15.9,1x,a)') 'Bulirsch-Stoer convergence threshold:',ctrl%convthre, 'a.u.'
+      else if (ctrl%integrator==1) then
+        write(u_log,'(a,1x,f15.9,1x,a)') 'Adaptive Velocity Verlet convergence threshold:',ctrl%convthre,'eV'
+        write(u_log,'(a,1x,f15.9,1x,a)') 'Minimum time step:',ctrl%dtstep_min,"fs"
+        write(u_log,'(a,1x,f15.9,1x,a)') 'Maximum time step:',ctrl%dtstep_max,"fs"
+      endif
+    endif
+
     ! scaling ============================================
 
     line=get_value_from_key('scaling',io)
@@ -1229,8 +1845,21 @@ module input
       stop 1
     endif
 
+    ! spin orbit coupling scaling factor==============================
+    line=get_value_from_key('soc_scaling',io)
+    if (io==0) then
+      read(line,*) ctrl%soc_scaling
+    else
+      ctrl%soc_scaling=1.d0
+    endif
+    if (ctrl%soc_scaling<=0.d0) then
+      write(0,*) 'SOC scaling must not be smaller than or equal to 0.0!'
+      stop 1
+    endif
+
     if (printlevel>1) then
       write(u_log,'(a,1x,f6.3)') 'Scaling factor to the Hamiltonian and gradients is',ctrl%scalingfactor
+      write(u_log,'(a,1x,f6.3)') 'SOC scaling factor is',ctrl%soc_scaling 
       write(u_log,*)
     endif
 
@@ -1277,8 +1906,14 @@ module input
 
     line=get_value_from_key('decoherence',io)
     if (io==0) then
-      ctrl%decoherence=1
-      ctrl%decoherence_alpha=0.1d0
+      if (ctrl%method==0) then
+        ctrl%decoherence=1
+        ctrl%decoherence_alpha=0.1d0
+      else if (ctrl%method==1) then
+        ctrl%decoherence=11
+        ctrl%decoherence_alpha=0.1d0
+        ctrl%decoherence_beta=1.0d0
+      endif
     else
       ctrl%decoherence=0
     endif
@@ -1296,6 +1931,10 @@ module input
           ctrl%decoherence=1
         case ('afssh') 
           ctrl%decoherence=2
+        case ('dom')
+          ctrl%decoherence=11
+          ctrl%decoherence_alpha=0.1d0
+          ctrl%decoherence_beta=1.0d0
         case('edc_legacy')
           ctrl%decoherence=-1
         case default
@@ -1312,6 +1951,16 @@ module input
         write(0,*) 'Decoherence parameter must not be smaller than 0.0!'
         stop 1
       endif
+    endif
+    if (ctrl%decoherence==11) then
+      line=get_value_from_key('decoherence_param_alpha',io)
+      if (io==0) read(line,*) ctrl%decoherence_alpha
+      if (ctrl%decoherence_alpha<0.d0) then
+        write(0,*) 'Decoherence parameter must not be smaller than 0.0!'
+        stop 1
+      endif
+      line=get_value_from_key('decoherence_param_beta',io)
+      if (io==0) read(line,*) ctrl%decoherence_beta
     endif
 
     if (printlevel>1) then
@@ -1332,9 +1981,62 @@ module input
           write(u_log,*)
           stop 1
         endif
+      elseif (ctrl%decoherence==11) then
+        write(u_log,'(a)') 'Decoherence is 11 (Decay of Mixing by Zhu, Nangia, Jasper, Truhlar)'
+        write(u_log,'(a,1x,f6.3,1x,a)') 'Alpha decoherence constant is',ctrl%decoherence_alpha,'Hartree'
+        write(u_log,'(a,1x,f6.3,1x,a)') 'Beta decoherence constant is',ctrl%decoherence_beta,'Hartree'
+        write(u_log,*)
       else
         write(u_log,'(a)') 'Decoherence is OFF'
         write(u_log,*)
+      endif
+    endif
+
+    line=get_value_from_key('decotime_method',io)
+    if (io==0) then
+      select case (trim(line))
+        case ('csdm')
+          ctrl%decotime_method=0
+        case ('scdm')
+          ctrl%decotime_method=1
+        case ('edc')
+          ctrl%decotime_method=2
+        case ('sd')
+          ctrl%decotime_method=3
+        case ('fp1')
+          ctrl%decotime_method=4
+        case ('fp2')
+          ctrl%decotime_method=5
+        case default
+          write(0,*) 'Unknown keyword ',trim(line),' to "decotime_method"!'
+          stop 1
+      endselect
+    else
+      ctrl%decotime_method=0
+    endif
+
+    if (ctrl%decotime_method==5) then !for fp2 method, we need to get gaussian width parameter
+      line=get_value_from_key('gaussian_width',io)
+      if (io==0) read(line,*) ctrl%gaussian_width
+      if (ctrl%gaussian_width<0.d0) then
+        write(0,*) 'Gaussian width must not be smaller than 0.0!'
+        stop 1
+      endif
+    endif
+
+    if (printlevel>1) then
+      if (ctrl%decotime_method==0) then
+        write(u_log,'(a)') 'Decoherence time is computed with CSDM method'
+      elseif (ctrl%decotime_method==1) then
+        write(u_log,'(a)') 'Decoherence time is computed with SCDM method'
+      elseif (ctrl%decotime_method==2) then
+        write(u_log,'(a)') 'Decoherence time is computed with EDC (energy based decoherence) method'
+      elseif (ctrl%decotime_method==3) then
+        write(u_log,'(a)') 'Decoherence time is computed with SD (stochastic decoherence) method'
+      elseif (ctrl%decotime_method==4) then
+        write(u_log,'(a)') 'Decoherence time is computed with FP1 (force momentum 1) method'
+      elseif (ctrl%decotime_method==5) then
+        write(u_log,'(a)') 'Decoherence time is computed with FP2 (force momentum 2) method'
       endif
     endif
 
@@ -1489,6 +2191,41 @@ module input
       ctrl%n_constraints=0
     endif
 
+    ! surface switching procedure
+    ctrl%switching_procedure=1
+    line=get_value_from_key('switching_procedure',io)
+    if (io==0) then
+      select case (trim(line))
+        case ('csdm')
+          ctrl%switching_procedure=1
+          if (printlevel>1) then
+            write(u_log,'(a)') 'Surface Switching procedure is CSDM (Shu, Zhang, Mai, Sun, Truhlar, Gonzalez)'
+            write(u_log,*)
+          endif
+        case ('scdm')
+          ctrl%switching_procedure=2
+          if (printlevel>1) then
+            write(u_log,'(a)') 'Surface Switching procedure is SCDM (Shu, Zhang, Mai, Sun, Truhlar, Gonzalez)'
+            write(u_log,*)
+          endif
+        case ('ndm')
+          ctrl%switching_procedure=3
+          if (printlevel>1) then
+            write(u_log,'(a)') 'Surface Switching procedure is NDM (Shu, Zhang, Mai, Sun, Truhlar, Gonzalez)'
+            write(u_log,*)
+          endif
+        case ('off')
+          ctrl%switching_procedure=0
+          ctrl%ekincorrect=0
+          if (printlevel>1) then
+            write(u_log,'(a)') 'Surface Switching if OFF (will stay in initial diagonal state)'
+            write(u_log,*)
+          endif
+        case default
+          write(0,*) 'Unknown keyword ',trim(line),' to "switching_procedure"!'
+          stop 1
+      endselect
+    endif
   
 
 
@@ -1655,11 +2392,23 @@ module input
   line=get_value_from_key('atommask',io)
   if (io==0) then
     ! ------- some combinations have no effect
-    if (ctrl%ekincorrect==2) then
+    if (ctrl%ekincorrect==3) then
       write(u_log,*) 'HINT: "ekincorrect parallel_nac" ignores "atommask".'
     endif
-    if (ctrl%ekincorrect==3) then
+    if (ctrl%ekincorrect==4) then
       write(u_log,*) 'HINT: "ekincorrect parallel_diff" ignores "atommask".'
+    endif
+    if (ctrl%ekincorrect==5) then
+      write(u_log,*) 'HINT: "ekincorrect parallel_pnac" ignores "atommask".'
+    endif
+    if (ctrl%ekincorrect==6) then
+      write(u_log,*) 'HINT: "ekincorrect parallel_pdiff" ignores "atommask".'
+    endif
+    if (ctrl%ekincorrect==7) then
+      write(u_log,*) 'HINT: "ekincorrect parallel_enac" ignores "atommask".'
+    endif
+    if (ctrl%ekincorrect==8) then
+      write(u_log,*) 'HINT: "ekincorrect parallel_penac" ignores "atommask".'
     endif
     if (ctrl%decoherence==2) then
       write(u_log,*) 'HINT: "decoherence_scheme afssh" ignores "atommask".'
@@ -1980,6 +2729,11 @@ module input
       endif
     endif
 
+    ctrl%calc_dipole=0
+
+    if (ctrl%laser/=0) then
+      ctrl%calc_dipole=1
+    endif
 
     ctrl%dipolegrad=0
     ctrl%calc_dipolegrad=-1
@@ -2239,10 +2993,16 @@ module input
   ! =====================================================
 
   ! convert all numbers to atomic units
+    ctrl%tmax=ctrl%tmax/au2fs
+    ctrl%dtstep_min=ctrl%dtstep_min/au2fs
+    ctrl%dtstep_max=ctrl%dtstep_max/au2fs
     ctrl%dtstep=ctrl%dtstep/au2fs
     ctrl%eselect_grad=ctrl%eselect_grad/au2eV
     ctrl%eselect_nac=ctrl%eselect_nac/au2eV
     traj%mass_a=traj%mass_a/au2u
+    if (ctrl%integrator==1) then
+      ctrl%convthre=ctrl%convthre/au2eV
+    endif
     ! geometry is read in bohrs, as specified in the COLUMBUS geom format
     ! velocity is read in as bohrs/atu
     ! laser field must be in a.u.
@@ -2338,4 +3098,4 @@ module input
 
 ! =================================================================== !
 
-endmodule
+endmodule input

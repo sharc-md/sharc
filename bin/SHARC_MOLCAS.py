@@ -4,7 +4,8 @@
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2019 University of Vienna
+#    Copyright (c) 2023 University of Vienna
+#    Copyright (c) 2023 University of Minnesota
 #
 #    This file is part of SHARC.
 #
@@ -99,7 +100,8 @@ import traceback
 import numpy as np
 
 
-# =========================================================0
+
+# ======================================================================= #
 
 version = '2.1'
 versiondate = datetime.date(2019, 9, 1)
@@ -203,6 +205,9 @@ changelogstring = '''
 
 25.05.2021:
 - numerical gradients with diabatization (diab_num_grad keyword)
+
+03.02.2023:
+- convert to python 3
 '''
 
 # ======================================================================= #
@@ -458,7 +463,7 @@ def printheader():
     string += '||' + ' ' * 80 + '||\n'
     string += '||' + ' ' * 27 + 'SHARC - MOLCAS - Interface' + ' ' * 27 + '||\n'
     string += '||' + ' ' * 80 + '||\n'
-    string += '||' + ' ' * 19 + 'Authors: Sebastian Mai and Martin Richter' + ' ' * 20 + '||\n'
+    string += '||' + ' ' * 19 + 'Authors: Sebastian Mai, Martin Richter, and Yinan Shu' + ' ' * 13 + '||\n'
     string += '||' + ' ' * 80 + '||\n'
     string += '||' + ' ' * (36 - (len(version) + 1) // 2) + 'Version: %s' % (version) + ' ' * (35 - (len(version)) // 2) + '||\n'
     lens = len(versiondate.strftime("%d.%m.%y"))
@@ -645,14 +650,20 @@ def printtasks(tasks):
             print('Copy\t%s\t==> \t%s' % (task[1], task[2]))
         elif task[0] == 'rasscf':
             print('RASSCF\tMultiplicity: %i\tStates: %i\tJOBIPH=%s\tLUMORB=%s' % (task[1], task[2], task[3], task[4]))
+        elif task[0] == 'rasscf-cms':
+            print('RASSCF-CMS\tMultiplicity: %i\tStates: %i\tJOBIPH=%s\tLUMORB=%s\tRLXROOT=%i' % (task[1], task[2], task[3], task[4], task[5]))
         # elif task[0]=='rasscf-rlx':
-            # print('RASSCF\tMultiplicity: %i\tStates: %i\tRLXROOT=%i' % (task[1],task[2],task[3]))
+            # print('RASSCF\tMultiplicity: %i\tStates: %i\tRLXROOT=%i' % (task[1], task[2], task[3]))
         elif task[0] == 'alaska':
             print('ALASKA')
         elif task[0] == 'mclr':
             print('MCLR')
+        elif task[0] == 'mclr-cms':
+            print('MCLR-CMS')
         elif task[0] == 'caspt2':
             print('CASPT2\tMultiplicity: %i\tStates: %i\tMULTISTATE=%s' % (task[1], task[2], task[3]))
+        elif task[0] == 'cms-pdft':
+            print('CMS-PDFT\tFunctional: %s' % (task[1]))
         elif task[0] == 'rassi':
             print('RASSI\t%s\tStates: %s' % ({'soc': 'Spin-Orbit Coupling', 'dm': 'Dipole Moments', 'overlap': 'Overlaps'}[task[1]], task[2]))
         elif task[0] == 'espf':
@@ -1271,13 +1282,13 @@ def getnacdr(out, mult, state, state2, QMin, version):
     roots = QMin['template']['roots']
     # ssgrad=roots[mult-1]==1          # for SS-CASSCF no MCLR is needed
 
-    # if espf:
-    # if 7<=version<8:
-    #gradstring='After ESPF, gradients are'
-    # versionshift=2
-    # elif 8<=version<9:
-    #gradstring='Molecular gradients, after ESPF'
-    # versionshift=8
+    #if espf:
+    #    if 7<=version<8:
+    #        gradstring='After ESPF, gradients are'
+    #        versionshift=2
+    #    elif 8<=version<9:
+    #        gradstring='Molecular gradients, after ESPF'
+    #        versionshift=8
 
     mclr = False
     alaska = False
@@ -1316,16 +1327,16 @@ def getnacdr(out, mult, state, state2, QMin, version):
                 # if int(line.split()[7].strip()) == state:
                 statefound = True
         elif alaska and multfound and statefound:
-            # if espf:
-            # if gradstring in line:
-            # for atom in range(natom):
-            # if atom+1 in QMin['active_qmmm_atoms']:
-            # atomindex=QMin['active_qmmm_atoms'].index(atom+1)
-            #grad.append([ float(out[i+versionshift+atomindex].split()[xyz+1]) for xyz in range(3) ])
-            # else:
-            #grad.append([ 0.0 for xyz in range(3)])
-            # return grad
-            # else:
+            #if espf:
+            #    if gradstring in line:
+            #        for atom in range(natom):
+            #            if atom+1 in QMin['active_qmmm_atoms']:
+            #                atomindex=QMin['active_qmmm_atoms'].index(atom+1)
+            #                grad.append([ float(out[i+versionshift+atomindex].split()[xyz+1]) for xyz in range(3) ])
+            #            else:
+            #                grad.append([ 0.0 for xyz in range(3)])
+            #        return grad
+            #else:
             if 'Total derivative coupling' in line:
                 for atom in range(natom):
                     grad.append([float(out[i + 8 + atom].split()[1 + xyz]) for xyz in range(3)])
@@ -1864,7 +1875,7 @@ def checkscratch(SCRATCHDIR):
         try:
             os.makedirs(SCRATCHDIR)
         except OSError:
-            print('Can not create SCRATCHDIR=%s\n' % (SCRATCHDIR))
+            print('Cannot create SCRATCHDIR=%s\n' % (SCRATCHDIR))
             sys.exit(29)
 
 # ======================================================================= #
@@ -2448,12 +2459,12 @@ def readQMin(QMinfilename):
     QMin['template']['rootpad'] = QMin['template']['rootpad'][:len(QMin['template']['roots'])]
 
     # check roots versus number of electrons
-    # nelec=QMin['template']['inactive']*2+QMin['template']['nactel']
-    # for i,n in enumerate(QMin['states']):
-    # if n>0:
-    # if not (QMin['template']['nactel']+i)%2==0:
-    # print('Number of electrons is %i, but states of multiplicity %i are requested.' % (nelec,i+1))
-    # sys.exit(61)
+    #nelec=QMin['template']['inactive']*2+QMin['template']['nactel']
+    #for i,n in enumerate(QMin['states']):
+    #    if n>0:
+    #        if not (QMin['template']['nactel']+i)%2==0:
+    #            print('Number of electrons is %i, but states of multiplicity %i are requested.' % (nelec,i+1))
+    #            sys.exit(61)
 
     necessary = ['basis', 'nactel', 'ras2', 'inactive']
     for i in necessary:
@@ -2493,10 +2504,23 @@ def readQMin(QMinfilename):
         print('Unknown method "%s" given in MOLCAS.template' % (QMin['template']['method']))
         sys.exit(64)
 
+    # find functional if it is cms-pdft
+    if QMin['method'] == 5:
+        allowed_functionals=['tpbe','t:pbe','ft:pbe','t:blyp','ft:blyp','t:revPBE','ft:revPBE','t:LSDA','ft:LSDA']
+        for i,m in enumerate(allowed_functionals):
+            if QMin['template']['pdft-functional'] == m:
+                QMin['pdft-functional'] = i
+                break
+        else:
+            print('Warning! No analytical gradients for cms-pdft and "%s" given in MOLCAS.template' % (QMin['template']['functional']))
+            print('Using numerical gradients. Analytical gradients only for tpbe, t:pbe, ft:pbe, t:blyp, ft:blyp, t:revPBE, ft:revPBE, t:LSDA, or ft:LSDA.')
+            QMin['pdft-functional'] = -1
+
     # decide which type of gradients to do:
     # 0 = analytical CASSCF gradients in one MOLCAS input file (less overhead, but recommended only under certain circumstances)
     # 1 = analytical CASSCF gradients in separate MOLCAS inputs, possibly distributed over several CPUs (DEFAULT)
     # 2 = numerical gradients (CASPT2, MS-CASPT2, Cholesky-CASSCF; or for dmdr and socdr), possibly distributed over several CPUs
+    # 3 = analytical CMS-PDFT gradients in one MOLCAS input file (less overhead, but recommended only under certain circumstances)
     if 'dmdr' in QMin or 'socdr' in QMin or 'grad' in QMin or 'nacdr' in QMin:
         if 'dmdr' in QMin or 'socdr' in QMin:
             QMin['gradmode'] = 2
@@ -2504,7 +2528,9 @@ def readQMin(QMinfilename):
             QMin['gradmode'] = 2
         elif QMin['template']['pcmset']['on']:
             QMin['gradmode'] = 2
-        elif QMin['method'] in [1, 2, 4, 5]:
+        elif QMin['method'] in [1, 2, 4]:
+            QMin['gradmode'] = 2
+        elif QMin['method'] == 5 and QMin['pdft-functional'] == -1:
             QMin['gradmode'] = 2
         else:
             if QMin['ncpu'] > 0:
@@ -2662,22 +2688,28 @@ def gettasks(QMin):
         if 'samestep' not in QMin or 'always_orb_init' in QMin:
             jobiph = 'JobIph' in mofile
             rasorb = 'RasOrb' in mofile
-            task = ['rasscf', imult + 1, QMin['template']['roots'][imult], jobiph, rasorb]
+            if QMin['method'] == 5: 
+                if QMin['pdft-functional'] > -1: # analytical gradients
+                    if not 'init' in QMin:
+                        tasks.append(['copy',os.path.join(QMin['savedir'],'Do_Rotate.%i.txt' % (imult+1)),'Do_Rotate.txt'])
+            tasks.append(['rasscf',imult+1,QMin['template']['roots'][imult],jobiph,rasorb])
             if QMin['method'] == 4:
-                task.append(['XMSI'])
-            if QMin['method'] == 5:
-                task.append(['CMSI'])
-            tasks.append(task)
+                tasks.append(['XMSI'])
+            if QMin['method'] == 5: 
+                if QMin['pdft-functional'] == -1: # numerical gradients
+                    tasks.append(['CMSI'])
             if jobiph:
                 tasks.append(['rm', 'JOBOLD'])
-            if QMin['method'] == 0 or QMin['method'] == 3:
+            if QMin['method'] == 0 or QMin['method'] == 3 or (QMin['method'] == 5 and QMin['pdft-functional'] > -1):
                 tasks.append(['copy', 'MOLCAS.JobIph', 'MOLCAS.%i.JobIph' % (imult + 1)])
+                if QMin['method'] == 5:
+                    tasks.append(['rm', 'JOBOLD'])
             if 'ion' in QMin:
                 tasks.append(['copy', 'MOLCAS.RasOrb', 'MOLCAS.%i.RasOrb' % (imult + 1)])
             if 'molden' in QMin:
                 tasks.append(['copy', 'MOLCAS.rasscf.molden', 'MOLCAS.%i.molden' % (imult + 1)])
 
-            if QMin['method'] in [3, 4, 5]:
+            if QMin['method'] in [3, 4]:
                 # mc-pdft
                 keys = ['KSDFT=%s' % QMin['template']['pdft-functional']]
                 if QMin['method'] == 3 and 'grad' in QMin:
@@ -2691,6 +2723,22 @@ def gettasks(QMin):
                 # copy JobIphs
                 if QMin['method'] in [4, 5]:
                     tasks.append(['copy', 'MOLCAS.JobIph', 'MOLCAS.%i.JobIph' % (imult + 1)])
+
+            if QMin['method'] == 5 and QMin['pdft-functional'] == -1:
+                # mc-pdft
+                keys = ['KSDFT=%s' % QMin['template']['pdft-functional']]
+                if QMin['method'] == 3 and 'grad' in QMin:
+                    keys.append('GRAD')
+                else:
+                    keys.append('noGrad')
+                if QMin['method'] in [4, 5]:
+                    keys.append('MSPDFT')
+                    keys.append('WJOB')
+                tasks.append(['mcpdft', keys])
+                # copy JobIphs
+                if QMin['method'] in [4, 5]:
+                    tasks.append(['copy', 'MOLCAS.JobIph', 'MOLCAS.%i.JobIph' % (imult + 1)])
+
 
         # Gradients
         if QMin['gradmode'] == 0:
@@ -2804,6 +2852,13 @@ def writeMOLCASinput(tasks, QMin):
                 # string+='AMFI\n'
             if QMin['template']['cholesky']:
                 string += 'DOANA\n'
+            #if it is cms-pdft, add CMSI
+            if QMin['method'] == 5 and QMin['pdft-functional'] > -1:
+                string += 'GRID INPUT\n'
+                string += 'GRID=ULTRAFINE\n'
+                string += 'NORO\n'
+                string += 'NOSC\n'
+                string += 'END OF GRID INPUT\n'
             string += '\n'
 
         elif task[0] == 'espf':
@@ -2860,21 +2915,63 @@ def writeMOLCASinput(tasks, QMin):
                     string += 'NONEQUILIBRIUM\n'
             string += '\n'
 
-            string += '\n'
+        elif task[0]=='rasscf-cms':
+            nactel=QMin['template']['nactel']
+            npad=QMin['template']['rootpad'][task[1]-1]
+            if (nactel-task[1])%2==0:
+                nactel-=1
+            string+='&RASSCF\nSPIN=%i\nNACTEL=%i 0 0\nINACTIVE=%i\nRAS2=%i\n' % (
+                    task[1],
+                    nactel,
+                    QMin['template']['inactive'],
+                    QMin['template']['ras2'])
+            if npad==0:
+                string+='CIROOT=%i %i 1\n' % (task[2],task[2])
+            else:
+                string+='CIROOT=%i %i; ' % (task[2],task[2]+npad)
+                for i in range(task[2]):
+                    string+='%i ' % (i+1)
+                string+=';'
+                for i in range(task[2]):
+                    string+='%i ' % (1)
+                string+='\n'
+            string+='RLXROOT=%i\n' % (task[5])
+            string+='ORBLISTING=NOTHING\nPRWF=0.1\n'
+            if 'grad' in QMin and QMin['gradmode']<2:
+                string+='THRS=1.0e-10 1.0e-06 1.0e-06\n'
+            else:
+                string+='THRS=%14.12f %14.12f %14.12f\n' % (QMin['template']['rasscf_thrs_e'],QMin['template']['rasscf_thrs_rot'],QMin['template']['rasscf_thrs_egrd'])
+            if task[3]:
+                string+='JOBIPH\n'
+            elif task[4]:
+                string+='LUMORB\n'
+            if QMin['template']['pcmset']['on']:
+                if task[1]==QMin['template']['pcmstate'][0]:
+                    string+='RFROOT = %i\n' % QMin['template']['pcmstate'][1]
+                else:
+                    string+='NONEQUILIBRIUM\n'
+            string+='CMSI\n'
+            string+='CMMI=0\n'
+            if not 'init' in QMin:
+                string+='CMSS=Do_Rotate.txt\n'
+            string+='CMTH=1.0d-10\n'
+            string+='\n'
 
-        # elif task[0]=='rasscf-rlx':
-            # nactel=QMin['template']['nactel']
-            # if (nactel-task[1])%2==0:
-            # nactel-=1
-            # string+='&RASSCF\nSPIN=%i\nNACTEL=%i 0 0\nINACTIVE=%i\nRAS2=%i\nCIROOT=%i %i 1\nRLXROOT=%i\n' % (
-            # task[1],
-            # nactel,
-            # QMin['template']['inactive'],
-            # QMin['template']['ras2'],
-            # task[2],task[2],
-            # task[3])
-            # string+='ORBLISTING=NOTHING\nPRWF=0.1\nJOBIPH\n'
-            # string+='\n'
+            string+='\n'
+
+        #elif task[0]=='rasscf-rlx':
+            #nactel=QMin['template']['nactel']
+            #if (nactel-task[1])%2==0:
+                #nactel-=1
+            #string+='&RASSCF\nSPIN=%i\nNACTEL=%i 0 0\nINACTIVE=%i\nRAS2=%i\nCIROOT=%i %i 1\nRLXROOT=%i\n' % (
+                    #task[1],
+                    #nactel,
+                    #QMin['template']['inactive'],
+                    #QMin['template']['ras2'],
+                    #task[2],task[2],
+                    #task[3])
+            #string+='ORBLISTING=NOTHING\nPRWF=0.1\nJOBIPH\n'
+            #string+='\n'
 
         elif task[0] == 'caspt2':
             string += '&CASPT2\nSHIFT=0.0\nIMAGINARY=%5.3f\nIPEASHIFT=%4.2f\nMAXITER=%i\n' % (
@@ -2892,6 +2989,13 @@ def writeMOLCASinput(tasks, QMin):
             if QMin['template']['pcmset']['on']:
                 string += 'RFPERT\n'
             string += '\n'
+
+        elif task[0]=='cms-pdft':
+            string+='&MCPDFT\nKSDFT=%s\n' % (task[1])
+            string+='MSPD\n'
+            if 'grad' in QMin and QMin['gradmode']<2:
+                string+='GRAD\n'
+            string+='\n'
 
         elif task[0] == 'mcpdft':
             string += '&MCPDFT\n'
@@ -3315,10 +3419,10 @@ def generate_joblist(QMin):
             cpu_per_run = [1] * ntasks
         QMin['nslots_pool'].append(nslots)
 
-        # if 'socdr' in QMin or 'dmdr' in QMin:
-        # idispl=QMin['ncpu']-1
-        # else:
-        # idispl=0
+        #if 'socdr' in QMin or 'dmdr' in QMin:
+        #    idispl=QMin['ncpu']-1
+        #else:
+        #    idispl=0
         icount = 0
         joblist.append({})
         for iatom in range(QMin['natom']):
@@ -3326,7 +3430,7 @@ def generate_joblist(QMin):
                 for isign in [-1., 1.]:
                     # idispl+=1
                     # if idispl==QMin['ncpu']:
-                    # joblist.append({})
+                    #     joblist.append({})
                     QMin3 = deepcopy(QMin2)
                     QMin3 = doDisplacement(QMin3, [iatom, ixyz, isign], QMin['displ'])
 
@@ -3887,10 +3991,10 @@ def verifyQMout(QMout, QMin, out):
 
     refweight_ratio = 0.80
 
-    if QMin['method'] in [0, 3, 4, 5]:
+    if QMin['method'] in [0, 3, 4]:
         # CASSCF case
         pass
-    elif QMin['method'] in [1, 2]:
+    elif QMin['method'] in [1, 2, 5]:
         # SS-CASPT2 and MS-CASPT2 cases
         refs = []
         for istate in range(QMin['nmstates']):

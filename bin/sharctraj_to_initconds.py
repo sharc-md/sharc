@@ -754,33 +754,34 @@ def remove_rotations(ic):
         # print('No default mass for atom %s' % (symb))
         # sys.exit(1)
 
+def check_output_dat(data, timepoints):
+  inf={}
+  line=data[0].lower()
+  if 'sharc_version' in line:
+    inf['version']=float( line.split()[-1] )
+  else:
+    inf['version']=1.0
 
-def check_output_dat(data):
-    inf = {}
-    line = data[0].lower()
-    if 'sharc_version' in line:
-        inf['version'] = float(line.split()[-1])
-    else:
-        inf['version'] = 1.0
 
-    integers = ['maxmult',
-                'natom',
-                'calc_overlap',
-                'laser',
-                'nsteps',
-                'nsubsteps',
-                'write_overlap',
-                'write_grad',
-                'write_nacdr',
-                'write_property1d',
-                'write_property2d',
-                'n_property1d',
-                'n_property2d'
-                ]
-    floats = ['dtstep',
-              'ezero'
-              ]
-    special = ['nstates_m']
+  integers=['integrator',
+            'maxmult',
+            'natom',
+            'calc_overlap',
+            'laser',
+            'nsteps',
+            'nsubsteps',
+            'write_overlap',
+            'write_grad',
+            'write_nacdr',
+            'write_property1d',
+            'write_property2d',
+            'n_property1d',
+            'n_property2d'
+            ]
+  floats=  ['dtstep',
+            'ezero'
+            ]
+  special= ['nstates_m']
 
     if inf['version'] == 1.0:
         stopstring = '! 0 step'
@@ -842,7 +843,66 @@ def check_output_dat(data):
             nmax = int(data[ilines + 1])
     inf['nmax'] = nmax
 
-    return inf
+  nmax=-1
+  while True:
+    ilines+=1
+    if ilines>=len(data):
+      break
+    line=data[ilines]
+    if '! 0 Step' in line:
+      nmax=int(data[ilines+1])
+  inf['nmax']=nmax
+
+  return inf
+
+
+  # now figure out the steps corredpond to time
+  ilines=head_end
+  last_step=0
+  last_time=0.0
+  while True:
+    ilines+=1
+    if ilines>=len(data):
+      break
+    line=data[ilines]
+    if '! 0 Step' in line:
+      line1=data[ilines+1].split()
+      if inf['integrator']==1 or inf['integrator']==0:
+        current_time=float(line1[1])
+        current_step=int(line1[0])
+        if current_time>timepoints[0]:
+          break
+        last_step=current_step
+        last_time=current_time
+ 
+  a=int(last_step)
+
+  ilines=head_end
+  while True:
+    ilines+=1
+    if ilines>=len(data):
+      break
+    line=data[ilines]
+    if '! 0 Step' in line:
+      line1=data[ilines+1].split()
+      if inf['integrator']==1 or inf['integrator']==0:
+        current_time=float(line1[1])
+        current_step=int(line1[0])
+        if current_time>timepoints[1]:
+          break
+
+  b=int(current_step)
+ 
+  if timepoints[0]<0.0:
+    a=nmax
+  if timepoints[1]<0.0:
+    b=nmax
+  if not (0<=a<=b<=nmax):
+    print('reset a=b=last step')
+    a=nmax
+    b=nmax
+
+  return inf, a, b
 
 # ======================================================================================================================
 
@@ -923,36 +983,28 @@ def get_coords(INFOS):
         print('No trajectories found!')
         sys.exit(1)
     filelist = [filelist[0]] + filelist
-    # print filelist
+    # print(filelist)
 
     # initialize arrays
     ic_list = []
     igeom = 0
 
-    # go through the data
-    for filename in filelist:
-        if INFOS['debug']:
-            print('%-40s' % '  reading ...', datetime.datetime.now() - starttime)
-        data = readfile(filename)
-        if INFOS['debug']:
-            print('%-40s' % '  header ...', datetime.datetime.now() - starttime)
-        inf = check_output_dat(data)
-        if inf['version'] == 1.0:
-            print('(skipping version 1.0 file)')
-            continue
+  # go through the data
+  for filename in filelist:
+    if INFOS['debug']:
+      print('%-40s'%'  reading ...',datetime.datetime.now()-starttime)
+    data=readfile(filename)
+    if INFOS['debug']:
+      print('%-40s'%'  header ...',datetime.datetime.now()-starttime)
+    
+    # a and b may be updated because of setting up time 
+    inf, a, b=check_output_dat(data, INFOS['time'])
+    if inf['version']==1.0:
+      print('(skipping version 1.0 file)')
+      continue
 
-        # choose the step:
-        a = INFOS['step'][0]
-        b = INFOS['step'][1]
-        n = inf['nmax']
-        if a < 0:
-            a = n + 1 + a
-        if b < 0:
-            b = n + 1 + b
-        if not (0 <= a <= b <= n):
-            print('(skipping, problems in steps: 0<=%i<=%i<=%i)' % (a, b, n))
-            continue
-        step = random.randint(a, b)
+    # choose the step:
+    step=random.randint( a,b )
 
         # get the atoms
         if INFOS['debug']:
@@ -1048,18 +1100,19 @@ TRAJ_to_initconds.py [options] Dir1 [ [ Dir2] ... ]
 This script reads the output.dat files from an emsemble of trajectories.
 The data is then transformed and written to initconds format.
 '''
-    description = ''
-    parser = OptionParser(usage=usage, description=description)
-    parser.add_option('-r', dest='r', type=int, nargs=1, default=16661, help="Seed for the random number generator (integer, default=16661)")
-    parser.add_option('-S', dest='S', type=int, nargs=2, default=(-1, -1), help="Range of time steps from which to randomly choose the step to extract (from/to)")
-    parser.add_option('-o', dest='o', type=str, nargs=1, default='initconds', help="Output filename (string, default=""initconds"")")
-    parser.add_option('-x', dest='X', action='store_true', help="Generate a xyz file with the sampled geometries in addition to the initconds file")
-    # parser.add_option('-m', dest='m', action='store_true',help="Enter non-default atom masses")
-    parser.add_option('--keep_trans_rot', dest='KTR', action='store_true', help="Keep translational and rotational components")
-    # parser.add_option('--use_eq_geom',    dest='UEG', action='store_true',help="For all samples, use the equilibrium geometry (only sample velocities)")
-    parser.add_option('--use_zero_veloc', dest='UZV', action='store_true', help="For all samples, set velocities to zero")
-    parser.add_option('--debug', dest='debug', action='store_true', help="Show timings")
-    parser.add_option('--give_TRAJ_paths', dest='TRAJ', action='store_true', help="Allows specifying directly the TRAJ_..... directories to use (default: automatically recurses into all subdirectories)")
+  description=''
+  parser = OptionParser(usage=usage, description=description)
+  parser.add_option('-r', dest='r', type=int, nargs=1, default=16661, help="Seed for the random number generator (integer, default=16661)")
+  parser.add_option('-T', dest='T', type=float, nargs=2, default=(-1.0,-1.0), help="Range of time from which to randomly choose the step to extract (from/to)")
+  #parser.add_option('-S', dest='S', type=int, nargs=2, default=(-1,-1), help="Range of time steps from which to randomly choose the step to extract (from/to)")
+  parser.add_option('-o', dest='o', type=str, nargs=1, default='initconds', help="Output filename (string, default=""initconds"")")
+  parser.add_option('-x', dest='X', action='store_true',help="Generate a xyz file with the sampled geometries in addition to the initconds file")
+  #parser.add_option('-m', dest='m', action='store_true',help="Enter non-default atom masses")
+  parser.add_option('--keep_trans_rot', dest='KTR', action='store_true',help="Keep translational and rotational components")
+  #parser.add_option('--use_eq_geom',    dest='UEG', action='store_true',help="For all samples, use the equilibrium geometry (only sample velocities)")
+  parser.add_option('--use_zero_veloc', dest='UZV', action='store_true',help="For all samples, set velocities to zero")
+  parser.add_option('--debug', dest='debug', action='store_true',help="Show timings")
+  parser.add_option('--give_TRAJ_paths', dest='TRAJ', action='store_true',help="Allows specifying directly the TRAJ_..... directories to use (default: automatically recurses into all subdirectories)")
 
     # arg processing
     (options, args) = parser.parse_args()
@@ -1067,16 +1120,17 @@ The data is then transformed and written to initconds format.
         print(usage)
         quit(1)
 
-    # options
-    INFOS = {}
-    INFOS['dirs'] = args[0:]
-    INFOS['step'] = options.S
-    INFOS['outfile'] = options.o
-    INFOS['KTR'] = options.KTR
-    INFOS['UZV'] = options.UZV
-    INFOS['debug'] = options.debug
-    INFOS['TRAJ_'] = options.TRAJ
-    random.seed(options.r)
+  # options
+  INFOS={}
+  INFOS['dirs']=args[0:]
+  #INFOS['step']=options.S
+  INFOS['time']=options.T
+  INFOS['outfile']=options.o
+  INFOS['KTR']=options.KTR
+  INFOS['UZV']=options.UZV
+  INFOS['debug']=options.debug
+  INFOS['TRAJ_']=options.TRAJ
+  random.seed(options.r)
 
 
 
@@ -1084,13 +1138,15 @@ The data is then transformed and written to initconds format.
     print('''Initial condition generation started...
 directories                    = "%s"
 Random number generator seed   = %i
-Pick randomly from these steps = %i to %i  %s
-OUTPUT file                    = "%s"''' % (INFOS['dirs'],
-                                            options.r,
-                                            options.S[0], options.S[1],
-                                            ['', '(negative indices are counted from the end)'][any(i < 0 for i in options.S)],
-                                            INFOS['outfile']
-                                            ))
+Pick randomly from these times = %f to %f  %s
+OUTPUT file                    = "%s"''' % (INFOS['dirs'], 
+                                         options.r,
+                                         #options.S[0],options.S[1],
+                                         #['','(negative indices are counted from the end)'][any(i<0 for i in options.S)],
+                                         options.T[0],options.T[1],
+                                         ['','(negative times are counted from the end)'][any(i<0.0 for i in options.T)],
+                                        INFOS['outfile']
+                                        )
 
 
     # print('Generating %i initial conditions' % amount)

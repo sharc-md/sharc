@@ -2,7 +2,7 @@
 !
 !    SHARC Program Suite
 !
-!    Copyright (c) 2019 University of Vienna
+!    Copyright (c) 2023 University of Vienna
 !
 !    This file is part of SHARC.
 !
@@ -321,6 +321,7 @@ subroutine get_scalingfactor(scl)
     __REAL__, intent(out) :: scl
 
     scl = ctrl%scalingfactor
+    soc_scl = ctrl%soc_scaling
 
     return
 endsubroutine
@@ -552,7 +553,7 @@ subroutine postprocess_qmout_data(IH, IDM, IGrad, IOverlap, INac)
 !C
     implicit none
     __INT__, intent(inout) :: IH, IDM, IGrad, IOverlap, INac
-    integer :: i,j
+    integer :: i,j,istate,jstate
 
 !    write(*,*) "Postprocess setting data", IH, IDM, IGrad, IOverlap
 
@@ -564,6 +565,16 @@ subroutine postprocess_qmout_data(IH, IDM, IGrad, IOverlap, INac)
         ! apply scaling factor
         if (ctrl%scalingfactor/=1.d0) then
           traj%H_MCH_ss=traj%H_MCH_ss*ctrl%scalingfactor
+        endif
+
+        if (ctrl%soc_scaling/=1.d0) then 
+          do istate=1,ctrl%nstates
+            do jstate=1,ctrl%nstates
+              if (istate.ne.jstate) then 
+                traj%H_MCH_ss(istate,jstate)=traj%H_MCH_ss(istate,jstate)*ctrl%soc_scaling
+              endif
+            enddo
+          enddo
         endif
 
         ! apply frozen-state mask
@@ -626,7 +637,7 @@ subroutine set_hamiltonian(N, H_MCH_ss)
     integer, intent(in)    :: N
     __COMPLEX__, intent(in) :: H_MCH_ss(N, N) 
     
-    integer :: i,j
+    integer :: i,j,istate,jstate
 
     if ( ctrl%nstates .ne. N) then
         write(*,*) "Hamiltonian has wrong dimension!"
@@ -646,6 +657,16 @@ subroutine set_hamiltonian(N, H_MCH_ss)
     ! apply scaling factor
     if (ctrl%scalingfactor/=1.d0) then
       traj%H_MCH_ss=traj%H_MCH_ss*ctrl%scalingfactor
+    endif
+
+    if (ctrl%soc_scaling/=1.d0) then
+      do istate=1,ctrl%nstates
+        do jstate=1,ctrl%nstates
+          if (istate.ne.jstate) then
+            traj%H_MCH_ss(istate,jstate)=traj%H_MCH_ss(istate,jstate)*ctrl%soc_scaling
+          endif
+        enddo
+      enddo
     endif
 
     ! apply frozen-state mask
@@ -831,7 +852,7 @@ subroutine initial_qm_pre()
 
 
     if (printlevel>1) then
-      call write_logtimestep(u_log,traj%step)
+      call write_logtimestep(u_log,traj%step,traj%microtime)
     endif
 
 endsubroutine
@@ -1133,7 +1154,7 @@ subroutine initial_step(IRestart)
 
     if ( IRestart .eq. 0 ) then
         call Mix_gradients(traj,ctrl)
-        call Update_old(traj)
+        call Update_old(traj,ctrl)
         call Calculate_etot(traj,ctrl)
         call set_time(traj)
         call write_dat_new(u_dat, traj, ctrl)    
@@ -1159,7 +1180,7 @@ subroutine Verlet_xstep(i_step)
     __INT__, intent(in) :: i_step
 
     traj%step=i_step
-    call write_logtimestep(u_log, i_step)
+    call write_logtimestep(u_log, i_step, traj%microtime)
     ! Velocity Verlet x
     call VelocityVerlet_xstep(traj, ctrl)
     return
@@ -1229,7 +1250,7 @@ subroutine Verlet_finalize(IExit, iskip)
 
     if (traj%kind_of_jump/=0) call Mix_gradients(traj, ctrl)
     ! Finalization: Variable update, Output, Restart File, Consistency Checks
-    call Update_old(traj)
+    call Update_old(traj,ctrl)
     call set_time(traj)
     call write_list_line(u_lis, traj, ctrl)
     call write_dat_new(u_dat, traj, ctrl)

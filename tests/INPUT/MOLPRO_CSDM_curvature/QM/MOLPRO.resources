@@ -1,0 +1,4 @@
+molpro $MOLPRO/
+scratchdir $SCRADIR/WORK
+savedir $SCRADIR/TRAJ/restart
+wfoverlap $SHARC/wfoverlap.x

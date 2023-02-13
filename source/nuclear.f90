@@ -2,7 +2,7 @@
 !
 !    SHARC Program Suite
 !
-!    Copyright (c) 2019 University of Vienna
+!    Copyright (c) 2023 University of Vienna
 !
 !    This file is part of SHARC.
 !
@@ -24,7 +24,13 @@
 !> # Module NUCLEAR
 !> 
 !> \author Sebastian Mai
-!> \ðate 27.02.2015
+!> \date 27.02.2015
+!>
+!>
+!>                   modified 11.13.2019 by Yinan Shu
+!>                       change subroutine Calculate_etot - works for SCP now
+!>                       add following subroutines used for adaptive step size:
+!>                       Check_Consistency, Adaptive_Stepsize, Back_propagate
 !>
 !> This module defines all subroutines for the nuclear dynamics:
 !> - the two velocity-verlet steps (update of geometry, update of velocity)
@@ -279,6 +285,30 @@ endsubroutine
 
 ! ===========================================================
 
+!> performs the velocity update of the Velocity Verlet algorithm
+!> a(t+dt)=g(t+dt)/M
+!> v(t+dt)=v(t)+a(t+dt)*dt
+subroutine VelocityVerlet_vstep_approximate(vold, v, a, dt, n)
+  use definitions
+  use matrix
+  implicit none
+  integer, intent(in) :: n
+  real*8, intent(in) :: vold(n,3), a(n,3)
+  real*8, intent(out) :: v(n,3)
+  real*8, intent(in) :: dt
+  integer :: iatom, idir
+
+
+  do iatom=1,n
+    do idir=1,3
+      v(iatom,idir)=vold(iatom,idir)+a(iatom,idir)*dt
+    enddo
+  enddo
+
+endsubroutine
+
+! ===========================================================
+
 !> calculates the sum of the kinetic energies of all atoms
 real*8 function Calculate_ekin(n, veloc, mass) result(Ekin)
   implicit none
@@ -325,17 +355,43 @@ subroutine Calculate_etot(traj,ctrl)
   type(trajectory_type) :: traj
   type(ctrl_type) :: ctrl
 
-  traj%Ekin=Calculate_ekin(ctrl%natom, traj%veloc_ad, traj%mass_a)
-  traj%Epot=real(traj%H_diag_ss(traj%state_diag,traj%state_diag))
-  traj%Etot=traj%Ekin+traj%Epot
+  integer :: istate, jstate
+  complex*16 :: den_ss(ctrl%nstates,ctrl%nstates)
+
+! computde density matrix
+  do istate=1,ctrl%nstates
+    do jstate=1,ctrl%nstates
+      den_ss(istate,jstate)=traj%coeff_diag_s(istate)*conjg(traj%coeff_diag_s(jstate))
+    enddo
+  enddo
+
+! save the previous step energies
+  traj%Ekin_old=traj%Ekin
+  traj%Epot_old=traj%Epot
+  traj%Etot_old=traj%Etot
+
+! depend on either using TSH or SCP
+  if(ctrl%method==0) then !TSH
+    traj%Ekin=Calculate_ekin(ctrl%natom, traj%veloc_ad, traj%mass_a)
+    traj%Epot=real(traj%H_diag_ss(traj%state_diag,traj%state_diag))
+    traj%Etot=traj%Ekin+traj%Epot
+  else if (ctrl%method==1) then !SCP
+    traj%Ekin=Calculate_ekin(ctrl%natom, traj%veloc_ad, traj%mass_a)
+    traj%Epot=0.d0
+    do istate=1,ctrl%nstates
+      traj%Epot=traj%Epot+&
+      &real(den_ss(istate,istate)*traj%H_diag_ss(istate,istate))
+    enddo
+    traj%Etot=traj%Ekin+traj%Epot
+  endif
 
   if (printlevel>2) then
     write(u_log,*) '============================================================='
     write(u_log,*) '                        Energies'
     write(u_log,*) '============================================================='
-    write(u_log,'(A,1X,F14.9,1X,A)') 'Ekin:',traj%Ekin*au2ev,'eV'
-    write(u_log,'(A,1X,F14.9,1X,A)') 'Epot:',traj%Epot*au2ev,'eV'
-    write(u_log,'(A,1X,F14.9,1X,A)') 'Etot:',traj%Etot*au2ev,'eV'
+    write(u_log,'(A,1X,F20.10,1X,A)') 'Ekin:',traj%Ekin*au2ev,'eV'
+    write(u_log,'(A,1X,F20.10,1X,A)') 'Epot:',traj%Epot*au2ev,'eV'
+    write(u_log,'(A,1X,F20.10,1X,A)') 'Etot:',traj%Etot*au2ev,'eV'
     write(u_log,*) ''
   endif
 
@@ -400,7 +456,7 @@ subroutine Rescale_velocities(traj,ctrl)
 ! ! !           endif
         case (2)
           call available_ekin(ctrl%natom,&
-          &traj%veloc_ad,real(traj%gmatrix_ssad(traj%state_diag_old, traj%state_diag,:,:)),&
+          &traj%veloc_ad,traj%hopping_direction_ssad(traj%state_diag_old,traj%state_diag,:,:),&
           &traj%mass_a, sum_kk, sum_vk)
           deltaE=4.d0*sum_kk*(traj%Etot-traj%Ekin-&
           &real(traj%H_diag_ss(traj%state_diag,traj%state_diag)))+sum_vk**2
@@ -411,7 +467,28 @@ subroutine Rescale_velocities(traj,ctrl)
           endif
           do i=1,3
             traj%veloc_ad(:,i)=traj%veloc_ad(:,i)-factor*&
-            &real(traj%gmatrix_ssad(traj%state_diag_old, traj%state_diag,:,i))/traj%mass_a(:)
+            &traj%hopping_direction_ssad(traj%state_diag_old,traj%state_diag,:,i)/traj%mass_a(:)
+          enddo
+          if (printlevel>2) then
+            write(u_log,'(A)') 'Velocity is rescaled along projected velocity vector.'
+            write(u_log,'(A,1X,E16.8,1X,E16.8)') 'a, b: ', sum_kk, sum_vk
+            write(u_log,'(A,1X,E16.8)') 'Delta is          ',deltaE
+            write(u_log,'(A,1X,F12.6)') 'Scaling factor is ',factor
+          endif
+        case (3)
+          call available_ekin(ctrl%natom,&
+          &traj%veloc_ad,traj%hopping_direction_ssad(traj%state_diag_old,traj%state_diag,:,:),&
+          &traj%mass_a, sum_kk, sum_vk)
+          deltaE=4.d0*sum_kk*(traj%Etot-traj%Ekin-&
+          &real(traj%H_diag_ss(traj%state_diag,traj%state_diag)))+sum_vk**2
+          if (sum_vk<0.d0) then
+            factor=(sum_vk+sqrt(deltaE))/2.d0/sum_kk
+          else
+            factor=(sum_vk-sqrt(deltaE))/2.d0/sum_kk
+          endif
+          do i=1,3
+            traj%veloc_ad(:,i)=traj%veloc_ad(:,i)-factor*&
+            &traj%hopping_direction_ssad(traj%state_diag_old,traj%state_diag,:,i)/traj%mass_a(:)
           enddo
           if (printlevel>2) then
             write(u_log,'(A)') 'Velocity is rescaled along non-adiabatic coupling vector.'
@@ -419,10 +496,9 @@ subroutine Rescale_velocities(traj,ctrl)
             write(u_log,'(A,1X,E16.8)') 'Delta is          ',deltaE
             write(u_log,'(A,1X,F12.6)') 'Scaling factor is ',factor
           endif
-        case (3)
+        case (4)
           call available_ekin(ctrl%natom,&
-          &traj%veloc_ad,real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)-&
-          &traj%gmatrix_ssad(traj%state_diag_old, traj%state_diag_old,:,:)),&
+          &traj%veloc_ad,traj%hopping_direction_ssad(traj%state_diag_old,traj%state_diag,:,:),&
           &traj%mass_a, sum_kk, sum_vk)
           deltaE=4.d0*sum_kk*(traj%Etot-traj%Ekin-&
           &real(traj%H_diag_ss(traj%state_diag,traj%state_diag)))+sum_vk**2
@@ -433,11 +509,94 @@ subroutine Rescale_velocities(traj,ctrl)
           endif
           do i=1,3
             traj%veloc_ad(:,i)=traj%veloc_ad(:,i)-factor*&
-            &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,i)-&
-            &traj%gmatrix_ssad(traj%state_diag_old, traj%state_diag_old,:,i))/traj%mass_a(:)
+            &traj%hopping_direction_ssad(traj%state_diag_old,traj%state_diag,:,i)/traj%mass_a(:)
           enddo
           if (printlevel>2) then
             write(u_log,'(A)') 'Velocity is rescaled along gradient difference vector.'
+            write(u_log,'(A,1X,E16.8,1X,E16.8)') 'a, b: ', sum_kk, sum_vk
+            write(u_log,'(A,1X,E16.8)') 'Delta is          ',deltaE
+            write(u_log,'(A,1X,F12.6)') 'Scaling factor is ',factor
+          endif
+        case (5)
+          call available_ekin(ctrl%natom,&
+          &traj%veloc_ad,traj%hopping_direction_ssad(traj%state_diag_old,traj%state_diag,:,:),&
+          &traj%mass_a, sum_kk, sum_vk)
+          deltaE=4.d0*sum_kk*(traj%Etot-traj%Ekin-&
+          &real(traj%H_diag_ss(traj%state_diag,traj%state_diag)))+sum_vk**2
+          if (sum_vk<0.d0) then
+            factor=(sum_vk+sqrt(deltaE))/2.d0/sum_kk
+          else
+            factor=(sum_vk-sqrt(deltaE))/2.d0/sum_kk
+          endif
+          do i=1,3
+            traj%veloc_ad(:,i)=traj%veloc_ad(:,i)-factor*&
+            &traj%hopping_direction_ssad(traj%state_diag_old,traj%state_diag,:,i)/traj%mass_a(:)
+          enddo
+          if (printlevel>2) then
+            write(u_log,'(A)') 'Velocity is rescaled along projected non-adiabatic coupling vector.'
+            write(u_log,'(A,1X,E16.8,1X,E16.8)') 'a, b: ', sum_kk, sum_vk
+            write(u_log,'(A,1X,E16.8)') 'Delta is          ',deltaE
+            write(u_log,'(A,1X,F12.6)') 'Scaling factor is ',factor
+          endif
+        case (6)
+          call available_ekin(ctrl%natom,&
+          &traj%veloc_ad,traj%hopping_direction_ssad(traj%state_diag_old,traj%state_diag,:,:),&
+          &traj%mass_a, sum_kk, sum_vk)
+          deltaE=4.d0*sum_kk*(traj%Etot-traj%Ekin-&
+          &real(traj%H_diag_ss(traj%state_diag,traj%state_diag)))+sum_vk**2
+          if (sum_vk<0.d0) then
+            factor=(sum_vk+sqrt(deltaE))/2.d0/sum_kk
+          else
+            factor=(sum_vk-sqrt(deltaE))/2.d0/sum_kk
+          endif
+          do i=1,3
+            traj%veloc_ad(:,i)=traj%veloc_ad(:,i)-factor*&
+            &traj%hopping_direction_ssad(traj%state_diag_old,traj%state_diag,:,i)/traj%mass_a(:)
+          enddo
+          if (printlevel>2) then
+            write(u_log,'(A)') 'Velocity is rescaled along projected gradient difference vector.'
+            write(u_log,'(A,1X,E16.8,1X,E16.8)') 'a, b: ', sum_kk, sum_vk
+            write(u_log,'(A,1X,E16.8)') 'Delta is          ',deltaE
+            write(u_log,'(A,1X,F12.6)') 'Scaling factor is ',factor
+          endif
+        case (7)
+          call available_ekin(ctrl%natom,&
+          &traj%veloc_ad,traj%hopping_direction_ssad(traj%state_diag_old,traj%state_diag,:,:),&
+          &traj%mass_a, sum_kk, sum_vk)
+          deltaE=4.d0*sum_kk*(traj%Etot-traj%Ekin-&
+          &real(traj%H_diag_ss(traj%state_diag,traj%state_diag)))+sum_vk**2
+          if (sum_vk<0.d0) then
+            factor=(sum_vk+sqrt(deltaE))/2.d0/sum_kk
+          else
+            factor=(sum_vk-sqrt(deltaE))/2.d0/sum_kk
+          endif
+          do i=1,3
+            traj%veloc_ad(:,i)=traj%veloc_ad(:,i)-factor*&
+            &traj%hopping_direction_ssad(traj%state_diag_old,traj%state_diag,:,i)/traj%mass_a(:)
+          enddo
+          if (printlevel>2) then
+            write(u_log,'(A)') 'Velocity is rescaled along effective non-adiabatic coupling vector.'
+            write(u_log,'(A,1X,E16.8,1X,E16.8)') 'a, b: ', sum_kk, sum_vk
+            write(u_log,'(A,1X,E16.8)') 'Delta is          ',deltaE
+            write(u_log,'(A,1X,F12.6)') 'Scaling factor is ',factor
+          endif
+        case (8)
+          call available_ekin(ctrl%natom,&
+          &traj%veloc_ad,traj%hopping_direction_ssad(traj%state_diag_old,traj%state_diag,:,:),&
+          &traj%mass_a, sum_kk, sum_vk)
+          deltaE=4.d0*sum_kk*(traj%Etot-traj%Ekin-&
+          &real(traj%H_diag_ss(traj%state_diag,traj%state_diag)))+sum_vk**2
+          if (sum_vk<0.d0) then
+            factor=(sum_vk+sqrt(deltaE))/2.d0/sum_kk
+          else
+            factor=(sum_vk-sqrt(deltaE))/2.d0/sum_kk
+          endif
+          do i=1,3
+            traj%veloc_ad(:,i)=traj%veloc_ad(:,i)-factor*&
+            &traj%hopping_direction_ssad(traj%state_diag_old,traj%state_diag,:,i)/traj%mass_a(:)
+          enddo
+          if (printlevel>2) then
+            write(u_log,'(A)') 'Velocity is rescaled along projected effective non-adiabatic coupling vector.'
             write(u_log,'(A,1X,E16.8,1X,E16.8)') 'a, b: ', sum_kk, sum_vk
             write(u_log,'(A,1X,E16.8)') 'Delta is          ',deltaE
             write(u_log,'(A,1X,F12.6)') 'Scaling factor is ',factor
@@ -454,14 +613,93 @@ subroutine Rescale_velocities(traj,ctrl)
             if (ctrl%atommask_a(i)) traj%veloc_ad(i,:) = -traj%veloc_ad(i,:)
           enddo
         case (2)
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected along projected velocity vector.'
           call reflect_nac(ctrl%natom,traj%veloc_ad,traj%mass_a,&
-          &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag,:,:)),&
+          &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
           &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
           &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
         case (3)
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected along nonadiabatic coupling vector'
           call reflect_nac(ctrl%natom,traj%veloc_ad,traj%mass_a,&
-          &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)-&
-          &traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
+          &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
+          &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
+          &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
+        case (4)
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected along gradient difference vector'
+          call reflect_nac(ctrl%natom,traj%veloc_ad,traj%mass_a,&
+          &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
+          &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
+          &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
+        case (5)
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected along projected nonadiabatic coupling vector'
+          call reflect_nac(ctrl%natom,traj%veloc_ad,traj%mass_a,&
+          &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
+          &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
+          &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
+        case (6)
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected along projected gradient difference vector'
+          call reflect_nac(ctrl%natom,traj%veloc_ad,traj%mass_a,&
+          &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
+          &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
+          &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
+        case (7)
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected along effective nonadiabatic coupling vector'
+          call reflect_nac(ctrl%natom,traj%veloc_ad,traj%mass_a,&
+          &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
+          &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
+          &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
+        case (8)
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected along projected effective nonadiabatic coupling vector'
+          call reflect_nac(ctrl%natom,traj%veloc_ad,traj%mass_a,&
+          &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
+          &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
+          &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
+        case (91)
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to deltaV approach along velocity vector.'
+          call reflect_deltaV(ctrl%natom,traj%veloc_ad,traj%mass_a,&
+          &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
+          &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
+          &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
+        case (92)
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to deltaV approach along projected velocity vector.'
+          call reflect_deltaV(ctrl%natom,traj%veloc_ad,traj%mass_a,&
+          &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
+          &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
+          &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
+        case (93)
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to deltaV approach along nonadiabatic coupling vector.'
+          call reflect_deltaV(ctrl%natom,traj%veloc_ad,traj%mass_a,&
+          &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
+          &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
+          &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
+        case (94)
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to deltaV approach along gradient difference vector.'
+          call reflect_deltaV(ctrl%natom,traj%veloc_ad,traj%mass_a,&
+          &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
+          &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
+          &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
+        case (95)
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to deltaV approach along projected nonadiabatic coupling vector.'
+          call reflect_deltaV(ctrl%natom,traj%veloc_ad,traj%mass_a,&
+          &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
+          &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
+          &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
+        case (96)
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to deltaV approach along projected gradient difference vector.'
+          call reflect_deltaV(ctrl%natom,traj%veloc_ad,traj%mass_a,&
+          &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
+          &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
+          &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
+        case (97)
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to deltaV approach along effective nonadiabatic coupling vector.'
+          call reflect_deltaV(ctrl%natom,traj%veloc_ad,traj%mass_a,&
+          &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
+          &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
+          &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
+        case (98)
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to deltaV approach along projected effective nonadiabatic coupling vector.'
+          call reflect_deltaV(ctrl%natom,traj%veloc_ad,traj%mass_a,&
+          &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
           &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
           &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
       endselect
@@ -515,7 +753,7 @@ subroutine reflect_nac(natom,veloc_ad,mass_a,nac_ad,Gdiag,Gfrust)
   sum_Ffrustk = sum(-Gfrust*nac_ad)
   sum_pk = sum(mass_ad*veloc_ad*nac_ad)
   if (printlevel>2)  then
-    write(u_log,*)'Checking velocity reflection along the nonadiabatic coupling vector.'
+    write(u_log,*)'Checking velocity reflection along the frustrated hop reflection vector.'
     write(u_log,'(A,4E14.6)') ' sum_Fdiagk, sum_Ffrustk, sum_vk, sum_kk', sum_Fdiagk, sum_Ffrustk, sum_pk,&
     &sum(nac_ad*nac_ad)
   endif
@@ -534,6 +772,47 @@ subroutine reflect_nac(natom,veloc_ad,mass_a,nac_ad,Gdiag,Gfrust)
 !     &sum(mass_ad*veloc_ad*veloc_ad), sum(mass_ad*mass_ad*veloc_ad*veloc_ad)
   else
     if (printlevel>2) write(u_log,*) 'Conditions for reflection not fulfilled.'
+  endif
+
+endsubroutine
+
+! ===========================================================
+
+subroutine reflect_deltaV(natom,veloc_ad,mass_a,nac_ad,Gdiag,Gfrust)
+  use definitions
+  implicit none
+  integer, intent(in) :: natom
+  real*8, intent(inout) :: veloc_ad(natom,3)
+  real*8, intent(in) :: mass_a(natom), nac_ad(natom,3), Gdiag(natom, 3), Gfrust(natom, 3)
+  integer :: idir, iat
+  real*8 :: mass_ad(natom,3)
+  real*8 :: sum_pk, sum_Fdiagk, sum_Ffrustk
+  real*8 :: factor
+
+  do idir=1,3
+    mass_ad(:,idir) = mass_a(:)
+  enddo
+
+  ! Notice in deltaV approach, it is -Grust dot nac_ad; 
+  ! the input nac_ad is nac_diagfrust_diag
+  ! therefore, Gfrust*nac_ad = -Grust * nac_ad
+  sum_Fdiagk  = sum(-Gdiag*nac_ad)
+  sum_Ffrustk = sum(-Gfrust*nac_ad)
+  sum_pk = sum(mass_ad*veloc_ad*nac_ad)
+  if (printlevel>2)  then
+    write(u_log,*)'Checking velocity reflection along the frustrated hop reflection vector.'
+    write(u_log,'(A,4E14.6)') ' sum_Fdiagk, sum_Ffrustk, sum_vk, sum_kk', sum_Fdiagk, sum_Ffrustk, sum_pk,&
+    &sum(nac_ad*nac_ad)
+  endif
+
+  if (sum_Ffrustk*sum_pk<0) then
+    if (printlevel>2) write(u_log,*) 'Conditions for deltaV reflection approach fulfilled.'
+    do iat=1,natom
+      factor = 2 * sum(veloc_ad(iat,:)*nac_ad(iat,:)) / sum(nac_ad(iat,:)*nac_ad(iat,:))
+      veloc_ad(iat,:) = veloc_ad(iat,:) - factor * nac_ad(iat,:)
+    enddo
+  else
+    if (printlevel>2) write(u_log,*) 'Conditions for deltaV reflection not fulfilled.'
   endif
 
 endsubroutine
@@ -560,6 +839,82 @@ endsubroutine
 
 ! ===========================================================
 
+
+!> Check the consistency between time steps, for adaptive time step
+subroutine Check_Consistency(traj,ctrl)
+  use definitions
+  implicit none
+  type(trajectory_type) :: traj
+  type(ctrl_type) :: ctrl
+
+  real*8 :: diff
+
+  ! initialize consistency and discrepancy
+  traj%consistency=0
+  traj%discrepancy=1.d0
+
+  ! Check energy convergence
+  diff=abs(traj%Etot-traj%Etot_old)
+
+  if (diff .gt. ctrl%convthre) then  !if energy difference is bigger than threshold
+    traj%consistency=2
+    traj%discrepancy=2.0
+  else if (traj%step .gt. 2 .and. diff .lt. (ctrl%convthre/5.0)) then
+    traj%consistency=1
+    traj%discrepancy=0.5
+  endif
+
+  ! if one has a surface hop in TSH, energy conservation is perfect, but should
+  ! not increase time step 
+  if (ctrl%method==0 .and. traj%kind_of_jump==2) then 
+    traj%consistency=0
+    traj%discrepancy=1.d0
+  endif
+
+endsubroutine
+
+! ===========================================================
+
+!> Change the step size
+subroutine Adaptive_Stepsize(traj,ctrl)
+  use definitions
+  implicit none
+  type(trajectory_type) :: traj
+  type(ctrl_type) :: ctrl
+
+  real*8 :: oldstep
+
+  oldstep=ctrl%dtstep
+  ctrl%dtstep=ctrl%dtstep/traj%discrepancy
+
+  if (printlevel>2) then
+    write(u_log,*) 'Time step size has been adapted'
+    write(u_log,'(A,1X,F9.6)') ' Old step size in fs:', oldstep*au2fs
+    write(u_log,'(A,1X,F9.6)') ' New step size in fs:', ctrl%dtstep*au2fs
+  endif
+  if (ctrl%dtstep.lt.ctrl%dtstep_min) then
+    if (printlevel>2) then
+      write(u_log,*) "adaptive time step bellow minimum value:",ctrl%dtstep_min*au2fs,"fs"
+    endif
+    ctrl%dtstep=ctrl%dtstep_min
+  endif
+
+  if (ctrl%dtstep.gt.ctrl%dtstep_max) then
+    if (printlevel>2) then
+      write(u_log,*) "adaptive time step exceeds maximum value:",ctrl%dtstep_max*au2fs,"fs"
+    endif
+    ctrl%dtstep=ctrl%dtstep_max
+  endif
+
+endsubroutine
+
+
+
+
+
+
+! ===========================================================
+
 !> returns 3*natoms gaussian distributed random numbers with mean=mu and variance=var
 function gaussian_random(natoms,mu,var)
   use definitions
@@ -583,4 +938,4 @@ function gaussian_random(natoms,mu,var)
 endfunction
 
 
-endmodule
+endmodule nuclear

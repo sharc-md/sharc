@@ -1,0 +1,6 @@
+molcas $MOLCAS/
+scratchdir ./scratch
+savedir /panfs/roc/groups/8/truhlard/baoxx138/ch3nh2/molcas_ktdc/State_2/TRAJ_00002//restart
+memory 1000
+ncpu 500
+project MOLCAS

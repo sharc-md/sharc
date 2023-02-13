@@ -21,8 +21,8 @@
 #
 #******************************************
 # Makefile for Sharc 
-# Version 2.1
-# 1.9.2019
+# Version 3.0
+# 1.9.2023
 
 
 # -------------------------------------- configure ---------------------------------------
@@ -84,7 +84,7 @@ ifeq ($(USE_COMPILER), gnu)
   EXTRAFLAGS := -ffree-line-length-none 
 else ifeq ($(USE_COMPILER), intel)
   CC:=icc
-  F90:=ifort 
+  F90:=ifort
   EXTRAFLAGS :=
 endif
 
@@ -159,16 +159,23 @@ TOOLS = definitions.o \
 	string.o \
 	input_list.o
 
-SHARC  =  misc.o \
+SHARC  =  driver.o \
+          misc.o \
 	  output.o \
 	  restart.o \
 	  qm_out.o \
 	  nuclear.o \
+          bsh.o \
 	  electronic.o \
 	  qm.o \
 	  electronic_laser.o \
 	  input.o \
-	  decoherence_afssh.o
+	  decoherence_afssh.o \
+          decoherence_dom.o \
+          zpe.o \
+          tsh_tu.o \
+          army_ants.o \
+          pointer_basis.o 
 ifeq ($(USE_PYSHARC),true)
 SHARC += interface.o
 endif
@@ -312,22 +319,29 @@ test_path:
 
 # the following lines define the dependencies of the Fortran90 module files
 ifeq ($(USE_PYSHARC),true)
-main.o: output.o qm.o restart.o misc.o electronic_laser.o input.o decoherence_afssh.o interface.o
+main.o: output.o qm.o restart.o misc.o electronic_laser.o input.o decoherence_afssh.o decoherence_dom.o zpe.o tsh_tu.o army_ants.o pointer_basis.o interface.o
 else
-main.o: output.o qm.o restart.o misc.o electronic_laser.o input.o decoherence_afssh.o
+main.o: driver.o output.o qm.o bsh.o restart.o misc.o electronic_laser.o input.o decoherence_afssh.o decoherence_dom.o zpe.o tsh_tu.o army_ants.o pointer_basis.o
 endif
 
-interface.o: electronic.o definitions.o definitions_NetCDF.o output.o qm.o restart.o misc.o electronic_laser.o input.o decoherence_afssh.o
+driver.o: output.o qm.o bsh.o restart.o misc.o electronic_laser.o input.o decoherence_afssh.o decoherence_dom.o zpe.o tsh_tu.o army_ants.o pointer_basis.o
+interface.o: electronic.o definitions.o definitions_NetCDF.o output.o qm.o restart.o misc.o electronic_laser.o input.o decoherence_afssh.o decoherence_dom.o zpe.o tsh_tu.o army_ants.o pointer_basis.o
 misc.o: definitions.o
 output.o: $(TOOLS) build_info misc.o
-nuclear.o: $(TOOLS)
-electronic.o: nuclear.o $(TOOLS) decoherence_afssh.o
+nuclear.o: $(TOOLS) decoherence_afssh.o decoherence_dom.o
+electronic.o: nuclear.o $(TOOLS) decoherence_afssh.o decoherence_dom.o
 electronic_laser.o: electronic.o $(TOOLS)
 input.o: $(TOOLS) output.o restart.o misc.o
-qm.o: $(TOOLS) electronic.o qm_out.o restart.o
+qm.o: $(TOOLS) electronic.o nuclear.o qm_out.o restart.o
+bsh.o: $(TOOLS) electronic.o decoherence_dom.o qm.o
 qm_out.o: $(TOOLS)
 restart.o: $(TOOLS) misc.o decoherence_afssh.o
 decoherence_afssh.o: $(TOOLS) definitions.o 
+decoherence_dom.o: $(TOOLS) definitions.o
+zpe.o: $(TOOLS) definitions.o nuclear.o
+tsh_tu.o: $(TOOLS) definitions.o electronic.o nuclear.o army_ants.o
+army_ants.o: $(TOOLS) definitions.o electronic.o 
+pointer_basis.o: $(TOOLS) definitions.o 
 
 LASER_input.o: LASER_definitions.o 
 LASER_calc_fftw.o: LASER_definitions.o

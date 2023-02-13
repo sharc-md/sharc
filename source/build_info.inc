@@ -1,0 +1,5 @@
+character(len=500), parameter :: build_date="Mon Feb 13 11:32:49 CET 2023"
+character(len=500), parameter :: build_host="manganese.itc.univie.ac.at"
+character(len=500), parameter :: build_dir="/user/phchm/software/sharc/source"
+character(len=500), parameter :: build_compiler="/usr/bin/gfortran"
+character(len=500), parameter :: use_pysharc="false"

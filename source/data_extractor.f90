@@ -103,7 +103,20 @@ program data_extractor
   integer :: nsteps                       !< number of timesteps from dat file (needed to read the laser field)
   integer :: nsubsteps                    !< number of substeps (needed to read the laser field)
   integer :: nprojections                    !< number of vectors to project dipole moment onto
+  integer :: adaptive                     !< whether using adaptive time step
 
+  !> # Information that is needed in adaptive timestep
+  real*8 :: dtstep_adapted                !< adapted nuclear timestep
+  integer :: nsteps_adapted               !< adapted total steps
+  integer :: total_columns                !< total number of columns
+  real*8, allocatable :: timeline(:)      !< the timeline after linear interpolation
+  real*8, allocatable :: timeline_adapted(:)  !< timeline of adapted timestep
+  real*8, allocatable :: tmp_in_matrix(:,:)   !< a matrix to temporary store readin information
+  real*8, allocatable :: tmp_out_matrix(:,:)  !< a matrix to temporary store linearly interpolated information
+  character*100 :: filename1              !< original file name
+  character*100 :: filename2              !< file name with _li, i.e. linearly interporlated
+  character*8000 :: header1, header2, header3 !< headers
+ 
   !> # Information which is updated per time step
   !> Most of these are equivalent to their definition in definitions.f90
   integer :: step
@@ -113,7 +126,7 @@ program data_extractor
   complex*16, allocatable :: coeff_diag_s(:),overlaps_ss(:,:), ref_ovl_ss(:,:)
   real*8, allocatable :: geom_ad(:,:), veloc_ad(:,:)
   real*8 , allocatable :: hopprob_s(:)
-  real*8 :: Ekin, Epot, randnum
+  real*8 :: Ekin, Epot, randnum, microtime
   integer :: state_diag, state_MCH, runtime
 
   !> # Information which is calculated at each time step
@@ -585,6 +598,21 @@ program data_extractor
       n_property2d=1
     endif
 
+    ! check adaptive integrator
+    line=get_value_from_key('integrator',io)
+    if (io==0) then
+      select case (trim(line))
+        case ('2') 
+          adaptive=0
+        case ('1') 
+          adaptive=1
+        case ('0')
+          adaptive=1
+      endselect
+    else
+      adaptive=0
+    endif
+
     ! allocate everything
     allocate( H_MCH_ss(nstates,nstates), H_diag_ss(nstates,nstates) )
     allocate( U_ss(nstates,nstates) )
@@ -664,23 +692,28 @@ program data_extractor
     line=get_value_from_key('laser',io)
     if (io==0) then
       read(line,*) laser
-      if (laser==2) then
-        line=get_value_from_key('nsteps',io)
-        if (io==0) then
-          read(line,*) nsteps
-        else
-          stop 'Error! If laser is present, keyword nsteps must be given.'
-        endif
-        line=get_value_from_key('nsubsteps',io)
-        if (io==0) then
-          read(line,*) nsubsteps
-        else
-          stop 'Error! If laser is present, keyword nsubsteps must be given.'
-        endif
-      endif
     else
       laser=0
     endif
+
+    line=get_value_from_key('nsteps',io)
+    if (io==0) then
+      read(line,*) nsteps
+    else 
+      if (laser==2) then
+        stop 'Error! If laser is present, keyword nsteps must be given.'
+      endif
+    endif
+
+    line=get_value_from_key('nsubsteps',io)
+    if (io==0) then
+      read(line,*) nsubsteps
+    else
+      if (laser==2) then
+        stop 'Error! If laser is present, keyword nsubsteps must be given.'
+      endif
+    endif
+
 
     if (have_grad == 1) then
       if (.not. skip_geom_vel_grad_nac) then
@@ -985,7 +1018,12 @@ program data_extractor
     ! random number, runtime for the timestep, geometry, velocity, property matrix
     read(u_dat,*,iostat=io) string1
     if (io/=0) exit
-    read(u_dat,*) step
+    if (adaptive==0) then 
+      read(u_dat,*) step
+      microtime=step*dtstep
+    else if (adaptive==1) then
+      read(u_dat,*) nsteps_adapted, microtime, dtstep_adapted
+    endif
     call matread(nstates,H_MCH_ss,u_dat,string1)
     call matread(nstates,U_ss,u_dat,string1)
     do idir=1,3
@@ -1164,7 +1202,7 @@ program data_extractor
     if (write_energy) then
       ! write to energy.out
       write(u_ener,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, Ekin*au2eV, Epot*au2eV, (Epot+Ekin)*au2eV,&
+      &microtime, Ekin*au2eV, Epot*au2eV, (Epot+Ekin)*au2eV,&
       (real(H_diag_ss(istate,istate)*au2eV),istate=1,nstates)
     endif
 
@@ -1172,13 +1210,13 @@ program data_extractor
     if (write_dip) then
       ! write to fosc.out
       write(u_dm,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, expec_dm(state_diag),&
+      &microtime, expec_dm(state_diag),&
       (expec_dm(istate),istate=1,nstates)
     endif
     if (write_dipact)  then
       ! write to fosc_act.out
       write(u_fosc_act,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep,(abs(real(H_diag_ss(istate,istate)-H_diag_ss(state_diag,state_diag)))*au2eV,istate=1,nstates),&
+      &microtime,(abs(real(H_diag_ss(istate,istate)-H_diag_ss(state_diag,state_diag)))*au2eV,istate=1,nstates),&
       (expec_dm_act(istate),istate=1,nstates)
 !       write(u_fosc_act,'(2X,1000(ES20.12E3,1X))') &
 !       &step*dtstep,(real(H_diag_ss(istate,istate)-H_diag_ss(state_diag,state_diag))*au2eV,istate=1,nstates),&
@@ -1189,13 +1227,13 @@ program data_extractor
     if (write_iondiag) then
       ! write to ion_diag.out
       write(u_ion_diag,'(2X,ES20.12E3,1X,I20,1X,1000(ES20.12E3,1X))') &
-      &step*dtstep,state_diag,(real(H_diag_ss(istate,istate)-H_diag_ss(state_diag,state_diag))*au2eV,istate=1,nstates),&
+      &microtime,state_diag,(real(H_diag_ss(istate,istate)-H_diag_ss(state_diag,state_diag))*au2eV,istate=1,nstates),&
       (expec_ion_diag(istate),istate=1,nstates)
     endif
     if (write_ionmch) then
       ! write to ion_mch.out
       write(u_ion_mch,'(2X,ES20.12E3,1X,I20,1X,1000(ES20.12E3,1X))') &
-      &step*dtstep,state_diag,(real(H_mch_ss(istate,istate)-H_mch_ss(state_mch,state_mch))*au2eV,istate=1,nstates),&
+      &microtime,state_diag,(real(H_mch_ss(istate,istate)-H_mch_ss(state_mch,state_mch))*au2eV,istate=1,nstates),&
       (expec_ion_mch(istate),istate=1,nstates)
     endif
 
@@ -1203,7 +1241,7 @@ program data_extractor
     if (write_spin) then
       ! write to spin.out
       write(u_spin,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, expec_s(state_diag),&
+      &microtime, expec_s(state_diag),&
       (expec_s(istate),istate=1,nstates)
     endif
 
@@ -1216,15 +1254,15 @@ program data_extractor
       enddo
       ! write to coeff_diag.out
       write(u_coefd,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, sumc,&
+      &microtime, sumc,&
       (coeff_diag_s(istate),istate=1,nstates)
       ! write to coeff_class_diag.out
       write(u_classd,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, 1.d0,&
+      &microtime, 1.d0,&
       (delta(istate,state_diag),istate=1,nstates)
       ! write to coeff_mixed_diag.out
       write(u_cmixd,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, 1.d0,&
+      &microtime, 1.d0,&
       (delta(istate,state_diag),istate=1,nstates)
     endif
 
@@ -1237,11 +1275,11 @@ program data_extractor
       enddo
       ! write to coeff_MCH.out
       write(u_coefm,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, sumc,&
+      &microtime, sumc,&
       (coeff_MCH_s(istate),istate=1,nstates)
       ! write to coeff_class_MCH.out
       write(u_classm,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, 1.d0,&
+      &microtime, 1.d0,&
       (real(abs(U_ss(istate,state_diag))**2),istate=1,nstates)
       ! write to coeff_mixed_MCH.out
       expec_pop=0.d0
@@ -1260,7 +1298,7 @@ program data_extractor
         enddo
       enddo
       write(u_cmixm,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, 1.d0,&
+      &microtime, 1.d0,&
       (expec_pop(istate),istate=1,nstates)
     endif
 
@@ -1273,12 +1311,12 @@ program data_extractor
       enddo
       ! write to coeff_diab.out
       write(u_coefdiab,'(2X,1000(ES20.12E3,X))') &
-      &step*dtstep, sumc,&
+      &microtime, sumc,&
       (coeff_diab_s(istate),istate=1,nstates)
       ! write to coeff_class_diab.out
       call matmultiply(nstates,ref_ovl_ss,U_ss,A_ss,'nn')
       write(u_classdiab,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, 1.d0,&
+      &microtime, 1.d0,&
       (real(abs(A_ss(istate,state_diag))**2),istate=1,nstates)
       ! write to coeff_mixed_diab.out
       expec_pop=0.d0
@@ -1297,7 +1335,7 @@ program data_extractor
         enddo
       enddo
       write(u_cmixdiab,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, 1.d0,&
+      &microtime, 1.d0,&
       (expec_pop(istate),istate=1,nstates)
     endif
 
@@ -1309,7 +1347,7 @@ program data_extractor
       enddo
       ! write to prob.out
       write(u_prob,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, randnum,&
+      &microtime, randnum,&
       (hopprob_s(istate),istate=1,nstates)
     endif
 
@@ -1319,7 +1357,7 @@ program data_extractor
       ! this infos are also in energy.out, spin.out and fosc.out
       ! but in order to plot them together they are also written in one file
       write(u_expec,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, Ekin*au2eV, Epot*au2eV, (Epot+Ekin)*au2eV,&
+      &microtime, Ekin*au2eV, Epot*au2eV, (Epot+Ekin)*au2eV,&
       &(real(H_diag_ss(istate,istate)*au2eV),istate=1,nstates),&
       &(expec_s(istate),istate=1,nstates),&
       &(expec_dm(istate),istate=1,nstates)
@@ -1328,7 +1366,7 @@ program data_extractor
 
     if (write_expecmch) then
       write(u_expec_mch,'(2X,1000(ES20.12E3,1X))') &
-      &step*dtstep, Ekin*au2eV, Epot*au2eV, (Epot+Ekin)*au2eV,&
+      &microtime, Ekin*au2eV, Epot*au2eV, (Epot+Ekin)*au2eV,&
       &(real(H_MCH_ss(istate,istate)*au2eV),istate=1,nstates),&
       &(spin0_s(istate),istate=1,nstates),&
       &(expec_dm_mch(istate),istate=1,nstates)
@@ -1356,11 +1394,710 @@ program data_extractor
 
 
     ! write progress to screen
-    write(*,'(A,A,F9.2,A)',advance='no') achar(13), 't=',step*dtstep,' fs'
+    write(*,'(A,A,F9.2,A)',advance='no') achar(13), 't=',microtime,' fs'
   enddo
   write(*,*)
 
+  ! close output files
+  if (write_energy)    close(u_ener)      ! -e
+  if (write_dip)       close(u_dm)        ! -d
+  if (write_spin)      close(u_spin)      ! -s
+ 
+  if (write_coeffdiag) close(u_coefd)     ! -cd
+  if (write_coeffmch)  close(u_coefm)     ! -cm 
+  if (write_coeffdiab) close(u_coefdiab)  ! -cb
 
+  if (write_coeffdiag) close(u_classd)    ! -cd
+  if (write_coeffmch)  close(u_classm)    ! -cm
+  if (write_coeffdiab) close(u_classdiab) ! -cb 
+
+  if (write_coeffdiag) close(u_cmixd)     ! -cd
+  if (write_coeffmch)  close(u_cmixm)     ! -cm
+  if (write_coeffdiab) close(u_cmixdiab)  ! -cb
+
+  if (write_prob)      close(u_prob)      ! -p
+  if (write_expec)     close(u_expec)     ! -x
+  if (write_expecmch)  close(u_expec_mch) ! -xm
+  if (write_dipact)    close(u_fosc_act)  ! -da
+  if (write_iondiag)   close(u_ion_diag)  ! -id
+  if (write_ionmch)    close(u_ion_mch)   ! -im 
+  if (write_dm_diag)   close(u_dm_diag)   ! -dd
+  if (write_dm_proj)   close(u_dm_proj)   ! -dd 
+
+
+
+
+    ! ============== Start linear interpolation =================
+
+  if (adaptive==1) then ! do linear interpolation 
+
+    write(*,*) 'adaptive time step employed, performing linear interpolation' 
+    
+    allocate(timeline(nsteps+1))
+    allocate(timeline_adapted(nsteps_adapted+1))
+
+    do i=1,nsteps+1
+      timeline(i)=dtstep*(i-1)
+    enddo
+ 
+ 
+    if (write_energy) then
+      ! nstates, kinetic, potential, total, time
+      total_columns=nstates+4
+      allocate(tmp_in_matrix(nsteps_adapted+1,total_columns))
+      allocate(tmp_out_matrix(nsteps+1,total_columns))
+      open(unit=u_ener, file='output_data/energy.out', status='old', action='read')
+        read(u_ener,'(A)') header1
+        read(u_ener,'(A)') header2
+        read(u_ener,'(A)') header3
+        do i=1,nsteps_adapted+1
+          read(u_ener,*) (tmp_in_matrix(i,istate),istate=1,total_columns)
+        enddo 
+      close(u_ener)
+      filename1='output_data/energy.out'
+      filename2='output_data/energy.original.out'
+      call system("mv "//trim(filename1)//" "//trim(filename2))
+      timeline_adapted(:)=tmp_in_matrix(:,1)
+      do istate=2,total_columns ! starts with column 2 because first column is time.
+        call linear_interp(nsteps_adapted+1, nsteps+1, timeline_adapted, tmp_in_matrix(:,istate), timeline, tmp_out_matrix(:,istate))
+      enddo
+      tmp_out_matrix(:,1)=timeline(:)
+      open(unit=u_ener, file='output_data/energy.out', status='replace', action='write')
+        write(u_ener,'(A)') trim(header1)
+        write(u_ener,'(A)') trim(header2)
+        write(u_ener,'(A)') trim(header3)
+        do i=1,nsteps+1
+          write(u_ener,'(2X,1000(ES20.12E3,1X))') (tmp_out_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_ener)
+      deallocate(tmp_in_matrix)
+      deallocate(tmp_out_matrix)
+    endif
+
+
+    if (write_dip) then
+      ! nstates, expected_dm, time
+      total_columns=nstates+2
+      allocate(tmp_in_matrix(nsteps_adapted+1,total_columns))
+      allocate(tmp_out_matrix(nsteps+1,total_columns))
+      open(unit=u_dm, file='output_data/fosc.out', status='old', action='read')
+        read(u_dm,'(A)') header1
+        read(u_dm,'(A)') header2
+        read(u_dm,'(A)') header3
+        do i=1,nsteps_adapted+1
+          read(u_dm,*) (tmp_in_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_dm)
+      filename1='output_data/fosc.out'
+      filename2='output_data/fosc.original.out'
+      call system("mv "//trim(filename1)//" "//trim(filename2))
+      timeline_adapted(:)=tmp_in_matrix(:,1)
+      do istate=2,total_columns ! starts with column 2 because first column is time.
+        call linear_interp(nsteps_adapted+1, nsteps+1, timeline_adapted, tmp_in_matrix(:,istate), timeline, tmp_out_matrix(:,istate))
+      enddo
+      tmp_out_matrix(:,1)=timeline(:)
+      open(unit=u_dm, file='output_data/fosc.out', status='replace', action='write')
+        write(u_dm,'(A)') trim(header1)
+        write(u_dm,'(A)') trim(header2)
+        write(u_dm,'(A)') trim(header3)
+        do i=1,nsteps+1
+          write(u_dm,'(2X,1000(ES20.12E3,1X))') (tmp_out_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_dm)
+      deallocate(tmp_in_matrix)
+      deallocate(tmp_out_matrix)
+    endif
+
+
+    if (write_dipact)  then
+      ! nstates, nstates, time
+      total_columns=2*nstates+1
+      allocate(tmp_in_matrix(nsteps_adapted+1,total_columns))
+      allocate(tmp_out_matrix(nsteps+1,total_columns))
+      open(unit=u_fosc_act, file='output_data/fosc_act.out', status='old', action='read')
+        read(u_fosc_act,'(A)') header1
+        read(u_fosc_act,'(A)') header2
+        read(u_fosc_act,'(A)') header3
+        do i=1,nsteps_adapted+1
+          read(u_fosc_act,*) (tmp_in_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_fosc_act)
+      filename1='output_data/fosc_act.out'
+      filename2='output_data/fosc_act.original.out'
+      call system("mv "//trim(filename1)//" "//trim(filename2))
+      timeline_adapted(:)=tmp_in_matrix(:,1)
+      do istate=2,total_columns ! starts with column 2 because first column is time.
+        call linear_interp(nsteps_adapted+1, nsteps+1, timeline_adapted, tmp_in_matrix(:,istate), timeline, tmp_out_matrix(:,istate))
+      enddo
+      tmp_out_matrix(:,1)=timeline(:)
+      open(unit=u_fosc_act, file='output_data/fosc_act.out', status='replace', action='write')
+        write(u_fosc_act,'(A)') trim(header1)
+        write(u_fosc_act,'(A)') trim(header2)
+        write(u_fosc_act,'(A)') trim(header3)
+        do i=1,nsteps+1
+          write(u_fosc_act,'(2X,1000(ES20.12E3,1X))') (tmp_out_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_fosc_act)
+      deallocate(tmp_in_matrix)
+      deallocate(tmp_out_matrix)
+    endif
+
+
+    if (write_iondiag) then
+      ! nstates, nstates, state_diag, time
+      total_columns=2*nstates+2
+      allocate(tmp_in_matrix(nsteps_adapted+1,total_columns))
+      allocate(tmp_out_matrix(nsteps+1,total_columns))
+      open(unit=u_ion_diag, file='output_data/ion_diag.out', status='old', action='read')
+        read(u_ion_diag,'(A)') header1
+        read(u_ion_diag,'(A)') header2
+        read(u_ion_diag,'(A)') header3
+        do i=1,nsteps_adapted+1
+          read(u_ion_diag,*) (tmp_in_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_ion_diag)
+      filename1='output_data/ion_diag.out'
+      filename2='output_data/ion_diag.original.out'
+      call system("mv "//trim(filename1)//" "//trim(filename2))
+      timeline_adapted(:)=tmp_in_matrix(:,1)
+      do istate=2,total_columns ! starts with column 2 because first column is time.
+        call linear_interp(nsteps_adapted+1, nsteps+1, timeline_adapted, tmp_in_matrix(:,istate), timeline, tmp_out_matrix(:,istate))
+      enddo
+      tmp_out_matrix(:,1)=timeline(:)
+      open(unit=u_ion_diag, file='output_data/ion_diag.out', status='replace', action='write')
+        write(u_ion_diag,'(A)') trim(header1)
+        write(u_ion_diag,'(A)') trim(header2)
+        write(u_ion_diag,'(A)') trim(header3)
+        do i=1,nsteps+1
+          write(u_ion_diag,'(2X,1000(ES20.12E3,1X))') (tmp_out_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_ion_diag)
+      deallocate(tmp_in_matrix)
+      deallocate(tmp_out_matrix)
+    endif
+ 
+
+    if (write_ionmch) then
+      ! nstates, nstates, state_diag, time
+      total_columns=2*nstates+2
+      allocate(tmp_in_matrix(nsteps_adapted+1,total_columns))
+      allocate(tmp_out_matrix(nsteps+1,total_columns))
+      open(unit=u_ion_mch, file='output_data/ion_mch.out', status='old', action='read')
+        read(u_ion_mch,'(A)') header1
+        read(u_ion_mch,'(A)') header2
+        read(u_ion_mch,'(A)') header3
+        do i=1,nsteps_adapted+1
+          read(u_ion_mch,*) (tmp_in_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_ion_mch)
+      filename1='output_data/ion_mch.out'
+      filename2='output_data/ion_mch.original.out'
+      call system("mv "//trim(filename1)//" "//trim(filename2))
+      timeline_adapted(:)=tmp_in_matrix(:,1)
+      do istate=2,total_columns ! starts with column 2 because first column is time.
+        call linear_interp(nsteps_adapted+1, nsteps+1, timeline_adapted, tmp_in_matrix(:,istate), timeline, tmp_out_matrix(:,istate))
+      enddo
+      tmp_out_matrix(:,1)=timeline(:)
+      open(unit=u_ion_mch, file='output_data/ion_mch.out', status='replace', action='write')
+        write(u_ion_mch,'(A)') trim(header1)
+        write(u_ion_mch,'(A)') trim(header2)
+        write(u_ion_mch,'(A)') trim(header3)
+        do i=1,nsteps+1
+          write(u_ion_mch,'(2X,1000(ES20.12E3,1X))') (tmp_out_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_ion_mch)
+      deallocate(tmp_in_matrix)
+      deallocate(tmp_out_matrix)
+    endif
+
+
+    if (write_spin) then
+      ! nstates, expec_s, time
+      total_columns=nstates+2
+      allocate(tmp_in_matrix(nsteps_adapted+1,total_columns))
+      allocate(tmp_out_matrix(nsteps+1,total_columns))
+      open(unit=u_spin, file='output_data/spin.out', status='old', action='read')
+        read(u_spin,'(A)') header1
+        read(u_spin,'(A)') header2
+        read(u_spin,'(A)') header3
+        do i=1,nsteps_adapted+1
+          read(u_spin,*) (tmp_in_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_spin)
+      filename1='output_data/spin.out'
+      filename2='output_data/spin.original.out'
+      call system("mv "//trim(filename1)//" "//trim(filename2))
+      timeline_adapted(:)=tmp_in_matrix(:,1)
+      do istate=2,total_columns ! starts with column 2 because first column is time.
+        call linear_interp(nsteps_adapted+1, nsteps+1, timeline_adapted, tmp_in_matrix(:,istate), timeline, tmp_out_matrix(:,istate))
+      enddo
+      tmp_out_matrix(:,1)=timeline(:)
+      open(unit=u_spin, file='output_data/spin.out', status='replace', action='write')
+        write(u_spin,'(A)') trim(header1)
+        write(u_spin,'(A)') trim(header2)
+        write(u_spin,'(A)') trim(header3)
+        do i=1,nsteps+1
+          write(u_spin,'(2X,1000(ES20.12E3,1X))') (tmp_out_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_spin)
+      deallocate(tmp_in_matrix)
+      deallocate(tmp_out_matrix)
+    endif
+
+
+    if (write_coeffdiag) then
+    ! for coefficients, one has to linearly interpolate norm, i.e. population,
+    ! and real-imaginary phase angle. 
+    ! there are three outputs: u_coefd, u_classd, u_cmixd
+
+      ! u_coefd
+      ! nstates, sum, time, coeff is complex, so it is 2*nstates
+      total_columns=2*nstates+2
+      allocate(tmp_in_matrix(nsteps_adapted+1,total_columns))
+      allocate(tmp_out_matrix(nsteps+1,total_columns))
+      open(unit=u_coefd, file='output_data/coeff_diag.out', status='old', action='read')
+        read(u_coefd,'(A)') header1
+        read(u_coefd,'(A)') header2
+        read(u_coefd,'(A)') header3
+        do i=1,nsteps_adapted+1
+          read(u_coefd,*) (tmp_in_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_coefd)
+      filename1='output_data/coeff_diag.out'
+      filename2='output_data/coeff_diag.original.out'
+      call system("mv "//trim(filename1)//" "//trim(filename2))
+      ! deal with tmp_in_matrix and convert it to norm and angle. 
+      call convert_to_norm_angle(nsteps_adapted+1, total_columns, nstates, tmp_in_matrix)
+      timeline_adapted(:)=tmp_in_matrix(:,1)
+      do istate=2,total_columns ! starts with column 2 because first column is time.
+        call linear_interp(nsteps_adapted+1, nsteps+1, timeline_adapted, tmp_in_matrix(:,istate), timeline, tmp_out_matrix(:,istate))
+      enddo
+      ! convert back to real and imaginary
+      call convert_to_real_imag(nsteps+1, total_columns, nstates, tmp_out_matrix)
+      tmp_out_matrix(:,1)=timeline(:)
+      open(unit=u_coefd, file='output_data/coeff_diag.out', status='replace', action='write')
+        write(u_coefd,'(A)') trim(header1)
+        write(u_coefd,'(A)') trim(header2)
+        write(u_coefd,'(A)') trim(header3)
+        do i=1,nsteps+1
+          write(u_coefd,'(2X,1000(ES20.12E3,1X))') (tmp_out_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_coefd)
+      deallocate(tmp_in_matrix)
+      deallocate(tmp_out_matrix)
+      ! end u_coefd
+
+      ! u_classd
+      ! nstates, 1.d0, time
+      total_columns=nstates+2
+      allocate(tmp_in_matrix(nsteps_adapted+1,total_columns))
+      allocate(tmp_out_matrix(nsteps+1,total_columns))
+      open(unit=u_classd, file='output_data/coeff_class_diag.out', status='old', action='read')
+        read(u_classd,'(A)') header1
+        read(u_classd,'(A)') header2
+        read(u_classd,'(A)') header3
+        do i=1,nsteps_adapted+1
+          read(u_classd,*) (tmp_in_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_classd)
+      filename1='output_data/coeff_class_diag.out'
+      filename2='output_data/coeff_class_diag.original.out'
+      call system("mv "//trim(filename1)//" "//trim(filename2))
+      timeline_adapted(:)=tmp_in_matrix(:,1)
+      do istate=2,total_columns ! starts with column 2 because first column is time.
+        call linear_interp(nsteps_adapted+1, nsteps+1, timeline_adapted, tmp_in_matrix(:,istate), timeline, tmp_out_matrix(:,istate))
+      enddo
+      tmp_out_matrix(:,1)=timeline(:)
+      open(unit=u_classd, file='output_data/coeff_class_diag.out', status='replace', action='write')
+        write(u_classd,'(A)') trim(header1)
+        write(u_classd,'(A)') trim(header2)
+        write(u_classd,'(A)') trim(header3)
+        do i=1,nsteps+1
+          write(u_classd,'(2X,1000(ES20.12E3,1X))') (tmp_out_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_classd)
+      deallocate(tmp_in_matrix)
+      deallocate(tmp_out_matrix)
+      ! end u_classd
+
+      ! u_cmixd
+      ! nstates, 1.d0, time
+      total_columns=nstates+2
+      allocate(tmp_in_matrix(nsteps_adapted+1,total_columns))
+      allocate(tmp_out_matrix(nsteps+1,total_columns))
+      open(unit=u_cmixd, file='output_data/coeff_mixed_diag.out', status='old', action='read')
+        read(u_cmixd,'(A)') header1
+        read(u_cmixd,'(A)') header2
+        read(u_cmixd,'(A)') header3
+        do i=1,nsteps_adapted+1
+          read(u_cmixd,*) (tmp_in_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_cmixd)
+      filename1='output_data/coeff_mixed_diag.out'
+      filename2='output_data/coeff_mixed_diag.original.out'
+      call system("mv "//trim(filename1)//" "//trim(filename2))
+      timeline_adapted(:)=tmp_in_matrix(:,1)
+      do istate=2,total_columns ! starts with column 2 because first column is time.
+        call linear_interp(nsteps_adapted+1, nsteps+1, timeline_adapted, tmp_in_matrix(:,istate), timeline, tmp_out_matrix(:,istate))
+      enddo
+      tmp_out_matrix(:,1)=timeline(:)
+      open(unit=u_cmixd, file='output_data/coeff_mixed_diag.out', status='replace', action='write')
+        write(u_cmixd,'(A)') trim(header1)
+        write(u_cmixd,'(A)') trim(header2)
+        write(u_cmixd,'(A)') trim(header3)
+        do i=1,nsteps+1
+          write(u_cmixd,'(2X,1000(ES20.12E3,1X))') (tmp_out_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_cmixd)
+      deallocate(tmp_in_matrix)
+      deallocate(tmp_out_matrix)
+      ! end u_cmixd
+    endif
+
+
+    if (write_coeffmch) then
+    ! for coefficients, one has to linearly interpolate norm, i.e. population,
+    ! and real-imaginary phase angle. 
+    ! there are three outputs: u_coefm, u_classm, u_cmixm
+
+      ! u_coefm
+      ! nstates, sum, time, coeff is complex, so it is 2*nstates
+      total_columns=2*nstates+2
+      allocate(tmp_in_matrix(nsteps_adapted+1,total_columns))
+      allocate(tmp_out_matrix(nsteps+1,total_columns))
+      open(unit=u_coefm, file='output_data/coeff_MCH.out', status='old', action='read')
+        read(u_coefm,'(A)') header1
+        read(u_coefm,'(A)') header2
+        read(u_coefm,'(A)') header3
+        do i=1,nsteps_adapted+1
+          read(u_coefm,*) (tmp_in_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_coefm)
+      filename1='output_data/coeff_MCH.out'
+      filename2='output_data/coeff_MCH.original.out'
+      call system("mv "//trim(filename1)//" "//trim(filename2))
+      ! deal with tmp_in_matrix and convert it to norm and angle. 
+      call convert_to_norm_angle(nsteps_adapted+1, total_columns, nstates, tmp_in_matrix)
+      timeline_adapted(:)=tmp_in_matrix(:,1)
+      do istate=2,total_columns ! starts with column 2 because first column is time.
+        call linear_interp(nsteps_adapted+1, nsteps+1, timeline_adapted, tmp_in_matrix(:,istate), timeline, tmp_out_matrix(:,istate))
+      enddo
+      ! convert back to real and imaginary
+      call convert_to_real_imag(nsteps+1, total_columns, nstates, tmp_out_matrix)
+      tmp_out_matrix(:,1)=timeline(:)
+      open(unit=u_coefm, file='output_data/coeff_MCH.out', status='replace', action='write')
+        write(u_coefm,'(A)') trim(header1)
+        write(u_coefm,'(A)') trim(header2)
+        write(u_coefm,'(A)') trim(header3)
+        do i=1,nsteps+1
+          write(u_coefm,'(2X,1000(ES20.12E3,1X))') (tmp_out_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_coefm)
+      deallocate(tmp_in_matrix)
+      deallocate(tmp_out_matrix)
+      ! end u_coefm
+
+      ! u_classm
+      ! nstates, 1.d0, time
+      total_columns=nstates+2
+      allocate(tmp_in_matrix(nsteps_adapted+1,total_columns))
+      allocate(tmp_out_matrix(nsteps+1,total_columns))
+      open(unit=u_classm, file='output_data/coeff_class_MCH.out', status='old', action='read') 
+        read(u_classm,'(A)') header1
+        read(u_classm,'(A)') header2
+        read(u_classm,'(A)') header3
+        do i=1,nsteps_adapted+1
+          read(u_classm,*) (tmp_in_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_classm)
+      filename1='output_data/coeff_class_MCH.out'
+      filename2='output_data/coeff_class_MCH.original.out'
+      call system("mv "//trim(filename1)//" "//trim(filename2))
+      timeline_adapted(:)=tmp_in_matrix(:,1)
+      do istate=2,total_columns ! starts with column 2 because first column is time.
+        call linear_interp(nsteps_adapted+1, nsteps+1, timeline_adapted, tmp_in_matrix(:,istate), timeline, tmp_out_matrix(:,istate))
+      enddo
+      tmp_out_matrix(:,1)=timeline(:)
+      open(unit=u_classm, file='output_data/coeff_class_MCH.out', status='replace', action='write')
+        write(u_classm,'(A)') trim(header1)
+        write(u_classm,'(A)') trim(header2)
+        write(u_classm,'(A)') trim(header3)
+        do i=1,nsteps+1
+          write(u_classm,'(2X,1000(ES20.12E3,1X))') (tmp_out_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_classm)
+      deallocate(tmp_in_matrix)
+      deallocate(tmp_out_matrix)
+      ! end u_classm
+
+      ! u_cmixm
+      ! nstates, 1.d0, time
+      total_columns=nstates+2
+      allocate(tmp_in_matrix(nsteps_adapted+1,total_columns))
+      allocate(tmp_out_matrix(nsteps+1,total_columns))
+      open(unit=u_cmixm, file='output_data/coeff_mixed_MCH.out', status='old', action='read')
+        read(u_cmixm,'(A)') header1
+        read(u_cmixm,'(A)') header2
+        read(u_cmixm,'(A)') header3
+        do i=1,nsteps_adapted+1
+          read(u_cmixm,*) (tmp_in_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_cmixm)
+      filename1='output_data/coeff_mixed_MCH.out'
+      filename2='output_data/coeff_mixed_MCH.original.out'
+      call system("mv "//trim(filename1)//" "//trim(filename2))
+      timeline_adapted(:)=tmp_in_matrix(:,1)
+      do istate=2,total_columns ! starts with column 2 because first column is time.
+        call linear_interp(nsteps_adapted+1, nsteps+1, timeline_adapted, tmp_in_matrix(:,istate), timeline, tmp_out_matrix(:,istate))
+      enddo
+      tmp_out_matrix(:,1)=timeline(:)
+      open(unit=u_cmixm, file='output_data/coeff_mixed_MCH.out', status='replace', action='write')
+        write(u_cmixm,'(A)') trim(header1)
+        write(u_cmixm,'(A)') trim(header2)
+        write(u_cmixm,'(A)') trim(header3)
+        do i=1,nsteps+1
+          write(u_cmixm,'(2X,1000(ES20.12E3,1X))') (tmp_out_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_cmixm)
+      deallocate(tmp_in_matrix)
+      deallocate(tmp_out_matrix)
+      ! end u_cmixm
+    endif
+
+
+    if (write_coeffdiab) then
+    ! for coefficients, one has to linearly interpolate norm, i.e. population,
+    ! and real-imaginary phase angle. 
+    ! there are three outputs: u_coefdiab, u_classdiab, u_cmixdiab
+
+      ! u_coefdiab
+      ! nstates, sum, time, coeff is complex, so it is 2*nstates
+      total_columns=2*nstates+2
+      allocate(tmp_in_matrix(nsteps_adapted+1,total_columns))
+      allocate(tmp_out_matrix(nsteps+1,total_columns))
+      open(unit=u_coefdiab, file='output_data/coeff_diab.out', status='old', action='read')
+        read(u_coefdiab,'(A)') header1
+        read(u_coefdiab,'(A)') header2
+        read(u_coefdiab,'(A)') header3
+        do i=1,nsteps_adapted+1
+          read(u_coefdiab,*) (tmp_in_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_coefdiab)
+      filename1='output_data/coeff_diab.out'
+      filename2='output_data/coeff_diab.original.out'
+      call system("mv "//trim(filename1)//" "//trim(filename2))
+      ! deal with tmp_in_matrix and convert it to norm and angle. 
+      call convert_to_norm_angle(nsteps_adapted+1, total_columns, nstates, tmp_in_matrix)
+      timeline_adapted(:)=tmp_in_matrix(:,1)
+      do istate=2,total_columns ! starts with column 2 because first column is time.
+        call linear_interp(nsteps_adapted+1, nsteps+1, timeline_adapted, tmp_in_matrix(:,istate), timeline, tmp_out_matrix(:,istate))
+      enddo
+      ! convert back to real and imaginary
+      call convert_to_real_imag(nsteps+1, total_columns, nstates, tmp_out_matrix)
+      tmp_out_matrix(:,1)=timeline(:)
+      open(unit=u_coefdiab, file='output_data/coeff_diab.out', status='replace', action='write')
+        write(u_coefdiab,'(A)') trim(header1)
+        write(u_coefdiab,'(A)') trim(header2)
+        write(u_coefdiab,'(A)') trim(header3)
+        do i=1,nsteps+1
+          write(u_coefdiab,'(2X,1000(ES20.12E3,1X))') (tmp_out_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_coefdiab)
+      deallocate(tmp_in_matrix)
+      deallocate(tmp_out_matrix)
+      ! end u_coefdiab
+
+      ! u_classdiab
+      ! nstates, 1.d0, time
+      total_columns=nstates+2
+      allocate(tmp_in_matrix(nsteps_adapted+1,total_columns))
+      allocate(tmp_out_matrix(nsteps+1,total_columns))
+      open(unit=u_classdiab, file='output_data/coeff_class_diab.out', status='old', action='read')
+        read(u_classdiab,'(A)') header1
+        read(u_classdiab,'(A)') header2
+        read(u_classdiab,'(A)') header3
+        do i=1,nsteps_adapted+1
+          read(u_classdiab,*) (tmp_in_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_classdiab)
+      filename1='output_data/coeff_class_diab.out'
+      filename2='output_data/coeff_class_diab.original.out'
+      call system("mv "//trim(filename1)//" "//trim(filename2))
+      timeline_adapted(:)=tmp_in_matrix(:,1)
+      do istate=2,total_columns ! starts with column 2 because first column is time.
+        call linear_interp(nsteps_adapted+1, nsteps+1, timeline_adapted, tmp_in_matrix(:,istate), timeline, tmp_out_matrix(:,istate))
+      enddo
+      tmp_out_matrix(:,1)=timeline(:)
+      open(unit=u_classdiab, file='output_data/coeff_class_diab.out', status='replace', action='write')
+        write(u_classdiab,'(A)') trim(header1)
+        write(u_classdiab,'(A)') trim(header2)
+        write(u_classdiab,'(A)') trim(header3)
+        do i=1,nsteps+1
+          write(u_classdiab,'(2X,1000(ES20.12E3,1X))') (tmp_out_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_classdiab)
+      deallocate(tmp_in_matrix)
+      deallocate(tmp_out_matrix)
+      ! end u_classdiab
+
+      ! u_cmixdiab
+      ! nstates, 1.d0, time
+      total_columns=nstates+2
+      allocate(tmp_in_matrix(nsteps_adapted+1,total_columns))
+      allocate(tmp_out_matrix(nsteps+1,total_columns))
+      open(unit=u_cmixdiab, file='output_data/coeff_mixed_diab.out', status='old', action='read')
+        read(u_cmixdiab,'(A)') header1
+        read(u_cmixdiab,'(A)') header2
+        read(u_cmixdiab,'(A)') header3
+        do i=1,nsteps_adapted+1
+          read(u_cmixdiab,*) (tmp_in_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_cmixdiab)
+      filename1='output_data/coeff_mixed_diab.out'
+      filename2='output_data/coeff_mixed_diab.original.out'
+      call system("mv "//trim(filename1)//" "//trim(filename2))
+      timeline_adapted(:)=tmp_in_matrix(:,1)
+      do istate=2,total_columns ! starts with column 2 because first column is time.
+        call linear_interp(nsteps_adapted+1, nsteps+1, timeline_adapted, tmp_in_matrix(:,istate), timeline, tmp_out_matrix(:,istate))
+      enddo
+      tmp_out_matrix(:,1)=timeline(:)
+      open(unit=u_cmixdiab, file='output_data/coeff_mixed_diab.out', status='replace', action='write')
+        write(u_cmixdiab,'(A)') trim(header1)
+        write(u_cmixdiab,'(A)') trim(header2)
+        write(u_cmixdiab,'(A)') trim(header3)
+        do i=1,nsteps+1
+          write(u_cmixdiab,'(2X,1000(ES20.12E3,1X))') (tmp_out_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_cmixdiab)
+      deallocate(tmp_in_matrix)
+      deallocate(tmp_out_matrix) 
+      ! end u_cmixdiab
+    endif
+
+ 
+    if (write_prob) then
+      ! nstates, randnum, time
+      total_columns=nstates+2
+      allocate(tmp_in_matrix(nsteps_adapted+1,total_columns))
+      allocate(tmp_out_matrix(nsteps+1,total_columns))
+      open(unit=u_prob, file='output_data/prob.out', status='old', action='read')
+        read(u_prob,'(A)') header1
+        read(u_prob,'(A)') header2
+        read(u_prob,'(A)') header3
+        do i=1,nsteps_adapted+1
+          read(u_prob,*) (tmp_in_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_prob)
+      filename1='output_data/prob.out'
+      filename2='output_data/prob.original.out'
+      call system("mv "//trim(filename1)//" "//trim(filename2))
+      timeline_adapted(:)=tmp_in_matrix(:,1)
+      do istate=2,total_columns ! starts with column 2 because first column is time.
+        call linear_interp(nsteps_adapted+1, nsteps+1, timeline_adapted, tmp_in_matrix(:,istate), timeline, tmp_out_matrix(:,istate))
+      enddo
+      tmp_out_matrix(:,1)=timeline(:)
+      open(unit=u_prob, file='output_data/prob.out', status='replace', action='write')
+        write(u_prob,'(A)') trim(header1)
+        write(u_prob,'(A)') trim(header2)
+        write(u_prob,'(A)') trim(header3)
+        do i=1,nsteps+1
+          write(u_prob,'(2X,1000(ES20.12E3,1X))') (tmp_out_matrix(i,istate),istate=1,total_columns)
+        enddo 
+      close(u_prob)
+      deallocate(tmp_in_matrix)
+      deallocate(tmp_out_matrix)
+    endif
+
+
+    if (write_expec) then
+      ! 3nstates, Ekin, Epot, Etotal, time
+      total_columns=3*nstates+4
+      allocate(tmp_in_matrix(nsteps_adapted+1,total_columns))
+      allocate(tmp_out_matrix(nsteps+1,total_columns))
+      open(unit=u_expec, file='output_data/expec.out', status='old', action='read')
+        read(u_expec,'(A)') header1
+        read(u_expec,'(A)') header2
+        read(u_expec,'(A)') header3
+        do i=1,nsteps_adapted+1
+          read(u_expec,*) (tmp_in_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_expec)
+      filename1='output_data/expec.out'
+      filename2='output_data/expec.original.out'
+      call system("mv "//trim(filename1)//" "//trim(filename2))
+      timeline_adapted(:)=tmp_in_matrix(:,1)
+      do istate=2,total_columns ! starts with column 2 because first column is time.
+        call linear_interp(nsteps_adapted+1, nsteps+1, timeline_adapted, tmp_in_matrix(:,istate), timeline, tmp_out_matrix(:,istate))
+      enddo
+      tmp_out_matrix(:,1)=timeline(:)
+      open(unit=u_expec, file='output_data/expec.out', status='replace', action='write')
+        write(u_expec,'(A)') trim(header1)
+        write(u_expec,'(A)') trim(header2)
+        write(u_expec,'(A)') trim(header3)
+        do i=1,nsteps+1
+          write(u_expec,'(2X,1000(ES20.12E3,1X))') (tmp_out_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_expec)
+      deallocate(tmp_in_matrix)
+      deallocate(tmp_out_matrix)
+    endif
+
+
+    if (write_expecmch) then
+      ! 3nstates, Ekin, Epot, Etotal, time
+      total_columns=3*nstates+4
+      allocate(tmp_in_matrix(nsteps_adapted+1,total_columns))
+      allocate(tmp_out_matrix(nsteps+1,total_columns))
+      open(unit=u_expec_mch, file='output_data/expec_MCH.out', status='old', action='read')
+        read(u_expec_mch,'(A)') header1
+        read(u_expec_mch,'(A)') header2
+        read(u_expec_mch,'(A)') header3
+        do i=1,nsteps_adapted+1
+          read(u_expec_mch,*) (tmp_in_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_expec_mch)
+      filename1='output_data/expec_MCH.out'
+      filename2='output_data/expec_MCH.original.out'
+      call system("mv "//trim(filename1)//" "//trim(filename2))
+      timeline_adapted(:)=tmp_in_matrix(:,1)
+      do istate=2,total_columns ! starts with column 2 because first column is time.
+        call linear_interp(nsteps_adapted+1, nsteps+1, timeline_adapted, tmp_in_matrix(:,istate), timeline, tmp_out_matrix(:,istate))
+      enddo
+      tmp_out_matrix(:,1)=timeline(:)
+      open(unit=u_expec_mch, file='output_data/expec_MCH.out', status='replace', action='write')
+        write(u_expec_mch,'(A)') trim(header1)
+        write(u_expec_mch,'(A)') trim(header2)
+        write(u_expec_mch,'(A)') trim(header3)
+        do i=1,nsteps+1
+          write(u_expec_mch,'(2X,1000(ES20.12E3,1X))') (tmp_out_matrix(i,istate),istate=1,total_columns)
+        enddo
+      close(u_expec_mch)
+      deallocate(tmp_in_matrix)
+      deallocate(tmp_out_matrix)
+    endif
+
+
+    if (write_DM_diag) then
+
+
+    endif
+
+
+
+    if (write_dm_proj) then
+
+
+    endif
+
+
+
+    write(*,*) 'original files are saved as *.original.out'
+    write(*,*) 'linear interpolation finished.'
+
+
+  endif ! if (adaptive==1) then 
+
+    ! =============== End linear interpolation ==================
 
 ! subroutines for data extractor
   contains
@@ -1409,6 +2146,85 @@ program data_extractor
     return
   endfunction
 
+
+  subroutine linear_interp(n1, n2, x, y, x_out, y_out)
+    implicit none
+    integer, intent(in) :: n1, n2
+    real*8, intent(in) :: x(n1), y(n1), x_out(n2)
+    real*8, intent(inout) :: y_out(n2)
+
+    real*8 :: x1, y1, x2, y2, w1, w2
+    integer :: i, j, record 
+
+    ! first and last points are not interpolated, it is zero
+    y_out(1)=y(1)
+    y_out(n2)=y(n1)
+
+    record=2
+    do i=2, n2-1
+    ! looking for the point in x right before, and right after x_out(i)
+      j=record
+      do while (x(j)<x_out(i))
+         j=j+1
+      enddo
+      record=j ! record is updated 
+        
+      if (x(j)==x_out(i)) then 
+        y_out(i)=y(j)
+      else ! do linear interpolation  
+        x1=x(j-1)
+        x2=x(j)
+        y1=y(j-1)
+        y2=y(j)
+        w1=(x2-x_out(i))/(x2-x1)
+        w2=(x_out(i)-x1)/(x2-x1) 
+        y_out(i)=w1*y1+w2*y2
+      endif      
+    enddo
+
+  endsubroutine
+
+  subroutine convert_to_norm_angle(n1, n2, nstates, matrix)
+    implicit none
+    integer, intent(in) :: n1, n2, nstates
+    real*8, intent(inout) :: matrix(n1,n2)
+
+    real*8 :: c_real, c_imag                !< real and imaginary part of coefficients
+    real*8 :: c_norm, c_angle               !< norm and angle of coefficients
+    integer :: i, istate 
+
+    do i=1, n1
+      do istate=1, nstates
+        c_real=matrix(i,2*istate+1)
+        c_imag=matrix(i,2*istate+2)
+        c_norm=sqrt(c_real*c_real+c_imag*c_imag)
+        c_angle=acos(c_real/c_norm)
+        matrix(i,2*istate+1)=c_norm
+        matrix(i,2*istate+2)=c_angle
+      enddo
+    enddo
+  endsubroutine
+
+  subroutine convert_to_real_imag(n1, n2, nstates, matrix)
+    implicit none
+    integer, intent(in) :: n1, n2, nstates
+    real*8, intent(inout) :: matrix(n1,n2)
+
+    real*8 :: c_real, c_imag                !< real and imaginary part of coefficients
+    real*8 :: c_norm, c_angle               !< norm and angle of coefficients
+    integer :: i, istate
+
+    do i=1, n1
+      do istate=1, nstates
+        c_norm=matrix(i,2*istate+1)
+        c_angle=matrix(i,2*istate+2)
+        c_real=c_norm*cos(c_angle)
+        c_imag=c_norm*sin(c_angle)
+        matrix(i,2*istate+1)=c_real
+        matrix(i,2*istate+2)=c_imag
+      enddo
+    enddo
+  endsubroutine
 
 endprogram
 

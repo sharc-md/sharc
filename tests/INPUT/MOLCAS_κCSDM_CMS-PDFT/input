@@ -1,0 +1,30 @@
+printlevel 1
+
+geomfile "geom"
+veloc external
+velocfile "veloc"
+
+nstates 2 0 0 
+actstates 2 0 0 
+state 2 diag
+coeff auto
+rngseed -11805
+
+ezero     -95.5567559100
+tmax 1000.000000
+stepsize 0.100000
+nsubsteps 250
+integrator fvv
+
+method scp
+surf diagonal
+coupling ktdc
+neom gdiff
+nogradcorrect
+decoherence_scheme dom
+switching_procedure CSDM
+decotime_method csdm
+nospinorbit
+output_format ascii
+output_dat_steps 1
+nac_projection
