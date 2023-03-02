@@ -1143,11 +1143,11 @@ module input
           ctrl%gradcorrect=1
         case ('nac')
           ctrl%gradcorrect=1
-        case ('ngh')
+        case ('ngt')
           ctrl%gradcorrect=1
         case ('kmatrix')
           ctrl%gradcorrect=2
-        case ('tdh')
+        case ('tdm')
           ctrl%gradcorrect=2
         case ('enac')
           ctrl%gradcorrect=3
