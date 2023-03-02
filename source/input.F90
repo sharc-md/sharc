@@ -842,7 +842,7 @@ module input
     endif
 
     ! method to compute kmatrix, another keyword
-    line=get_value_from_key('tdh_method',io)
+    line=get_value_from_key('tdm_method',io)
     if (io==0) then
       select case (trim(line))
         case ('gradient')
