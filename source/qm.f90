@@ -2940,7 +2940,7 @@ module qm
         if (printlevel>4) write(u_log,*) 'Frustrated hops are ignored'
         continue
       else if (ctrl%reflect_frustrated==1 .or. ctrl%reflect_frustrated==91) then    
-        ! reverse along v or deltaV approach with reverse along v
+        ! reverse along v or delV approach with reverse along v
         if (printlevel>4) write(u_log,*) 'Frustrated hop direction set to reverse along velocity vector'
         do istate=1,ctrl%nstates
           do jstate=1,ctrl%nstates
@@ -2948,7 +2948,7 @@ module qm
           enddo
         enddo
       else if (ctrl%reflect_frustrated==2 .or. ctrl%reflect_frustrated==92) then
-        ! reverse along projected v or deltaV approach with reverse along projected v
+        ! reverse along projected v or delV approach with reverse along projected v
         if (printlevel>4) write(u_log,*) 'Frustrated hop direction set to reverse along projected velocity vector'
         do istate=1,ctrl%nstates
           do jstate=1,ctrl%nstates
@@ -2956,7 +2956,7 @@ module qm
           enddo
         enddo
       else if (ctrl%reflect_frustrated==3 .or. ctrl%reflect_frustrated==93) then
-        ! reverse along NAC or deltaV approach with reverse along NAC
+        ! reverse along NAC or delV approach with reverse along NAC
         if (printlevel>4) write(u_log,*) 'Frustrated hop direction set to reverse along NAC'
         do istate=1,ctrl%nstates
           do jstate=1,ctrl%nstates
@@ -2964,7 +2964,7 @@ module qm
           enddo
         enddo
       else if (ctrl%reflect_frustrated==4 .or. ctrl%reflect_frustrated==94) then
-        ! reverse along NAC or deltaV approach with reverse along gradient difference
+        ! reverse along NAC or delV approach with reverse along gradient difference
         if (printlevel>4) write(u_log,*) 'Frustrated hop direction set to reverse along difference gradient'
         do istate=1,ctrl%nstates
           do jstate=1,ctrl%nstates
@@ -2973,7 +2973,7 @@ module qm
           enddo
         enddo
       else if (ctrl%reflect_frustrated==5 .or. ctrl%reflect_frustrated==95) then
-        ! reverse along NAC or deltaV approach with reverse along projected NAC
+        ! reverse along NAC or delV approach with reverse along projected NAC
         if (printlevel>4) write(u_log,*) 'Frustrated hop direction set to reverse along projected NAC'
         do istate=1,ctrl%nstates
           do jstate=1,ctrl%nstates
@@ -2981,7 +2981,7 @@ module qm
           enddo
         enddo
       else if (ctrl%reflect_frustrated==6 .or. ctrl%reflect_frustrated==96) then
-        ! reverse along NAC or deltaV approach with reverse along projected gradient difference
+        ! reverse along NAC or delV approach with reverse along projected gradient difference
         if (printlevel>4) write(u_log,*) 'Frustrated hop direction set to reverse along projected difference gradient'
         do istate=1,ctrl%nstates
           do jstate=1,ctrl%nstates
@@ -2990,7 +2990,7 @@ module qm
           enddo
         enddo
       else if (ctrl%reflect_frustrated==7 .or. ctrl%reflect_frustrated==97) then
-        ! reverse along NAC or deltaV approach with reverse along effective NAC
+        ! reverse along NAC or delV approach with reverse along effective NAC
         if (printlevel>4) write(u_log,*) 'Frustrated hop direction set to reverse along effective NAC'
         do istate=1,ctrl%nstates
           do jstate=1,ctrl%nstates
@@ -2998,7 +2998,7 @@ module qm
           enddo
         enddo
       else if (ctrl%reflect_frustrated==8 .or. ctrl%reflect_frustrated==98) then
-        ! reverse along NAC or deltaV approach with reverse along projected effective NAC
+        ! reverse along NAC or delV approach with reverse along projected effective NAC
         if (printlevel>4) write(u_log,*) 'Frustrated hop direction set to reverse along projected effective NAC'
         do istate=1,ctrl%nstates
           do jstate=1,ctrl%nstates
