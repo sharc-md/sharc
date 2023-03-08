@@ -41,7 +41,7 @@ USE_LIBS := mkl
 COMP_STATIC := false
 
 #needed for PYSHARC
-ANACONDA := 
+ANACONDA := ${CONDA_PREFIX}
 # =======================================
 
 

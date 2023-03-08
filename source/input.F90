@@ -863,7 +863,7 @@ module input
     endif
 
     ! method to compute kmatrix, another keyword
-    line=get_value_from_key('tdh_method',io)
+    line=get_value_from_key('tdm_method',io)
     if (io==0) then
       select case (trim(line))
         case ('gradient')
@@ -1164,11 +1164,11 @@ module input
           ctrl%gradcorrect=1
         case ('nac')
           ctrl%gradcorrect=1
-        case ('ngh')
+        case ('ngt')
           ctrl%gradcorrect=1
         case ('kmatrix')
           ctrl%gradcorrect=2
-        case ('tdh')
+        case ('tdm')
           ctrl%gradcorrect=2
         case ('enac')
           ctrl%gradcorrect=3
@@ -1236,21 +1236,21 @@ module input
           ctrl%reflect_frustrated=7
         case ('parallel_penac') ! projected effective NAC
           ctrl%reflect_frustrated=8
-        case ('deltaV_vel')
+        case ('delV_vel')
           ctrl%reflect_frustrated=91
-        case ('deltaV_pvel')
+        case ('delV_pvel')
           ctrl%reflect_frustrated=92
-        case ('deltaV_nac')
+        case ('delV_nac')
           ctrl%reflect_frustrated=93
-        case ('deltaV_diff')
+        case ('delV_diff')
           ctrl%reflect_frustrated=94
-        case ('deltaV_pnac')
+        case ('delV_pnac')
           ctrl%reflect_frustrated=95
-        case ('deltaV_pdiff')
+        case ('delV_pdiff')
           ctrl%reflect_frustrated=96
-        case ('deltaV_enac')
+        case ('delV_enac')
           ctrl%reflect_frustrated=97
-        case ('deltaV_penac')
+        case ('delV_penac')
           ctrl%reflect_frustrated=98
         case default
           write(0,*) 'Unknown keyword ',trim(line),' to "reflect_frustrated"!'

@@ -655,49 +655,49 @@ subroutine Rescale_velocities(traj,ctrl)
           &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
           &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
         case (91)
-          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to deltaV approach along velocity vector.'
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to delV approach along velocity vector.'
           call reflect_deltaV(ctrl%natom,traj%veloc_ad,traj%mass_a,&
           &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
           &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
           &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
         case (92)
-          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to deltaV approach along projected velocity vector.'
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to delV approach along projected velocity vector.'
           call reflect_deltaV(ctrl%natom,traj%veloc_ad,traj%mass_a,&
           &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
           &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
           &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
         case (93)
-          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to deltaV approach along nonadiabatic coupling vector.'
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to delV approach along nonadiabatic coupling vector.'
           call reflect_deltaV(ctrl%natom,traj%veloc_ad,traj%mass_a,&
           &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
           &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
           &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
         case (94)
-          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to deltaV approach along gradient difference vector.'
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to delV approach along gradient difference vector.'
           call reflect_deltaV(ctrl%natom,traj%veloc_ad,traj%mass_a,&
           &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
           &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
           &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
         case (95)
-          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to deltaV approach along projected nonadiabatic coupling vector.'
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to delV approach along projected nonadiabatic coupling vector.'
           call reflect_deltaV(ctrl%natom,traj%veloc_ad,traj%mass_a,&
           &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
           &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
           &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
         case (96)
-          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to deltaV approach along projected gradient difference vector.'
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to delV approach along projected gradient difference vector.'
           call reflect_deltaV(ctrl%natom,traj%veloc_ad,traj%mass_a,&
           &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
           &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
           &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
         case (97)
-          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to deltaV approach along effective nonadiabatic coupling vector.'
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to delV approach along effective nonadiabatic coupling vector.'
           call reflect_deltaV(ctrl%natom,traj%veloc_ad,traj%mass_a,&
           &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
           &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
           &real(traj%gmatrix_ssad(traj%state_diag_frust, traj%state_diag_frust,:,:)) )
         case (98)
-          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to deltaV approach along projected effective nonadiabatic coupling vector.'
+          if (printlevel>2) write(u_log,*) 'Velocity is reflected according to delV approach along projected effective nonadiabatic coupling vector.'
           call reflect_deltaV(ctrl%natom,traj%veloc_ad,traj%mass_a,&
           &traj%frustrated_hop_vec_ssad(traj%state_diag_frust, traj%state_diag,:,:),&
           &real(traj%gmatrix_ssad(traj%state_diag, traj%state_diag,:,:)),&
@@ -806,7 +806,7 @@ subroutine reflect_deltaV(natom,veloc_ad,mass_a,nac_ad,Gdiag,Gfrust)
   endif
 
   if (sum_Ffrustk*sum_pk<0) then
-    if (printlevel>2) write(u_log,*) 'Conditions for deltaV reflection approach fulfilled.'
+    if (printlevel>2) write(u_log,*) 'Conditions for delV reflection approach fulfilled.'
     do iat=1,natom
       factor = 2 * sum(veloc_ad(iat,:)*nac_ad(iat,:)) / sum(nac_ad(iat,:)*nac_ad(iat,:))
       veloc_ad(iat,:) = veloc_ad(iat,:) - factor * nac_ad(iat,:)

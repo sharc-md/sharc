@@ -3151,6 +3151,8 @@ def moveOldFiles(QMin):
 
 
 def saveFiles(WORKDIR, QMin):
+    # see https://www.ibm.com/support/pages/apar/IJ29942
+    shutil._USE_CP_SENDFILE = False
     # copy the wf files from master directories
     job = QMin['JOB']
     fromfile = os.path.join(WORKDIR, 'wf')
