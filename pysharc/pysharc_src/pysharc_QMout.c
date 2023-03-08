@@ -256,8 +256,9 @@ QMout_set_gradient(QMout * self, PyObject * args)
     double * state_gradient;
 
     double scale = 0.0;
+    double soc_scale = 0.0;
 
-    get_scalingfactor_(&scale);
+    get_scalingfactor_(&scale, &soc_scale);
 
     if (!PyArg_ParseTuple(args, "Oi", &gradient, &icall))
         return NULL;

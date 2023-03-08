@@ -46,7 +46,7 @@ void get_savedir_(char * string);
 void get_tasks_(char * string, int * icall);
 void get_grad_(char * string, int * icall);
 void get_nacdr_(char * string, int * icall);
-void get_scalingfactor_(double * scale);
+void get_scalingfactor_(double * scale, double * soc_scale);
 void get_constants_(double * consts);
 // Molecule info
 void get_natoms_(int * natoms);

@@ -315,10 +315,11 @@ endsubroutine
 
 ! ------------------------------------------------------
 
-subroutine get_scalingfactor(scl)
+subroutine get_scalingfactor(scl,soc_scl)
     use memory_module, only: ctrl
     implicit none
     __REAL__, intent(out) :: scl
+    __REAL__, intent(out) :: soc_scl
 
     scl = ctrl%scalingfactor
     soc_scl = ctrl%soc_scaling
