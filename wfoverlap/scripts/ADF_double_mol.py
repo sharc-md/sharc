@@ -1,10 +1,10 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 #******************************************
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2019 University of Vienna
+#    Copyright (c) 2023 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -23,7 +23,6 @@
 #
 #******************************************
 
-#!/usr/bin/env python2
 
 import sys
 import os
@@ -58,7 +57,7 @@ def readfile(filename):
     out=f.readlines()
     f.close()
   except IOError:
-    print 'File %s does not exist!' % (filename)
+    print('File %s does not exist!' % (filename))
     sys.exit(13)
   return out
 
@@ -73,11 +72,11 @@ def writefile(filename,content):
     elif isinstance(content,str):
       f.write(content)
     else:
-      print 'Content %s cannot be written to file!' % (content)
+      print('Content %s cannot be written to file!' % (content))
       sys.exit(14)
     f.close()
   except IOError:
-    print 'Could not write to file %s!' % (filename)
+    print('Could not write to file %s!' % (filename))
     sys.exit(15)
 
 
@@ -133,7 +132,7 @@ def runADF(WORKDIR,ADF,ncpu,strip=False):
     try:
         runerror=sp.call(string,shell=True,stdout=stdoutfile,stderr=stderrfile)
     except OSError:
-        print 'Call have had some serious problems:',OSError
+        print('Call have had some serious problems:',OSError)
         sys.exit(66)
     stdoutfile.close()
     stderrfile.close()

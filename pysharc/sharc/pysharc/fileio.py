@@ -1,4 +1,4 @@
-#******************************************
+# ******************************************
 #
 #    SHARC Program Suite
 #
@@ -19,41 +19,43 @@
 #    You should have received a copy of the GNU General Public License
 #    inside the SHARC manual.  If not, see <http://www.gnu.org/licenses/>.
 #
-#******************************************
+# ******************************************
 
 
 import sys
 
-def readFile(fileName,option="rb+"):
+
+def readFile(fileName, option="rb+"):
     """Read File and return text in file
-       
+
        fileName = str, Name of the file to be read (or path+fileName)
        return   = str, Information in fileName
     """
 
     try:
-        data = open(fileName,option)
-    except:
+        data = open(fileName, option)
+    except BaseException:
         print(" Error reading file: " + fileName)
         sys.exit()
 
     text = data.read()
-    data.close()  
+    data.close()
     return text
 
-def writeOutput(fileName,content):
+
+def writeOutput(fileName, content):
     """ write content to file [fileName]
 
-        fileName = str, Name of the file to be read 
+        fileName = str, Name of the file to be read
         content  = str, content written to the file
         return   = None
     """
     try:
-      OUT = open(fileName,"w")
-    except:
-      print("Error writing to file: "+fileName)
-      sys.exit()
-    
+        OUT = open(fileName, "w")
+    except BaseException:
+        print("Error writing to file: " + fileName)
+        sys.exit()
+
     OUT.write(content)
     OUT.close()
-    return;
+    return

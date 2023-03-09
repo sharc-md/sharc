@@ -1,6 +1,6 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
-#******************************************
+# ******************************************
 #
 #    SHARC Program Suite
 #
@@ -21,10 +21,9 @@
 #    You should have received a copy of the GNU General Public License
 #    inside the SHARC manual.  If not, see <http://www.gnu.org/licenses/>.
 #
-#******************************************
+# ******************************************
 
 
-#!/usr/bin/env python2
 import sys
 import time
 # relative packages
@@ -32,7 +31,7 @@ from .. import sharc
 from .constants import IAn2AName
 from .constants import IAn2AName
 from .tools import writeQMout, lst2dct
-from . import fileio 
+from . import fileio
 
 
 class SHARC_INTERFACE(object):
@@ -129,6 +128,7 @@ class SHARC_INTERFACE(object):
         QMout = self.do_qm_job(tasks, Crd)
 
         return QMout
+
     def final_print(self):
         """
         Called before sharc_finalize
@@ -150,12 +150,12 @@ class SHARC_INTERFACE(object):
 
     def sharc_initial_setup(self):
         """
-        This function is used to handle all setup tasks 
+        This function is used to handle all setup tasks
         for the interface class before the dynamics starts!
         """
         if self.use_qmin is True:
             self._sharc_QMin = sharc.QMin(self.NAtoms)
-    
+
 
     def sharc_readQMin(self, QMin):
         """
@@ -172,11 +172,11 @@ class SHARC_INTERFACE(object):
         writes QMout file, based on the QMout dct!
         """
         QMin = {
-            'natom' : self.NAtoms,
-            'states' : self.states['states'],
-            'nstates' : self.states['nstates'],
-            'nmstates' : self.states['nmstates'],
-            }
+            'natom': self.NAtoms,
+            'states': self.states['states'],
+            'nstates': self.states['nstates'],
+            'nmstates': self.states['nmstates'],
+        }
 
         writeQMout(QMin, QMout, QMoutfile)
 
@@ -190,13 +190,13 @@ class SHARC_INTERFACE(object):
             txt = "%d\nQM.in created with SHARC_INTERFACE\n" % self.NAtoms
             if self.AtNames is None:
                 for i in range(self.NAtoms):
-                    txt += "%s   %12.8f %12.8f %12.8f \n" % ( IAn2AName[self.IAn[i]], Crd[i][0], Crd[i][1], Crd[i][2] )
+                    txt += "%s   %12.8f %12.8f %12.8f \n" % (IAn2AName[self.IAn[i]], Crd[i][0], Crd[i][1], Crd[i][2])
             else:
                 for i in range(self.NAtoms):
-                    txt += "%s   %12.8f %12.8f %12.8f \n" % ( self.AtNames[i], Crd[i][0], Crd[i][1], Crd[i][2] )
+                    txt += "%s   %12.8f %12.8f %12.8f \n" % (self.AtNames[i], Crd[i][0], Crd[i][1], Crd[i][2])
         else:
-            txt=""
-        
+            txt = ""
+
         txt += "# Basic Info \n"
         if self.iunit == 0:
             txt += 'Unit Bohr\n'
@@ -226,16 +226,16 @@ class SHARC_INTERFACE(object):
             self.IAn = None
 
         if self.save_atnames is True:
-            self.AtNames = [ IAn2AName[ian] for ian in  basic_info['IAn'] ]
+            self.AtNames = [IAn2AName[ian] for ian in basic_info['IAn']]
         else:
             self.AtNames = None
 
         self.savedir = basic_info['savedir']
         self.NAtoms = basic_info['NAtoms']
         self.nsteps = basic_info['NSteps']
-        self.istep  = basic_info['istep']
+        self.istep = basic_info['istep']
         self.constants = sharc.get_constants()
-        self.QMin = { 'savedir' : basic_info['savedir'] }
+        self.QMin = {'savedir': basic_info['savedir']}
 
     def sharc_get_sharc_tasks(self, icall, getCrd):
         tasks = sharc.get_all_tasks(icall)
@@ -264,20 +264,20 @@ class SHARC_INTERFACE(object):
                 self.QMout.set_dipolemoment(QMout['dm'])
 
         if 'overlap' in QMout:
-            if type(QMout['overlap']) != type([]):
+            if not isinstance(QMout['overlap'], type([])):
                 # assumes type is numpy array
-                QMout['overlap'] = [ list(ele) for ele in QMout['overlap'] ]
+                QMout['overlap'] = [list(ele) for ele in QMout['overlap']]
             self.QMout.set_overlap(QMout['overlap'])
 
         if 'grad' in QMout:
-            if type(QMout['grad']) == type([]):
+            if isinstance(QMout['grad'], type([])):
                 self.QMout.set_gradient(lst2dct(QMout['grad']), icall)
             else:
                 if QMout['grad'] is None:
                     QMout['grad'] = {}
                 self.QMout.set_gradient(QMout['grad'], icall)
         if 'nacdr' in QMout:
-            if type(QMout['nacdr']) == type([]):
+            if isinstance(QMout['nacdr'], type([])):
                 nacdr = {}
                 for i, ele in enumerate(QMout['nacdr']):
                     nacdr[i] = lst2dct(ele)
@@ -293,7 +293,7 @@ class SHARC_INTERFACE(object):
 
         try:
             return self.do_qm_job(tasks, Crd)
-        except:
+        except BaseException:
             self.crash_function()
             sharc.finalize_sharc()
             print("Unexpected error:", sys.exc_info()[0])
@@ -350,8 +350,8 @@ class SHARC_INTERFACE(object):
             sharc.initial_qm_post()
             # finish setup if not restart
             sharc.initial_step(IRestart)
-        #do main sharc loop
-        for istep in range(self.istep+1, self.nsteps+1):
+        # do main sharc loop
+        for istep in range(self.istep + 1, self.nsteps + 1):
             sharc.verlet_xstep(istep)
             # call do_qm_job
             Crd = self.sharc_do_qm_calculation()
@@ -370,7 +370,7 @@ class SHARC_INTERFACE(object):
 
     @classmethod
     def change_iskip(cls, value):
-        assert type(value) == int
+        assert isinstance(value, int)
         assert value > 0
 
         cls.iskip = value
@@ -378,14 +378,14 @@ class SHARC_INTERFACE(object):
     def getStates(self, txt):
         """ convert txt string in sharc, nstates data!  """
 
-        states={}
-        states['states'] = list(map(int,txt.split()))
+        states = {}
+        states['states'] = list(map(int, txt.split()))
         #states['states'] = [ int(i) for i in txt.split()]
         states['nstates'] = 0
         states['nmstates'] = 0
         for mult, i in enumerate(states['states']):
-            states['nstates']  += i
-            states['nmstates'] += (mult+1)*i
+            states['nstates'] += i
+            states['nmstates'] += (mult + 1) * i
         states['nmult'] = 0
         statemap = {}
         i = 1
@@ -393,14 +393,10 @@ class SHARC_INTERFACE(object):
             if nstates == 0:
                 continue
             states['nmult'] += 1
-            for ims in range(imult+1):
-                ms = ims-imult/2.0
+            for ims in range(imult + 1):
+                ms = ims - imult / 2.0
                 for istate in range(nstates):
-                    statemap[i] = [imult+1, istate+1, ms]
+                    statemap[i] = [imult + 1, istate + 1, ms]
                     i += 1
         states['statemap'] = statemap
         return states
-
-
-
-

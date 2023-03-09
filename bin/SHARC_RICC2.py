@@ -4476,7 +4476,7 @@ def runeverything(tasks, QMin):
 # ======================================================================= #
 def run_theodore(QMin):
     workdir = os.path.join(QMin['scratchdir'], 'JOB')
-    string = 'python2 %s/bin/analyze_tden.py' % (QMin['theodir'])
+    string = 'python %s/bin/analyze_tden.py' % (QMin['theodir'])
     runerror = runProgram(string, workdir, 'theodore.out')
     if runerror != 0:
         print('Theodore calculation crashed! Error code=%i' % (runerror))

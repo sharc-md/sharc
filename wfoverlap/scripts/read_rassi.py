@@ -1,10 +1,10 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 #******************************************
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2019 University of Vienna
+#    Copyright (c) 2023 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -23,7 +23,6 @@
 #
 #******************************************
 
-#!/usr/bin/env python2
 """
 This program reads RASSI output and converts it to the native ASCII format
 used by cioverlap.x
@@ -46,7 +45,7 @@ def readfile(filename):
     out=f.readlines()
     f.close()
   except IOError:
-    print 'File %s does not exist!' % (filename)
+    print('File %s does not exist!' % (filename))
     sys.exit(12)
   return out
 
@@ -61,12 +60,12 @@ def writefile(filename,content,lvprt=1):
     elif isinstance(content,str):
       f.write(content)
     else:
-      print 'Content %s cannot be written to file!' % (content)
+      print('Content %s cannot be written to file!' % (content))
     f.close()
     if lvprt>=1:
-        print 'File %s written.'%filename
+        print('File %s written.'%filename)
   except IOError:
-    print 'Could not write to file %s!' % (filename)
+    print('Could not write to file %s!' % (filename))
     sys.exit(13)    
 
 # ======================================================================= #
@@ -171,14 +170,14 @@ def get_determinants(out,mult):
             if spinstring in line:
                 jobiphmult.append(int(line.split()[-1]))
             if stopstring in line:
-                print 'jobiphmult: ', jobiphmult
+                print('jobiphmult: ', jobiphmult)
                 if all(i==mult for i in jobiphmult):
                     break
                 else:
                     module=False
     else:
-        print 'Determinants not found!', mult
-        print 'No RASSI run for multiplicity %i found!' % (mult)
+        print('Determinants not found!', mult)
+        print('No RASSI run for multiplicity %i found!' % (mult))
         sys.exit(15)
 
     # ndocc and nvirt
@@ -227,8 +226,8 @@ def get_determinants(out,mult):
             try:
               coef=float(s[-2])
             except ValueError:
-              print "WARNING cannot read line for state %i:"%(istate+1)
-              print line.rstrip()
+              print("WARNING cannot read line for state %i:"%(istate+1))
+              print(line.rstrip())
               coef=0.
             if coef==0.:
                 continue
@@ -254,7 +253,7 @@ def get_determinants(out,mult):
                 else:
                     ci_vectors[det]=[0.]*state
                     ci_vectors[det][state-1]+=coef*dets[det]
-    for det in ci_vectors.keys():
+    for det in list(ci_vectors.keys()):
         d=nstates-len(ci_vectors[det])
         if d>0:
             ci_vectors[det].extend( [0.]*d )
@@ -306,10 +305,10 @@ def format_ci_vectors(ci_vectors):
 if __name__ == '__main__':
     import sys
     
-    print "read_rassi.py <molcas_log> <mult> [<det_file>]"
+    print("read_rassi.py <molcas_log> <mult> [<det_file>]")
     
     if len(sys.argv) <= 2:
-        print "Enter at least 2 argmuments"
+        print("Enter at least 2 argmuments")
         sys.exit()
     mlog = sys.argv[1]
     mult = int(sys.argv[2])    
@@ -318,7 +317,7 @@ if __name__ == '__main__':
     except IndexError:
         wname = 'dets'
     
-    print "Reading %s ..."%mlog
+    print("Reading %s ..."%mlog)
     out = readfile(mlog)
     ci_vectors = get_determinants(out, mult)
     nfrozen = ci_vectors['ndocc']

@@ -1,10 +1,10 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 #******************************************
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2019 University of Vienna
+#    Copyright (c) 2023 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -23,7 +23,6 @@
 #
 #******************************************
 
-#!/usr/bin/env python2
 import os
 
 numargerror="""Usage:
@@ -49,7 +48,7 @@ def write_daltcomm(maxpri=10):
     
     dc.close()
     
-    print "File daltcomm written."
+    print("File daltcomm written.")
     
 def write_daltaoin(olddir, newdir):
     dout=open('daltaoin', 'w')
@@ -68,22 +67,22 @@ def write_daltaoin(olddir, newdir):
     for i, line in enumerate(open('%s/WORK/daltaoin' % newdir,'r')):
         if i > 3: dout.write(line)
     dout.close()
-    print "File daltaoin written."
+    print("File daltaoin written.")
     
 def run_dalton(mem=1000):
     import subprocess
     
     command = ["%s/dalton.x"%os.environ['COLUMBUS'], "-m", "%i"%mem]
-    print "command:", command
+    print("command:", command)
     
     hout = open('double_hermitls', 'w')
     retval = subprocess.call(command, stdout=hout)
     hout.close()
     
 def write_ciovin(olddir, newdir, ciovin='cioverlap.input'):
-    print "Creating file %s"%ciovin
+    print("Creating file %s"%ciovin)
     if os.path.exists(ciovin):
-      print "File already exists, exiting ..."
+      print("File already exists, exiting ...")
       return
       
     cin = open(ciovin, 'w')
@@ -95,7 +94,7 @@ def write_ciovin(olddir, newdir, ciovin='cioverlap.input'):
     cin.write("ao_read=2\n")
   
     cin.close()
-    print "File %s written."%ciovin
+    print("File %s written."%ciovin)
     
 # ========================== Start of Code =============================== #
 
@@ -103,7 +102,7 @@ if __name__ == '__main__':
     import sys
 
     if len(sys.argv)<3 or len(sys.argv)>4:
-      print numargerror
+      print(numargerror)
       quit()
     
     olddir=sys.argv[1]

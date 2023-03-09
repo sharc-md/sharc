@@ -1,10 +1,10 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 #******************************************
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2019 University of Vienna
+#    Copyright (c) 2023 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -22,8 +22,6 @@
 #    inside the SHARC manual.  If not, see <http://www.gnu.org/licenses/>.
 #
 #******************************************
-
-#!/usr/bin/env python2
 
 import sys
 import os
@@ -50,10 +48,10 @@ def writefile(filename,content):
     elif isinstance(content,str):
       f.write(content)
     else:
-      print 'Content %s cannot be written to file!' % (content)
+      print('Content %s cannot be written to file!' % (content))
     f.close()
   except IOError:
-    print 'Could not write to file %s!' % (filename)
+    print('Could not write to file %s!' % (filename))
     sys.exit(13)
 
 # ======================================================================= #
@@ -71,7 +69,7 @@ npart = npart_a.tolist()
 
 
 endtime=datetime.datetime.now()
-print 'TAPE15 read! \tTook',endtime-starttime,'seconds'
+print('TAPE15 read! \tTook',endtime-starttime,'seconds')
 starttime=datetime.datetime.now()
 
 
@@ -81,7 +79,7 @@ NSO = int(file1.read('SFOs','number'))
 SFOmat = file1.read('A','SFO')
 
 endtime=datetime.datetime.now()
-print 'TAPE21 read! \tTook',endtime-starttime,'seconds'
+print('TAPE21 read! \tTook',endtime-starttime,'seconds')
 starttime=datetime.datetime.now()
 
 #print NAO,NSO
@@ -121,7 +119,7 @@ for i in range(NAO):
 writefile('Smat',string)
 
 endtime=datetime.datetime.now()
-print 'Smat rearranged! \tTook',endtime-starttime,'seconds'
+print('Smat rearranged! \tTook',endtime-starttime,'seconds')
 starttime=datetime.datetime.now()
 
 
@@ -148,7 +146,7 @@ writefile('SFOmat',string)
 
 
 endtime=datetime.datetime.now()
-print 'SFOmat rearranged! \tTook',endtime-starttime,'seconds'
+print('SFOmat rearranged! \tTook',endtime-starttime,'seconds')
 starttime=datetime.datetime.now()
 
 
@@ -157,31 +155,31 @@ Full_SFOmat=np.array(Full_SFOmat)
 Full_Smat  =np.array(Full_Smat)
 
 endtime=datetime.datetime.now()
-print 'Numpy arrays! \tTook',endtime-starttime,'seconds'
+print('Numpy arrays! \tTook',endtime-starttime,'seconds')
 starttime=datetime.datetime.now()
 
 prodmat=np.dot( Full_SFOmat, np.dot(Full_Smat,Full_SFOmat.T))
 
 endtime=datetime.datetime.now()
-print 'Matmul done! \tTook',endtime-starttime,'seconds'
+print('Matmul done! \tTook',endtime-starttime,'seconds')
 starttime=datetime.datetime.now()
 
 if len(sys.argv)>1:
-  print 'Off-diagonal block!'
+  print('Off-diagonal block!')
   string='%i %i\n' % (NSO/2,NSO/2)
   for i in range(NSO/2,NSO):
     for j in range(0,NSO/2):
       string+='%6.12e ' % prodmat[i][j]
     string+='\n'
 else:
-  print 'Full block!'
+  print('Full block!')
   string='%i %i\n' % (NSO,NSO)
   for i in range(NSO):
     for j in range(NSO):
       string+='%6.12e ' % prodmat[i][j]
     string+='\n'
 writefile('SFO_overl',string)
-print 'DONE!'
+print('DONE!')
 
 
 

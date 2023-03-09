@@ -1,10 +1,10 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 #******************************************
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2019 University of Vienna
+#    Copyright (c) 2023 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -23,7 +23,6 @@
 #
 #******************************************
 
-#!/usr/bin/env python2
 """
 Plot pie charts.
 """
@@ -34,7 +33,7 @@ try:
     matplotlib.use('Agg')
     import pylab
 except:
-    print "pylab/matplotlib not installed - plotting not possible"
+    print("pylab/matplotlib not installed - plotting not possible")
     raise
 
 class pie_chart:
@@ -57,16 +56,16 @@ class pie_chart:
         ifile = open(fname, 'r')
         
         while(True):
-            line = ifile.next()
+            line = next(ifile)
             if self.ststr in line: break
             
-        line = ifile.next()
+        line = next(ifile)
         Slist = []
         while(True):
             try:
                 words = ifile.next().split()
             except StopIteration:
-                print "End of file reached"
+                print("End of file reached")
                 break
             if len(words) == 0: break
             
@@ -77,11 +76,11 @@ class pie_chart:
         ifile.close()
         
         if self.Astates == None:
-            self.Astates = range(len(self.Smat))
+            self.Astates = list(range(len(self.Smat)))
         else:
             self.Astates = [st-1 for st in self.Astates]
         if self.Bstates == None:
-            self.Bstates = range(len(self.Smat[0]))
+            self.Bstates = list(range(len(self.Smat[0])))
         else:
             self.Bstates = [st-1 for st in self.Bstates]
     
@@ -139,7 +138,7 @@ if __name__ == '__main__':
         elif arg == '-l' or arg == '--lowdin':
             pie.ststr = 'Orthonormalized overlap matrix'
         else:
-            print "Unsupported option: '%s'"%arg
+            print("Unsupported option: '%s'"%arg)
             exit(1)
     
     pie.setup()

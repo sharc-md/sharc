@@ -3069,7 +3069,7 @@ at_lists=%s
 def runTHEODORE(WORKDIR, THEODIR):
     prevdir = os.getcwd()
     os.chdir(WORKDIR)
-    string = 'python2 ' + os.path.join(THEODIR, 'bin', 'analyze_tden.py')
+    string = 'python ' + os.path.join(THEODIR, 'bin', 'analyze_tden.py')
     stdoutfile = open(os.path.join(WORKDIR, 'theodore.out'), 'w')
     stderrfile = open(os.path.join(WORKDIR, 'theodore.err'), 'w')
     if PRINT or DEBUG:

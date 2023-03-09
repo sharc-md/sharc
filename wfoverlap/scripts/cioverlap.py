@@ -1,10 +1,10 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 #******************************************
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2019 University of Vienna
+#    Copyright (c) 2023 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -23,14 +23,13 @@
 #
 #******************************************
 
-#!/usr/bin/env python2
 """
 Short python script to test the main Fortran executable.
 If the bra and ket MOs are the same, use --same_mos for a shortcut to the overlap computation.
 """
 import numpy
 
-print "cioverlap.py <dets_a> <dets_b> [S_mo]"
+print("cioverlap.py <dets_a> <dets_b> [S_mo]")
 
 class cioverlap:
     def __init__(self):
@@ -39,19 +38,19 @@ class cioverlap:
         self.smo = None
 
     def read_smo(self, smo_file):
-        print "Reading MO-overlap matrix ..."
+        print("Reading MO-overlap matrix ...")
         sf = open(smo_file, 'r')
-        line = sf.next()
+        line = next(sf)
         words = line.split()
         
         self.nmo_a = int(words[0])
         self.nmo_b = int(words[1])
         self.smo = numpy.zeros([self.nmo_a, self.nmo_b])
         
-        for imo in xrange(self.nmo_a):
-            line = sf.next()
+        for imo in range(self.nmo_a):
+            line = next(sf)
             vals = [float(word) for word in line.split()]
-            for jmo in xrange(self.nmo_b):
+            for jmo in range(self.nmo_b):
                 self.smo[imo, jmo] = vals[jmo]        
         sf.close()
         
@@ -69,9 +68,9 @@ class cioverlap:
             for det_b in dets_b.detlist:
                 orb_ind_b = det_b[1]
                 det_mat = numpy.zeros([nel, nel])
-                for i_a in xrange(nel):
+                for i_a in range(nel):
                     oi_a = orb_ind_a[i_a]
-                    for i_b in xrange(nel):
+                    for i_b in range(nel):
                         oi_b = orb_ind_b[i_b]
                         if oi_a * oi_b < 0:
                             det_mat[i_a, i_b] = 0
@@ -79,41 +78,41 @@ class cioverlap:
                             det_mat[i_a, i_b] = self.smo[abs(oi_a)-1, abs(oi_b)-1]
                 
                 det = numpy.linalg.det(det_mat)            
-                for astate in xrange(dets_a.nstate):
-                    for bstate in xrange(dets_b.nstate):
+                for astate in range(dets_a.nstate):
+                    for bstate in range(dets_b.nstate):
                         ovl[astate, bstate] += det_a[astate + 2] * det_b[bstate + 2] * det
                         
         self.prt_ovl(ovl, dets_a, dets_b)
         
     def prt_ovl(self, ovl, dets_a, dets_b):
-        print "Overlap matrix <PsiA_i|PsiB_j>"
+        print("Overlap matrix <PsiA_i|PsiB_j>")
         self.prt_ovl_core(ovl)
         
         # Renormalize
         inorm_a = 1. / numpy.sqrt(dets_a.sqnorm)
         inorm_b = 1. / numpy.sqrt(dets_b.sqnorm)
         ovl_ren = ovl
-        for i in xrange(len(ovl)):
+        for i in range(len(ovl)):
             ovl_ren[i] *= inorm_a[i] * inorm_b
-        print " Renormalized overlap matrix <PsiA_i|PsiB_j>"
+        print(" Renormalized overlap matrix <PsiA_i|PsiB_j>")
         self.prt_ovl_core(ovl)
         
     def prt_ovl_core(self, ovl):
-        print 11 * " ",
-        for i in xrange(len(ovl[0])):
-            print "|PsiB%3i>    "%(i+1),
-        print
+        print(11 * " ", end=' ')
+        for i in range(len(ovl[0])):
+            print("|PsiB%3i>    "%(i+1), end=' ')
+        print()
         
         for i,ovl_a in enumerate(ovl):
-            print "<PsiA%3i|"%(i+1),
+            print("<PsiA%3i|"%(i+1), end=' ')
             for ovl_ab in ovl_a:
-                print "% .10f"%ovl_ab,
-            print
-        print
+                print("% .10f"%ovl_ab, end=' ')
+            print()
+        print()
 
 class cioverlap_same(cioverlap):
     def read_smo(self, smo_file):
-        print "Skipping MO-overlap input"
+        print("Skipping MO-overlap input")
     
     def overlap(self, dets_a, dets_b):
         dets_a.sort()
@@ -130,8 +129,8 @@ class cioverlap_same(cioverlap):
             bstring = det_b[0]            
             
             if astring == bstring:
-                for astate in xrange(dets_a.nstate):
-                    for bstate in xrange(dets_b.nstate):
+                for astate in range(dets_a.nstate):
+                    for bstate in range(dets_b.nstate):
                         ovl[astate, bstate] += det_a[astate + 2] * det_b[bstate + 2]
                 aind += 1
                 bind += 1
@@ -153,7 +152,7 @@ class dets:
         
     def read_detfile(self, fname):
         detf = open(fname, 'r')
-        line = detf.next()
+        line = next(detf)
         words = line.split()
         
         self.nstate = int(words[0])
@@ -162,8 +161,8 @@ class dets:
         self.detlist= []
         self.sqnorm = numpy.zeros(self.nstate)
         
-        for idet in xrange(self.ndet):
-            line = detf.next()
+        for idet in range(self.ndet):
+            line = next(detf)
             words = line.split()
             # Read: [determinant string, , coeff1, coeff2, ...]
             vals = [float(word) for word in words[1:]]
@@ -174,8 +173,8 @@ class dets:
         detf.close()
         
         self.nel = len(self.orb_inds(self.detlist[0][0]))
-        print "nel:", self.nel
-        print "sqnorm:", self.sqnorm
+        print("nel:", self.nel)
+        print("sqnorm:", self.sqnorm)
         assert(self.nel == len(self.orb_inds(self.detlist[-1][0])))
         
     def orb_inds(self, detstr):
@@ -200,7 +199,7 @@ class dets:
         self.detlist.sort()
     
     def set_orbinds(self):
-        for idet in xrange(self.ndet):
+        for idet in range(self.ndet):
             self.detlist[idet][1] = self.orb_inds(self.detlist[idet][0])
 
 if __name__ == '__main__':
@@ -223,7 +222,7 @@ if __name__ == '__main__':
     
     db = dets()
     db.read_detfile(fdets_b)
-    print "CPU time: % .1f s, walltime: %.1f s (reading files)"%(time.clock() - tc, time.time() - tt)
+    print("CPU time: % .1f s, walltime: %.1f s (reading files)"%(time.clock() - tc, time.time() - tt))
     
     cio.overlap(da, db)
-    print "CPU time: % .1f s, walltime: %.1f s"%(time.clock() - tc, time.time() - tt)
+    print("CPU time: % .1f s, walltime: %.1f s"%(time.clock() - tc, time.time() - tt))

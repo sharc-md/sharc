@@ -1,10 +1,10 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 #******************************************
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2019 University of Vienna
+#    Copyright (c) 2023 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -23,7 +23,6 @@
 #
 #******************************************
 
-#!/usr/bin/env python2
 
 import sys
 import os
@@ -48,10 +47,10 @@ def writefile(filename,content):
     elif isinstance(content,str):
       f.write(content)
     else:
-      print 'Content %s cannot be written to file!' % (content)
+      print('Content %s cannot be written to file!' % (content))
     f.close()
   except IOError:
-    print 'Could not write to file %s!' % (filename)
+    print('Could not write to file %s!' % (filename))
     sys.exit(13)
 
 # ======================================================================= #

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 #******************************************
 #
@@ -23,14 +23,10 @@
 #
 #******************************************
 
-#!/usr/bin/env python2
 
 # Modules:
 # Operating system, isfile and related routines, move files, create directories
 import sys
-if sys.version_info[0]!=2:
-  sys.stdout.write('The SHARC suite is not compatible with Python 3! Use Python 2 (>2.6)!')
-  sys.exit(0)
 
 import os
 import shutil
@@ -61,7 +57,7 @@ except ImportError:
 # compatibility stuff
 
 if sys.version_info[0]!=2:
-    print 'This is a script for Python 2!'
+    print('This is a script for Python 2!')
     sys.exit(0)
 
 if sys.version_info[1]<5:
@@ -125,7 +121,7 @@ def readfile(filename):
     out=f.readlines()
     f.close()
   except IOError:
-    print 'File %s does not exist!' % (filename)
+    print('File %s does not exist!' % (filename))
     sys.exit(12)
   return out
 
@@ -140,10 +136,10 @@ def writefile(filename,content):
     elif isinstance(content,str):
       f.write(content)
     else:
-      print 'Content %s cannot be written to file!' % (content)
+      print('Content %s cannot be written to file!' % (content))
     f.close()
   except IOError:
-    print 'Could not write to file %s!' % (filename)
+    print('Could not write to file %s!' % (filename))
     sys.exit(13)
 
 # ======================================================================================================================
@@ -174,7 +170,7 @@ This script automatizes the generation of GNUPLOT scripts for fitting of SHARC p
 (as generated with populations.py) to general kinetic models based on first-order population transfer.
 
 '''
-  print string
+  print(string)
 
 # ======================================================================================================================
 # ======================================================================================================================
@@ -310,7 +306,7 @@ def close_keystrokes():
 def question(question,typefunc,default=None,autocomplete=True,ranges=False):
   if typefunc==int or typefunc==float:
     if not default==None and not isinstance(default,list):
-      print 'Default to int or float question must be list!'
+      print('Default to int or float question must be list!')
       quit(1)
   if typefunc==str and autocomplete:
     readline.set_completer_delims(' \t\n;')
@@ -334,7 +330,7 @@ def question(question,typefunc,default=None,autocomplete=True,ranges=False):
       s+=' (range comprehension enabled)'
     s+=' '
 
-    line=raw_input(s)
+    line=input(s)
     line=re.sub('#.*$','',line).strip()
     if not typefunc==str:
       line=line.lower()
@@ -356,7 +352,7 @@ def question(question,typefunc,default=None,autocomplete=True,ranges=False):
         KEYSTROKES.write(line+' '*(40-len(line))+' #'+s+'\n')
         return False
       else:
-        print 'I didn''t understand you.'
+        print('I didn''t understand you.')
         continue
 
     if typefunc==str:
@@ -372,7 +368,7 @@ def question(question,typefunc,default=None,autocomplete=True,ranges=False):
         KEYSTROKES.write(line+' '*(40-len(line))+' #'+s+'\n')
         return f
       except ValueError:
-        print 'Please enter floats!'
+        print('Please enter floats!')
         continue
 
     if typefunc==int:
@@ -391,9 +387,9 @@ def question(question,typefunc,default=None,autocomplete=True,ranges=False):
         return out
       except ValueError:
         if ranges:
-          print 'Please enter integers or ranges of integers (e.g. "-3~-1  2  5~7")!'
+          print('Please enter integers or ranges of integers (e.g. "-3~-1  2  5~7")!')
         else:
-          print 'Please enter integers!'
+          print('Please enter integers!')
         continue
 
 # ======================================================================================================================
@@ -474,10 +470,10 @@ def get_cycles(rate_matrix):
     rank,null=nullspace(A)
     nullrank=len(A[0])-rank
     if nullrank>0:
-      print '  The reaction network contains %i %s!' % (nullrank,['cycles','cycle'][nullrank==1])
+      print('  The reaction network contains %i %s!' % (nullrank,['cycles','cycle'][nullrank==1]))
     return nullrank
   else:
-    print '  Hint: Cannot check for cycles without NUMPY!'
+    print('  Hint: Cannot check for cycles without NUMPY!')
     return -1
 
 # ===================================================
@@ -497,25 +493,25 @@ def check_pop_file(content):
     # check time
     time=float(s[0])
     if maxtime==-1. and time!=0.:
-      print '  Time does not start at zero!'
+      print('  Time does not start at zero!')
       return False,0,0,[]
     if time<0.:
-      print '  Negative times detected!'
+      print('  Negative times detected!')
       return False,0,0,[]
     if time <maxtime:
-      print '  Times not ordered!'
+      print('  Times not ordered!')
       return False,0,0,[]               # TODO: maybe this check is not necessary
     maxtime=time
     # check data
     d=[ float(i) for i in s ]
     if any( [i<0. for i in d] ):
-      print '  Negative populations detected!'
+      print('  Negative populations detected!')
       return False,0,0,[]
     col=len(d)
     if ncol==-1:
       ncol=col
     elif ncol!=col:
-      print '  Inconsistent number of columns detected!'
+      print('  Inconsistent number of columns detected!')
       if ncol>col:
         ncol=col
     data.append(d)
@@ -528,12 +524,12 @@ def get_infos():
 
   INFOS={}
 
-  print centerstring('',60,'#')
-  print centerstring('Kinetics Model',60,'#')
-  print centerstring('',60,'#')+'\n\n'
+  print(centerstring('',60,'#'))
+  print(centerstring('Kinetics Model',60,'#'))
+  print(centerstring('',60,'#')+'\n\n')
   # =========================== Define the kinetic model species ==================================
-  print centerstring('Model Species',60,'-')+'\n'
-  print '''First, please specify the set of species used in your model kinetics.
+  print(centerstring('Model Species',60,'-')+'\n')
+  print('''First, please specify the set of species used in your model kinetics.
 
 Possible input:
 + <label> <label> ...   Adds one or several species to the set
@@ -542,38 +538,38 @@ show                    Show the currently defined set of species
 end                     Finish species input
 
 Each label must be unique. Enter the labels without quotes.
-'''
+''')
   species=[]
   while True:
     line=question('Input:',str,'end',False)
     s=line.split()
     if 'end' in s[0].lower():
       if len(species)==0:
-        print '  No species added yet!'
+        print('  No species added yet!')
       else:
         break
     elif 'show' in s[0].lower():
-      print '  Current set:  %s\n' % (species)
+      print('  Current set:  %s\n' % (species))
     elif '+' in s[0]:
       for i in s[1:]:
         if i in species:
-          print '  Species \'%s\' already in set!' % (i)
+          print('  Species \'%s\' already in set!' % (i))
         else:
           if label_valid(i):
             species.append(i)
-            print '  Species \'%s\' added!' % (i)
+            print('  Species \'%s\' added!' % (i))
           else:
-            print '  Invalid label \'%s\'! Labels must be a letter followed by letters, \n  numbers and single underscores! "F" and "x" are reserved!' % (i)
+            print('  Invalid label \'%s\'! Labels must be a letter followed by letters, \n  numbers and single underscores! "F" and "x" are reserved!' % (i))
     elif '-' in s[0]:
       for i in s[1:]:
         if i in species:
           species.remove(i)
-          print '  Species \'%s\' removed!' % (i)
+          print('  Species \'%s\' removed!' % (i))
         else:
-          print '  Species \'%s\' not in set!' % (i)
+          print('  Species \'%s\' not in set!' % (i))
     else:
-      print '  I did not understand you.'
-  print '\nFinal species set:  %s\n' % (species)
+      print('  I did not understand you.')
+  print('\nFinal species set:  %s\n' % (species))
   nspec=len(species)
   specmap={}
   for i in range(len(species)):
@@ -583,8 +579,8 @@ Each label must be unique. Enter the labels without quotes.
   INFOS['specmap']=specmap
 
   # =========================== Define the kinetic model reactions ==================================
-  print centerstring('Model Elementary Reactions',60,'-')+'\n'
-  print '''Second, please specify the set of elementary reactions in your model kinetics.
+  print(centerstring('Model Elementary Reactions',60,'-')+'\n')
+  print('''Second, please specify the set of elementary reactions in your model kinetics.
 
 Possible input:
 + <species1> <species2> <rate_label>       Add a reaction from species1 to species2 with labelled rate constant
@@ -593,7 +589,7 @@ show                                       Show the currently defined set of rea
 end                                        Finish reaction input
 
 Each rate label must be unique.
-'''
+''')
   rate_matrix=[ [ '' for i in range(nspec) ] for j in range(nspec) ]
   rateset=set()
   while True:
@@ -601,44 +597,44 @@ Each rate label must be unique.
     s=line.split()
     if 'end' in s[0].lower():
       if len(rateset)==0:
-        print '  No reactions added yet!'
+        print('  No reactions added yet!')
       else:
         break
     elif 'show' in s[0].lower():
-      print print_reactions(rate_matrix,specmap)
+      print(print_reactions(rate_matrix,specmap))
     elif '+' in s[0]:
       if len(s)<4:
-        print 'Please write "+ species1 species2 ratelabel"!'
+        print('Please write "+ species1 species2 ratelabel"!')
         continue
       if s[1]==s[2]:
-        print '  Species labels identical! No reaction added.'
+        print('  Species labels identical! No reaction added.')
         continue
       if s[1] in specmap and s[2] in specmap and not s[3] in specmap:
         if rate_matrix[specmap[s[1]]][specmap[s[2]]]!='':
-          print 'Please remove rate constant %s first!' % (rate_matrix[specmap[s[1]]][specmap[s[2]]])
+          print('Please remove rate constant %s first!' % (rate_matrix[specmap[s[1]]][specmap[s[2]]]))
           continue
         if not s[3] in rateset:
           if label_valid(s[3]):
             rateset.add(s[3])
             rate_matrix[specmap[s[1]]][specmap[s[2]]]=s[3]
             rank=get_cycles(rate_matrix)
-            print '  Reaction from \'%s\' to \'%s\' with rate label \'%s\' added!' % (s[1],s[2],s[3])
+            print('  Reaction from \'%s\' to \'%s\' with rate label \'%s\' added!' % (s[1],s[2],s[3]))
           else:
-            print '  Invalid label \'%s\'! Labels must be a letter followed by letters, numbers and single underscores!' % (s[3])
+            print('  Invalid label \'%s\'! Labels must be a letter followed by letters, numbers and single underscores!' % (s[3]))
         else:
-          print '  Rate label \'%s\' already defined!' % (s[3])
+          print('  Rate label \'%s\' already defined!' % (s[3]))
           anyways=question('Do you want to add it anyways (i.e., use two reactions with same rate constant)?',bool,False)
           if anyways:
             rate_matrix[specmap[s[1]]][specmap[s[2]]]=s[3]
             rank=get_cycles(rate_matrix)
-            print '  Reaction from \'%s\' to \'%s\' with rate label \'%s\' added!' % (s[1],s[2],s[3])
+            print('  Reaction from \'%s\' to \'%s\' with rate label \'%s\' added!' % (s[1],s[2],s[3]))
       else:
         if not s[1] in specmap:
-          print '  Species \'%s\' not defined!' % (s[1])
+          print('  Species \'%s\' not defined!' % (s[1]))
         if not s[2] in specmap:
-          print '  Species \'%s\' not defined!' % (s[2])
+          print('  Species \'%s\' not defined!' % (s[2]))
         if s[3] in specmap:
-          print '  Label \'%s\' already used for a species!' % (s[3])
+          print('  Label \'%s\' already used for a species!' % (s[3]))
     elif '-' in s[0]:
       if s[1] in rateset:
         rateset.remove(s[1])
@@ -648,77 +644,77 @@ Each rate label must be unique.
               rate_matrix[i][j]=''
               rank=get_cycles(rate_matrix)
       else:
-        print '  Rate label \'%s\' not defined!' % (s[1])
+        print('  Rate label \'%s\' not defined!' % (s[1]))
     else:
-      print '  I did not understand you.'
-  print '\nFinal reaction network:'
-  print print_reactions(rate_matrix,specmap)
+      print('  I did not understand you.')
+  print('\nFinal reaction network:')
+  print(print_reactions(rate_matrix,specmap))
   INFOS['rateset']=rateset
   INFOS['rate_matrix']=rate_matrix
   INFOS['rank']=rank
 
   # =========================== Define the kinetic model initial conditions ==================================
-  print centerstring('Model Initial Conditions',60,'-')+'\n'
-  print '''Third, please specify species with non-zero initial populations.
+  print(centerstring('Model Initial Conditions',60,'-')+'\n')
+  print('''Third, please specify species with non-zero initial populations.
 
 Possible input:
 + <species>       Declare species to have non-zero initial population
 - <species>       Remove species from the set of non-zero initial populations
 show              Show the currently defined non-zero initial populations
 end               Finish initial condition input
-'''
+''')
   initset=set()
   while True:
     line=question('Input:',str,'end',False)
     s=line.split()
     if 'end' in s[0].lower():
       if len(initset)==0:
-        print '  No species with non-zero initial population yet!'
+        print('  No species with non-zero initial population yet!')
       else:
         break
     elif 'show' in s[0].lower():
-      print '  Current set:  %s\n' % (list(initset))
+      print('  Current set:  %s\n' % (list(initset)))
     elif '+' in s[0]:
       for i in s[1:]:
         if i not in specmap:
-          print '  Species \'%s\' not defined!' % (i)
+          print('  Species \'%s\' not defined!' % (i))
         elif i in initset:
-          print '  Species \'%s\' already in set!' % (i)
+          print('  Species \'%s\' already in set!' % (i))
         else:
           initset.add(i)
-          print '  Species \'%s\' added!' % (i)
+          print('  Species \'%s\' added!' % (i))
     elif '-' in s[0]:
       for i in s[1:]:
         if i in initset:
           initset.remove(i)
-          print '  Species \'%s\' removed!' % (i)
+          print('  Species \'%s\' removed!' % (i))
         else:
-          print '  Species \'%s\' not in set!' % (i)
+          print('  Species \'%s\' not in set!' % (i))
     else:
-      print '  I did not understand you.'
-  print '\nFinal initial species set:  %s\n' % (list(initset))
+      print('  I did not understand you.')
+  print('\nFinal initial species set:  %s\n' % (list(initset)))
   INFOS['initset']=initset
 
-  print centerstring('',60,'#')
-  print centerstring('Fitting Data',60,'#')
-  print centerstring('',60,'#')+'\n\n'
+  print(centerstring('',60,'#'))
+  print(centerstring('Fitting Data',60,'#'))
+  print(centerstring('',60,'#')+'\n\n')
 
   # =========================== Define the data file ==================================
-  print centerstring('Population data file',60,'-')+'\n'
-  print '''Please specify the path to the population data file (as generated by populations.py).
-'''
+  print(centerstring('Population data file',60,'-')+'\n')
+  print('''Please specify the path to the population data file (as generated by populations.py).
+''')
   while True:
     popfile=question('Populations file:',str,'pop.out',True)
     if not os.path.isfile(popfile):
-      print '  File not found!'
+      print('  File not found!')
       continue
     content=readfile(popfile)
     valid,maxtime,ncol,data=check_pop_file(content)
     if not valid:
-      print '  File format not valid!'
+      print('  File format not valid!')
       continue
     else:
-      print '  Detected maximal time of %7.1f fs and %i columns (time plus %i data columns).' % (maxtime,ncol,ncol-1)
+      print('  Detected maximal time of %7.1f fs and %i columns (time plus %i data columns).' % (maxtime,ncol,ncol-1))
       break
   INFOS['maxtime']=maxtime
   INFOS['ncol']=ncol
@@ -726,8 +722,8 @@ end               Finish initial condition input
   INFOS['popfile']=os.path.abspath(popfile)
 
   # =========================== Define the data -- species mapping ==================================
-  print '\n'+centerstring('Population-to-Species Mapping for Fit',60,'-')+'\n'
-  print '''Please specify which model species should be fitted to which data file columns.
+  print('\n'+centerstring('Population-to-Species Mapping for Fit',60,'-')+'\n')
+  print('''Please specify which model species should be fitted to which data file columns.
 For example, you can fit the label 'S0' to column 2:
   S0 = 2
 You can also fit the sum of two species to a column:
@@ -748,10 +744,10 @@ reset                                                           Redo the mapping
 
 Each species label must be used at most once.
 Each column number (except for \'1\', which denotes the time) must be used at most once.
-'''
-  print 'Set of species:        %s' % (species)
+''')
+  print('Set of species:        %s' % (species))
   columns=[i for i in range(2,ncol+1)]
-  print 'Set of column numbers: %s' % (columns)
+  print('Set of column numbers: %s' % (columns))
 
   species_groups=[]
   columns_groups=[]
@@ -761,11 +757,11 @@ Each column number (except for \'1\', which denotes the time) must be used at mo
     s=line.split()
     if 'end' in s[0].lower():
       if ngroups==0:
-        print '  No valid input yet!'
+        print('  No valid input yet!')
       else:
         break
     elif 'show' in s[0].lower():
-      print '  Current mapping groups:'
+      print('  Current mapping groups:')
       for i in range(ngroups):
         string='    '
         for j in species_groups[i]:
@@ -773,10 +769,10 @@ Each column number (except for \'1\', which denotes the time) must be used at mo
         string+=' = '
         for j in columns_groups[i]:
           string+=' %i ' % (j)
-        print string
+        print(string)
     elif ' = ' in line:
       if s[0]=='=' or s[-1]=='=':
-        print '  Invalid input! Put species labels to the left of \'=\' and column number to the right!'
+        print('  Invalid input! Put species labels to the left of \'=\' and column number to the right!')
         continue
       do_species=True
       valid=True
@@ -785,7 +781,7 @@ Each column number (except for \'1\', which denotes the time) must be used at mo
       for i in s:
         if i=='=':
           if not do_species:
-            print 'More than 1 "=" used!'
+            print('More than 1 "=" used!')
             valid=False
             break
           else:
@@ -793,15 +789,15 @@ Each column number (except for \'1\', which denotes the time) must be used at mo
             continue
         if do_species:
           if not i in species:
-            print '  Species label \'%s\' not defined!' % (i)
+            print('  Species label \'%s\' not defined!' % (i))
             valid=False
             break
           if any( [ i in j for j in species_groups ] ):
-            print '  Species label \'%s\' already assigned!' % (i)
+            print('  Species label \'%s\' already assigned!' % (i))
             valid=False
             break
           if i in new_species_group:
-            print '  Species label \'%s\' used twice!' % (i)
+            print('  Species label \'%s\' used twice!' % (i))
             valid=False
             break
           new_species_group.append(i)
@@ -815,20 +811,20 @@ Each column number (except for \'1\', which denotes the time) must be used at mo
             else:
               ii=[int(i)]
           except ValueError:
-            print '  Could not understand!'
+            print('  Could not understand!')
             valid=False
             break
           for i in ii:
             if not i in columns:
-              print '  Column number %i not in data file!' % (i)
+              print('  Column number %i not in data file!' % (i))
               valid=False
               break
             if any( [ i in j for j in columns_groups ] ):
-              print '  Column number %i already assigned!' % (i)
+              print('  Column number %i already assigned!' % (i))
               valid=False
               break
             if i in new_columns_group:
-              print '  Columns number %i used twice!' % (i)
+              print('  Columns number %i used twice!' % (i))
               valid=False
               break
             new_columns_group.append(i)
@@ -840,8 +836,8 @@ Each column number (except for \'1\', which denotes the time) must be used at mo
       species_groups=[]
       columns_groups=[]
       ngroups=0
-      print '  Mappings reset! Please repeat input!'
-  print 'Final mappings:'
+      print('  Mappings reset! Please repeat input!')
+  print('Final mappings:')
   for i in range(ngroups):
     string='    '
     for j in species_groups[i]:
@@ -849,7 +845,7 @@ Each column number (except for \'1\', which denotes the time) must be used at mo
     string+=' = '
     for j in columns_groups[i]:
       string+=' %i ' % (j)
-    print string
+    print(string)
   INFOS['species_groups']=species_groups
   INFOS['columns_groups']=columns_groups
   INFOS['ngroups']=ngroups
@@ -927,24 +923,24 @@ def get_functions_from_maxima(INFOS):
   # call MAXIMA in interactive batch mode
   string='maxima -b %s' % (infile)
   while True:
-    print 'Calling MAXIMA computer algebra system with following command:\n  %s' % (string)
+    print('Calling MAXIMA computer algebra system with following command:\n  %s' % (string))
     go_on=question('Run this command?',bool,True)
     if go_on:
       break
     else:
-      print 'Please enter the path to the MAXIMA computer algebra system:'
+      print('Please enter the path to the MAXIMA computer algebra system:')
       path=question('Path to MAXIMA:',str,None,True)
       string=path+' -b %s' % (infile)
-  print '\n'
+  print('\n')
   outfile=os.path.join(cwd,'MAXIMA.output')
   errfile=os.path.join(cwd,'MAXIMA.err')
   stdoutfile=open(outfile,'wb')
   stderrfile=open(errfile,'w')
-  print '\n\nRunning MAXIMA interactively...'
-  print
-  print '(If MAXIMA takes long, its output will be shown and STDIN switched to MAXIMA.\nPlease try to answer any questions that MAXIMA is prompting,\ne.g., "Is <some constant> positive, negative, or zero?"\nIn this case, answer with "pos;", "neg;", or "zero;")'
-  print
-  print '*'*100
+  print('\n\nRunning MAXIMA interactively...')
+  print()
+  print('(If MAXIMA takes long, its output will be shown and STDIN switched to MAXIMA.\nPlease try to answer any questions that MAXIMA is prompting,\ne.g., "Is <some constant> positive, negative, or zero?"\nIn this case, answer with "pos;", "neg;", or "zero;")')
+  print()
+  print('*'*100)
   p=sp.Popen(string,shell=True,stdout=sp.PIPE,stderr=stderrfile,bufsize=1,stdin=sp.PIPE)
   isleep=0
   while True:
@@ -961,11 +957,11 @@ def get_functions_from_maxima(INFOS):
           else:
             break
       else:
-        print 'waiting ...'
+        print('waiting ...')
     except KeyboardInterrupt:
       p.kill()
-      print '*'*100
-      print '*** MAXIMA execution halted ***\n\n'
+      print('*'*100)
+      print('*** MAXIMA execution halted ***\n\n')
       raise
     if p.poll() is None:
       pass
@@ -980,8 +976,8 @@ def get_functions_from_maxima(INFOS):
   p.communicate()
   stdoutfile.close()
   stderrfile.close()
-  print '*'*100
-  print '\n*** Done! ***'
+  print('*'*100)
+  print('\n*** Done! ***')
 
 
   # extract function definitions from MAXIMA output
@@ -995,7 +991,7 @@ def get_functions_from_maxima(INFOS):
       if len(functions)==INFOS['nspec']:
         break
       else:
-        print '*** Output does not contain all function definitions!'
+        print('*** Output does not contain all function definitions!')
         sys.exit(1)
     line=out[iline]
     if '###' in line[0:4]:
@@ -1337,7 +1333,7 @@ set key at %.2f,1.00 top right
 
   # Write gnuplot script
   outfilename='model_fit.gp'
-  print 'Writing GNUPLOT script to %s ...' % (outfilename)
+  print('Writing GNUPLOT script to %s ...' % (outfilename))
   writefile(outfilename,string)
 
   return
@@ -1358,7 +1354,7 @@ def write_fitting_data(INFOS):
 
   # Write file
   outfilename='model_fit.dat'
-  print 'Writing GNUPLOT populations data to %s ...' % (outfilename)
+  print('Writing GNUPLOT populations data to %s ...' % (outfilename))
   writefile(outfilename,string)
 
   return
@@ -1453,7 +1449,7 @@ def print_messages(INFOS):
     string+='  The reaction network defined contains %i cycles.\n  Cycles might make the fit hard to converge or lead to large uncertainties for some fitting parameters.\n  Please carefully check your results.\n' % (INFOS['rank'])
 
   string+=centerstring('',62,'*')+'\n'
-  print string
+  print(string)
 
   return
 
@@ -1480,17 +1476,17 @@ GNUPLOT script which allows to fit the model parameters to the populations
   INFOS=get_infos()
 
   # echo input
-  print '\n\n'+centerstring('Full input',60,'#')+'\n'
+  print('\n\n'+centerstring('Full input',60,'#')+'\n')
   for item in INFOS:
     if not item=='data':
-      print item, ' '*(25-len(item)), INFOS[item]
+      print(item, ' '*(25-len(item)), INFOS[item])
     elif item=='data':
-      print item, ' '*(25-len(item)), '[ ... ]'
-  print ''
+      print(item, ' '*(25-len(item)), '[ ... ]')
+  print('')
   go_on=question('Do you want to continue?',bool,True)
   if not go_on:
     quit(0)
-  print ''
+  print('')
 
   # do work
   functionstring=get_functions_from_maxima(INFOS)
@@ -1509,7 +1505,7 @@ if __name__ == '__main__':
   try:
     main()
   except KeyboardInterrupt:
-    print '\nCtrl+C makes me a sad SHARC ;-(\n'
+    print('\nCtrl+C makes me a sad SHARC ;-(\n')
     quit(0)
 
 

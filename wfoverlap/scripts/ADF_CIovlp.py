@@ -1,10 +1,10 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 #******************************************
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2019 University of Vienna
+#    Copyright (c) 2023 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -23,7 +23,6 @@
 #
 #******************************************
 
-#!/usr/bin/env python2
 
 import sys
 import os
@@ -51,7 +50,7 @@ def readfile(filename):
     out=f.readlines()
     f.close()
   except IOError:
-    print 'File %s does not exist!' % (filename)
+    print('File %s does not exist!' % (filename))
     sys.exit(13)
   return out
 
@@ -66,23 +65,23 @@ def writefile(filename,content):
     elif isinstance(content,str):
       f.write(content)
     else:
-      print 'Content %s cannot be written to file!' % (content)
+      print('Content %s cannot be written to file!' % (content))
       sys.exit(14)
     f.close()
   except IOError:
-    print 'Could not write to file %s!' % (filename)
+    print('Could not write to file %s!' % (filename))
     sys.exit(15)
 
 # ======================================================================= #
 def get_MO_from_tape21(filename,nfrozen):
 
-    print '%-40s'%'  importing ...',datetime.datetime.now()-starttime
+    print('%-40s'%'  importing ...',datetime.datetime.now()-starttime)
 
     # get all info from TAPE21
     import kf
     f = kf.kffile(filename)
 
-    print '%-40s'%'  getting info ...',datetime.datetime.now()-starttime
+    print('%-40s'%'  getting info ...',datetime.datetime.now()-starttime)
 
     nspin=int(f.read('ActiveFrag','nspin'))
     if nspin==1:
@@ -101,7 +100,7 @@ def get_MO_from_tape21(filename,nfrozen):
     for i in range(len(npart)):
         npart[i]-=1
 
-    print '%-40s'%'  building matrices ...',datetime.datetime.now()-starttime
+    print('%-40s'%'  building matrices ...',datetime.datetime.now()-starttime)
 
     # build MO matrices
     MO_A=[ [ 0. for iao in range(NAO) ] for imo in range(NMO_A) ]
@@ -132,7 +131,7 @@ def get_MO_from_tape21(filename,nfrozen):
     else:
         NMO=NMO_A+NMO_B-2*nfrozen
 
-    print '%-40s'%'  formatting ...',datetime.datetime.now()-starttime
+    print('%-40s'%'  formatting ...',datetime.datetime.now()-starttime)
 
     # make string
     string='''2mocoef
@@ -188,7 +187,7 @@ mocoef
 def get_dets_from_tape21(filename,mults,wfthres,nfrozen):
 
 
-    print '%-40s'%'  importing ...',datetime.datetime.now()-starttime
+    print('%-40s'%'  importing ...',datetime.datetime.now()-starttime)
 
     # get all info from TAPE21
     import kf
@@ -200,7 +199,7 @@ def get_dets_from_tape21(filename,mults,wfthres,nfrozen):
     else:
       restr=False
 
-    print '%-40s'%'  getting general info ...',datetime.datetime.now()-starttime
+    print('%-40s'%'  getting general info ...',datetime.datetime.now()-starttime)
     # get general infos
     if restr:
         if 1 in mults:
@@ -267,11 +266,11 @@ def get_dets_from_tape21(filename,mults,wfthres,nfrozen):
         #print occ_B
         #print nocc_B,nvir_B
 
-    print '%-40s'%'  processing eigenvectors ...',datetime.datetime.now()-starttime
+    print('%-40s'%'  processing eigenvectors ...',datetime.datetime.now()-starttime)
     # get eigenvectors
     eigenvectors={}
     for imult,mult in enumerate(mults):
-        print '%-40s'%('    Multiplicity: %i' % (mult)),datetime.datetime.now()-starttime
+        print('%-40s'%('    Multiplicity: %i' % (mult)),datetime.datetime.now()-starttime)
         eigenvectors[mult]=[]
         if mult==gsmult:
             # add ground state
@@ -281,14 +280,14 @@ def get_dets_from_tape21(filename,mults,wfthres,nfrozen):
                 key=tuple(occ_A[nfrozen:]+occ_B[nfrozen:])
             eigenvectors[mult].append( {key:1.0} )
         for istate in range(nstates_to_extract[mult-1]):
-            print '%-40s'%('      State: %i' % (istate+1)),datetime.datetime.now()-starttime
-            print '%-40s'%'        Reading ...',datetime.datetime.now()-starttime
+            print('%-40s'%('      State: %i' % (istate+1)),datetime.datetime.now()-starttime)
+            print('%-40s'%'        Reading ...',datetime.datetime.now()-starttime)
             section='Excitations S%s A' % extrmults[imult]
             key='eigenvector %i' % (istate+1)
             try:
                 eig=f.read(section,key).tolist()
             except AttributeError:
-                print 'No eigenvectors found in file %s!' % (filename)
+                print('No eigenvectors found in file %s!' % (filename))
                 sys.exit(11)
             if lhybrid and not tda:
                 key='left eigenvector %i' % (istate+1)
@@ -296,7 +295,7 @@ def get_dets_from_tape21(filename,mults,wfthres,nfrozen):
                 for i in range(len(eig)):
                     eig[i]=(eig[i]+eigl[i])/2.
             # make dictionary
-            print '%-40s'%'        Converting ...',datetime.datetime.now()-starttime
+            print('%-40s'%'        Converting ...',datetime.datetime.now()-starttime)
             dets={}
             if restr:
                 for iocc in range(nocc_A):
@@ -314,7 +313,7 @@ def get_dets_from_tape21(filename,mults,wfthres,nfrozen):
                         index=iocc*nvir_B+ivirt + max(nvir_A,nvir_B)*max(nocc_A,nocc_B)
                         dets[ (iocc,ivirt,2) ]=eig[index]
             # truncate vector
-            print '%-40s'%'        Truncating vector ...',datetime.datetime.now()-starttime
+            print('%-40s'%'        Truncating vector ...',datetime.datetime.now()-starttime)
             norm=0.
             for k in sorted(dets,key=lambda x: dets[x]**2,reverse=True):
                 if norm>wfthres:
@@ -322,7 +321,7 @@ def get_dets_from_tape21(filename,mults,wfthres,nfrozen):
                     continue
                 norm+=dets[k]**2
             # create strings
-            print '%-40s'%'        Making determinants ...',datetime.datetime.now()-starttime
+            print('%-40s'%'        Making determinants ...',datetime.datetime.now()-starttime)
             dets2={}
             if restr:
                 for iocc,ivirt,dummy in dets:
@@ -354,7 +353,7 @@ def get_dets_from_tape21(filename,mults,wfthres,nfrozen):
                         key[nocc_A+nvir_A + nocc_B+ivirt]=2
                         dets2[tuple(key)]=dets[ (iocc,ivirt,dummy) ]
             # remove frozen core
-            print '%-40s'%'        Removing frozen core ...',datetime.datetime.now()-starttime
+            print('%-40s'%'        Removing frozen core ...',datetime.datetime.now()-starttime)
             dets3={}
             for key in dets2:
                 problem=False
@@ -367,7 +366,7 @@ def get_dets_from_tape21(filename,mults,wfthres,nfrozen):
                     if any( [key[i]!=2 for i in range(nocc_A+nvir_A, nocc_A+nvir_A + nfrozen) ] ):
                         problem=True
                 if problem:
-                    print 'WARNING: Non-occupied orbital inside frozen core!'
+                    print('WARNING: Non-occupied orbital inside frozen core!')
                     continue
                 if restr:
                     key2=key[nfrozen:]
@@ -377,7 +376,7 @@ def get_dets_from_tape21(filename,mults,wfthres,nfrozen):
             # append
             eigenvectors[mult].append(dets3)
 
-    print '%-40s'%'  formatting eigenvectors ...',datetime.datetime.now()-starttime
+    print('%-40s'%'  formatting eigenvectors ...',datetime.datetime.now()-starttime)
     strings={}
     for imult,mult in enumerate(mults):
         filename=os.path.join('dets.%i' % mult)
@@ -436,16 +435,16 @@ mults=[ int(i) for i in options.m.split() ]
 nfrozen=max(0,int(options.f))
 wfthres=max(0.,float(options.t))
 
-print '%-40s'%'Starting MO processing ...',datetime.datetime.now()-starttime
+print('%-40s'%'Starting MO processing ...',datetime.datetime.now()-starttime)
 string=get_MO_from_tape21(filename,nfrozen)
 writefile('mos',string)
-print '%-40s'%'Finished MO processing.',datetime.datetime.now()-starttime
+print('%-40s'%'Finished MO processing.',datetime.datetime.now()-starttime)
 
-print '%-40s'%'Starting determinant processing ...',datetime.datetime.now()-starttime
+print('%-40s'%'Starting determinant processing ...',datetime.datetime.now()-starttime)
 strings=get_dets_from_tape21(filename,mults,wfthres,nfrozen)
 for i in strings:
   writefile(i,strings[i])
-print '%-40s'%'Finished determinant processing.',datetime.datetime.now()-starttime
+print('%-40s'%'Finished determinant processing.',datetime.datetime.now()-starttime)
 
 
 

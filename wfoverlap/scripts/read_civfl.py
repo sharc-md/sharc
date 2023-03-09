@@ -1,10 +1,10 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 #******************************************
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2019 University of Vienna
+#    Copyright (c) 2023 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -23,7 +23,6 @@
 #
 #******************************************
 
-#!/usr/bin/env python2
 """
 This program reads a civfl file in Columbus format using cipc.x and converts it to the native ASCII format
 used by cioverlap.x
@@ -65,13 +64,13 @@ class civfl_ana:
         command = ["%s/cipc.x"%self.columbus, "-m", "%i"%mem]
         istart = 1
         maxiter=20000
-        for i in xrange(maxiter):
+        for i in range(maxiter):
             iend = istart + csfbuf
             cipstr  = "2\n4\n1\n%s\n0\n"%ms # initialize determinant print out
             cipstr += "7\n5\n%i\n0\n"%istate # read the coefficients
             cipstr += "1\n%i %i\n0/\n"%(istart, iend) # first and last CSF to print
             cipstr += "0\n" # finish
-            print "%s/cipc.x for state %i, CSFs %i to %i"%(self.columbus, istate, istart, iend)
+            print("%s/cipc.x for state %i, CSFs %i to %i"%(self.columbus, istate, istart, iend))
             starttime=datetime.datetime.now()
             sys.stdout.write('\t%s' % (starttime))
             cipx = sp.Popen(command, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
@@ -80,23 +79,23 @@ class civfl_ana:
                 open('pycipcin.st%i.%i'%(istate,i), 'w').write(cipstr)
                 open('pycipcls.st%i.%i'%(istate,i), 'w').write(cipout)
             if not 'end of cipc' in ciperr:
-                print " ERROR in cipc.x during determinant generation!"
+                print(" ERROR in cipc.x during determinant generation!")
                 #print "\n Standard output:\n", cipout
-                print "\n Standard error:\n", ciperr, 'Exit code:',cipx.returncode
+                print("\n Standard error:\n", ciperr, 'Exit code:',cipx.returncode)
                 sys.exit(20)
             if self.debug:
-                print " cipc.x finished succesfully"
+                print(" cipc.x finished succesfully")
             self.read_cipinfo(istate, cipout)
             endtime=datetime.datetime.now()
             sys.stdout.write('\t%s\t\tRuntime: %s\n\n' % (endtime,endtime-starttime))
             if (iend > self.ncsf) or (self.sqcinorms[istate] > self.maxsqnorm):
                 if self.debug:
-                    print "Finished, iend = %i, sqcinorm = %.4f.\n"%(iend, self.sqcinorms[istate])
+                    print("Finished, iend = %i, sqcinorm = %.4f.\n"%(iend, self.sqcinorms[istate]))
                 break
             else:
                 istart = iend + 1
         else:
-            print '%i CSFs read, maxiter reached.' % (csfbuf*maxiter)
+            print('%i CSFs read, maxiter reached.' % (csfbuf*maxiter))
             sys.exit(41)
 # ================================================== #
     def read_cipinfo(self, istate, fstring):
@@ -120,7 +119,7 @@ class civfl_ana:
                 self.nfvt = int(words[7])
                 #print 'Orbital information parsed:'
                 if self.debug:
-                    print '  nmot = %i, niot = %i, nfct = %i, nfvt = %i'%(self.nmot, self.niot, self.nfct, self.nfvt)
+                    print('  nmot = %i, niot = %i, nfct = %i, nfvt = %i'%(self.nmot, self.niot, self.nfct, self.nfvt))
             elif 'ncsft:' in line:
                 self.ncsf = int(line.split()[-1])
                 #print '  ncsf = %i'%self.ncsf
@@ -130,18 +129,18 @@ class civfl_ana:
                 continue
             elif ('csfs were printed in this range' in line):
                 if self.debug: 
-                    print "All CSFs of this batch read in.\n"
+                    print("All CSFs of this batch read in.\n")
                 break
             if not csfsec: continue
             if len(line) == 0:
                 if self.debug: 
-                    print "All CSFs of this batch read in.\n"
+                    print("All CSFs of this batch read in.\n")
                 break
             words = line.split()
             if ('idet' in line):
                 if sqcinorm > self.maxsqnorm:
                     if self.debug:
-                        print "Stopping at sqcinorm = %.4f"%sqcinorm
+                        print("Stopping at sqcinorm = %.4f"%sqcinorm)
                     break
                 else:
                     continue
@@ -159,7 +158,7 @@ class civfl_ana:
                 CSFstr = words[-1]
                 nel = 2*CSFstr.count('3') + CSFstr.count('1') + CSFstr.count('2')
                 if self.debug:
-                    print "-> %2s-CSF %s: nel = %i, n_ext_el = %i, n_exto = %i, ext1 = %2i, ext2 = %2i"%(wtype, CSFstr, nel, n_ext_el, n_exto, ext1, ext2)
+                    print("-> %2s-CSF %s: nel = %i, n_ext_el = %i, n_exto = %i, ext1 = %2i, ext2 = %2i"%(wtype, CSFstr, nel, n_ext_el, n_exto, ext1, ext2))
             else:
                 coeff = float(words[1])
                 # For even electron systems there is phase change if one external 
@@ -171,7 +170,7 @@ class civfl_ana:
                 #if n_ext_el==1: coeff = -coeff
                 det = self.det_string(words[-1], n_exto, ext1, ext2)
                 if self.debug:
-                    print "%25s -> %s: % .10f"%(words[-1], det, coeff)
+                    print("%25s -> %s: % .10f"%(words[-1], det, coeff))
                 if det in self.det_dict:
                     if istate in self.det_dict[det]:
                         self.det_dict[det][istate] += coeff
@@ -185,7 +184,7 @@ class civfl_ana:
     def det_string(self, cipstr, n_ext, ext1, ext2):
         retstr  = self.nfct * 'd'
         retstr += self.det_labels(cipstr[n_ext:])
-        for iorb in xrange(self.nfct + self.niot + 1, self.nmot + 1):
+        for iorb in range(self.nfct + self.niot + 1, self.nmot + 1):
             if   iorb == ext1:
                 retstr += self.det_labels(cipstr[0])
             elif iorb == ext2:
@@ -214,7 +213,7 @@ class civfl_ana:
         wf.write("%i %i %i\n"%(nstate, self.nmot, len(self.det_dict)))
         for det in sorted(sorted(self.det_dict, key=self.sort_key2), key=self.sort_key):
             wf.write(det)
-            for istate in xrange(1, nstate+1):
+            for istate in range(1, nstate+1):
                 try:
                     coeff = self.det_dict[det][istate]
                 except KeyError:
@@ -223,13 +222,13 @@ class civfl_ana:
             wf.write('\n')
         wf.close()
         if self.debug:
-            print "File %s written."%wname
+            print("File %s written."%wname)
         
 if __name__=='__main__':
     import sys
     
-    print "read_civfl.py <nstate> [<maxsqnorm>]"
-    print "   command line options: -debug, -ms <ms>, -m <mem (MB)>, -o <det_file>\n"
+    print("read_civfl.py <nstate> [<maxsqnorm>]")
+    print("   command line options: -debug, -ms <ms>, -m <mem (MB)>, -o <det_file>\n")
     
     debug = False
     nstate = None
@@ -240,7 +239,7 @@ if __name__=='__main__':
     
     args = sys.argv[1:]
     if len(args) == 0:
-        print "Enter at least one argument!\n"
+        print("Enter at least one argument!\n")
         sys.exit()
         
     while(len(args)>=1):
@@ -261,7 +260,7 @@ if __name__=='__main__':
     
     ca = civfl_ana(maxsqnorm, debug)
     
-    for istate in xrange(1, nstate+1):
+    for istate in range(1, nstate+1):
         ca.call_cipc(istate, ms=ms, mem=mem)
         #ca.read_cipcls(istate)
         

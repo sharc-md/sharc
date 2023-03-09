@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 #******************************************
 #
@@ -23,7 +23,6 @@
 #
 #******************************************
 
-#!/usr/bin/env python2
 
 # Script for the creation of ADF input files
 # 
@@ -40,28 +39,6 @@ import datetime
 from optparse import OptionParser
 import readline
 import time
-
-
-# =========================================================0
-# compatibility stuff
-
-if sys.version_info[0]!=2:
-  print 'This is a script for Python 2!'
-  sys.exit(0)
-
-if sys.version_info[1]<5:
-  def any(iterable):
-    for element in iterable:
-      if element:
-        return True
-    return False
-
-  def all(iterable):
-    for element in iterable:
-      if not element:
-        return False
-    return True
-
 
 
 # some constants
@@ -138,7 +115,7 @@ def displaywelcome():
   string+='''
 This script allows to quickly create ADF input files. 
   '''
-  print string
+  print(string)
 
 # ======================================================================================================================
 # ======================================================================================================================
@@ -158,7 +135,7 @@ def close_keystrokes():
 def question(question,typefunc,default=None,autocomplete=True,ranges=False):
   if typefunc==int or typefunc==float:
     if not default==None and not isinstance(default,list):
-      print 'Default to int or float question must be list!'
+      print('Default to int or float question must be list!')
       quit(1)
   if typefunc==str and autocomplete:
     readline.set_completer_delims(' \t\n;')
@@ -182,7 +159,7 @@ def question(question,typefunc,default=None,autocomplete=True,ranges=False):
       s+=' (range comprehension enabled)'
     s+=' '
 
-    line=raw_input(s)
+    line=input(s)
     line=re.sub('#.*$','',line).strip()
     if not typefunc==str:
       line=line.lower()
@@ -204,7 +181,7 @@ def question(question,typefunc,default=None,autocomplete=True,ranges=False):
         KEYSTROKES.write(line+' '*(40-len(line))+' #'+s+'\n')
         return False
       else:
-        print 'I didn''t understand you.'
+        print('I didn''t understand you.')
         continue
 
     if typefunc==str:
@@ -220,7 +197,7 @@ def question(question,typefunc,default=None,autocomplete=True,ranges=False):
         KEYSTROKES.write(line+' '*(40-len(line))+' #'+s+'\n')
         return f
       except ValueError:
-        print 'Please enter floats!'
+        print('Please enter floats!')
         continue
 
     if typefunc==int:
@@ -239,9 +216,9 @@ def question(question,typefunc,default=None,autocomplete=True,ranges=False):
         return out
       except ValueError:
         if ranges:
-          print 'Please enter integers or ranges of integers (e.g. "-3~-1  2  5~7")!'
+          print('Please enter integers or ranges of integers (e.g. "-3~-1  2  5~7")!')
         else:
-          print 'Please enter integers!'
+          print('Please enter integers!')
         continue
 
 # ======================================================================================================================
@@ -263,47 +240,47 @@ specific:
   INFOS={}
 
   #Type of Calculation
-  print centerstring('Type of calculation',60,'-')
-  print '''\nThis script generates input for the following types of calculations:  
+  print(centerstring('Type of calculation',60,'-'))
+  print('''\nThis script generates input for the following types of calculations:  
   1   Single Point calculations
   2   Optimization or Frequency calculations
 Please enter the number corresponding to the type of calculation.
-'''
+''')
   while True:
     ctype=question('Type of calculation:',int)[0]
     if not ctype in [1,2]:
-      print 'Enter an integer (1-2)!'
+      print('Enter an integer (1-2)!')
       continue
     break
   INFOS['ctype']=ctype
   freq=False
-  print ''
-  print 'If alterations to the options given here or more complex options are wished to be used please\nsee the ADF manual at https://www.scm.com/documentation/ADF/index/' 
-  print ''
+  print('')
+  print('If alterations to the options given here or more complex options are wished to be used please\nsee the ADF manual at https://www.scm.com/documentation/ADF/index/') 
+  print('')
   if ctype==2:
     freq=question('Frequency calculation?',bool,True)
-  print 'WARNING: For numerical frequencies (Needed for all but a few selected GGA functionals) you cannot run a geometry optimization in the same run, please provide an optimised geometry in the input'
+  print('WARNING: For numerical frequencies (Needed for all but a few selected GGA functionals) you cannot run a geometry optimization in the same run, please provide an optimised geometry in the input')
   INFOS['freq']=freq
-  print ''
+  print('')
 
   path=''
   # Geometry
   if ctype <= 2:
-     print centerstring('Geometry',60,'-')
-     print '\nPlease specify the geometry file (xyz format, Angstroms):'
+     print(centerstring('Geometry',60,'-'))
+     print('\nPlease specify the geometry file (xyz format, Angstroms):')
      while True:
        path=question('Geometry filename:',str,'geom.xyz')
        try:
          gf=open(path,'r')
        except IOError:
-         print 'Could not open: %s' % (path)
+         print('Could not open: %s' % (path))
          continue
        g=gf.readlines()
        gf.close()
        try:
          natom=int(g[0])
        except ValueError:
-         print 'Malformatted: %s' % (path)
+         print('Malformatted: %s' % (path))
          continue
        geom=[]
        fine=True
@@ -311,7 +288,7 @@ Please enter the number corresponding to the type of calculation.
          try:
            line=g[i+2].split()
          except IndexError:
-           print 'Malformatted: %s' % (path)
+           print('Malformatted: %s' % (path))
            fine=False
          try:
            j=i+1
@@ -319,14 +296,14 @@ Please enter the number corresponding to the type of calculation.
               line[0]=Atomsymb[int(line[0])]
            atom=[int(j),line[0],float(line[1]),float(line[2]),float(line[3])]
          except (IndexError,ValueError):
-           print 'Malformatted: %s' % (path)
+           print('Malformatted: %s' % (path))
            fine=False
            continue
          geom.append(atom)
        else:
          break
      INFOS['geom']=geom
-     print ''
+     print('')
 
 
      #print 'Please input the name of the created .run file (if none stated will use the xyz file name)'
@@ -335,23 +312,23 @@ Please enter the number corresponding to the type of calculation.
      #print ''
 
 
-     print 'Enter the total (net) molecular charge:'
+     print('Enter the total (net) molecular charge:')
      charge=question('Charge:',float,[0.0])[0]
      INFOS['CHARGE']=charge
-     print ''
+     print('')
 
 
-     print 'Please state the number of unpaired electrons (alpha-beta).'
+     print('Please state the number of unpaired electrons (alpha-beta).')
      Unr=question('Nr of unpaired electrons:',float,[0.0])[0]
      INFOS['Unp_elec']=Unr
      if ctype == 2 :
-        print ''
-        print 'Please state the number of geometry iterations permitted:'
+        print('')
+        print('Please state the number of geometry iterations permitted:')
         iterations = question('Iterations:',int,[150])[0]
         INFOS['GIter']=iterations  
         if INFOS['freq']==True:
-           print ''
-           print 'Do you wish to perform Analytical frequencies (Only works for some GGA functionals, but should be quicker)?'
+           print('')
+           print('Do you wish to perform Analytical frequencies (Only works for some GGA functionals, but should be quicker)?')
            Type=question('Analytical frequencies:',bool,True)
            if Type == True:
              INFOS['Freqtype']='analytical'
@@ -372,30 +349,30 @@ Please enter the number corresponding to the type of calculation.
 
 
 
-  print ''
-  print 'Please choose the maximum number of SCF iterations'
+  print('')
+  print('Please choose the maximum number of SCF iterations')
   SCFIter = question('Max Iterations:',int,[100])[0]
   INFOS['SCFIter']=SCFIter
 
 
   # basis set
-  print ''
-  print '\nPlease enter the basis set. (SZ, DZ, DZP, TZP, TZ2P, QZ4P)'
-  print 'If system contains a transition metal TZP or higher is recommended'
+  print('')
+  print('\nPlease enter the basis set. (SZ, DZ, DZP, TZP, TZ2P, QZ4P)')
+  print('If system contains a transition metal TZP or higher is recommended')
   basis=question('Basis set:',str,'TZP',autocomplete=False)
   INFOS['basis']=basis
 
 
   #DFT SETUP
-  print ''
-  print '\nPlease choose the type of Functional (LDA, GGA, HYBRID, METAGGA, METAHYBRID, MODEL, RANGE).'
-  print '\nGGA is recommended for Dynamics'
+  print('')
+  print('\nPlease choose the type of Functional (LDA, GGA, HYBRID, METAGGA, METAHYBRID, MODEL, RANGE).')
+  print('\nGGA is recommended for Dynamics')
   XCtype=question('XCtype:',str,'GGA',autocomplete=False)
   INFOS['XCtype']=XCtype
-  print ''
-  print '\nPlease state the Functional to be used.'
-  print '\nMeta, Model and Range-seperated can not be used for dynamics'
-  print '''Common functionals and their names in ADF (for more see\nhttp://www.scm.com/Doc/Doc2014/ADF/ADFUsersGuide/page68.html#keyscheme%20XC):
+  print('')
+  print('\nPlease state the Functional to be used.')
+  print('\nMeta, Model and Range-seperated can not be used for dynamics')
+  print('''Common functionals and their names in ADF (for more see\nhttp://www.scm.com/Doc/Doc2014/ADF/ADFUsersGuide/page68.html#keyscheme%20XC):
 LDA: VWN, PW92
 GGA: BP86, PBE, mPBE
 Hybrid: B3LYP, PBE0 BHandHLYP
@@ -403,39 +380,39 @@ Meta-GGA: TPSS, M06-L
 Meta-Hybrid: TPSSH, M06
 Model: LB94, SAOP
 Range-separated: CAMY-B3LYP, LCY-PBE
-'''
+''')
   XCfun=question('Functional:',str,'PBE',autocomplete=False)
   INFOS['XCfun']=XCfun 
-  print ''
+  print('')
 
 
-  print 'Would you like to include Relativistic effects (Scalar)?'
+  print('Would you like to include Relativistic effects (Scalar)?')
   Rel=question('Include Relativistic effects:',bool,True)
   INFOS['Rel']=Rel
   INFOS['SO_COUP']=False
   if Rel == True:
-     print''
-     print 'Use Spin-orbit Coupling? (Perturbative method, not possible for unrestricted calculations)'
+     print('')
+     print('Use Spin-orbit Coupling? (Perturbative method, not possible for unrestricted calculations)')
      SO=question('Spin-orbit coupling:',bool,False)
      INFOS['SO_COUP']=SO
-  print ''
+  print('')
 
 
-  print 'ZlmFit or STOFit? (ZlmFit is recommended)'
+  print('ZlmFit or STOFit? (ZlmFit is recommended)')
   FIT=question('Fit type',str,'ZlmFit',autocomplete=False)
   INFOS['FIT']=FIT
   if FIT == 'ZlmFit':
-     print ''
-     print 'Choose Fit Quality (basic, normal, good, verygood, excellent).'
+     print('')
+     print('Choose Fit Quality (basic, normal, good, verygood, excellent).')
      Fitquality=question('ZlmFit Quality:',str,'normal',autocomplete=False)
      INFOS['FitGrid']=Fitquality
-  print ''
+  print('')
 
 
-  print 'Choose Grid Quality for Integration (Becke: basic, normal, good, verygood, excellent).'
+  print('Choose Grid Quality for Integration (Becke: basic, normal, good, verygood, excellent).')
   IntGrid=question('Becke Grid Quality:',str,'good',autocomplete=False)
   INFOS['IntGrid']=IntGrid 
-  print ''
+  print('')
 
 
   #print 'Do you want to run excited state calculations?'
@@ -445,31 +422,31 @@ Range-separated: CAMY-B3LYP, LCY-PBE
   INFOS['COSMO']=False
   INFOS['ExcGO']=False
   if Exci == True:
-     print ''
-     print 'Singlets, Triplets or Both (ONLYSING, ONLYTRIP or BOTH)?'
-     print 'If Spin-orbit coupling or unrestricted only select BOTH'
+     print('')
+     print('Singlets, Triplets or Both (ONLYSING, ONLYTRIP or BOTH)?')
+     print('If Spin-orbit coupling or unrestricted only select BOTH')
      Mult=question('Excitation Type:',str,'BOTH',autocomplete=False)
      INFOS['Mult']=Mult
-     print ''
-     print 'Number of excitations to calculate (If BOTH, then calculate each that many singlets and triplets):'
+     print('')
+     print('Number of excitations to calculate (If BOTH, then calculate each that many singlets and triplets):')
      NrExci=question('Number of excitations:',int,[3])[0]
      INFOS['NrExci']=NrExci
-     print ''
-     print 'Select to use the Tamm-Dancoff Approximation (recommended)'
+     print('')
+     print('Select to use the Tamm-Dancoff Approximation (recommended)')
      TDA=question('Use TDA?',bool,True)
      INFOS['TDA']=TDA
-     print ''
+     print('')
      INFOS['ExcGO']=False
      INFOS['COSMO']=False
      if ctype <=2:
-        print 'Do you want to optimize an excited state or get excited state gradients?'
+        print('Do you want to optimize an excited state or get excited state gradients?')
         ExcitedGO=question('Gradients/GeoOpt:',bool,False)
         INFOS['ExcGO']=ExcitedGO
         if ExcitedGO == True:
-           print ''
+           print('')
            SingTrip=question('Singlet or Triplet:',str,'SINGLET',autocomplete=False)
            INFOS['SINGTRIP']=SingTrip
-           print ''
+           print('')
            State=question('Which State:',int,[1])[0]
            INFOS['STATE']=State
            #print ''
@@ -478,27 +455,27 @@ Range-separated: CAMY-B3LYP, LCY-PBE
 
 
   if ctype <=2 and not INFOS['ExcGO']:
-     print ''
-     print 'Would you like to use COSMO (Does not work with excited-state geometry optimizations)?'
+     print('')
+     print('Would you like to use COSMO (Does not work with excited-state geometry optimizations)?')
      COSMO=question('Include the Solvent:',bool,False)
      INFOS['COSMO']=COSMO
      if COSMO:
-        print 'Choose whether to use a simple input with solvent name or User defined'
+        print('Choose whether to use a simple input with solvent name or User defined')
         User=question('User defined dielectric constant and solvent radius?',bool,False) 
         INFOS['User']=User
-        print ''
+        print('')
         if User:
            Epsi = question('State the dielecric constant:',float,[0.1])[0]
-           print ''
+           print('')
            Rad = question('State the solvent radius:',float,[1.93])[0]
            INFOS['Epsi']=Epsi
            INFOS['Rad']=Rad
         else:
-           print 'Here are a few solvent options: infinitedielectric, Water, Acetonitrile, Methanol, Dichloromethane'
+           print('Here are a few solvent options: infinitedielectric, Water, Acetonitrile, Methanol, Dichloromethane')
            Solvent=question('Which Solvent:',str,'water',autocomplete=False)
            INFOS['SOLVENT']=Solvent
      
-  print ''
+  print('')
 
   return INFOS
 
@@ -514,11 +491,11 @@ def setup_input(INFOS):
      inpf='ADF.template'
   else:
      inpf=INFOS['path']
-  print 'Writing input to %s' % (inpf)
+  print('Writing input to %s' % (inpf))
   try:
     inp=open(inpf,'w')
   except IOError:
-    print 'Could not open %s for write!' % (inpf)
+    print('Could not open %s for write!' % (inpf))
     quit(1)
   s='ATOMS\n'
   if INFOS['ctype']<=2:
@@ -621,13 +598,13 @@ This interactive program prepares template files for the SHARC-ADF interface.
 
   INFOS=get_infos()
 
-  print centerstring('Full input',60,'#')+'\n'
+  print(centerstring('Full input',60,'#')+'\n')
   for item in INFOS:
-    print item, ' '*(15-len(item)), INFOS[item]
-  print ''
+    print(item, ' '*(15-len(item)), INFOS[item])
+  print('')
 
   setup_input(INFOS)
-  print '\nFinished\n'
+  print('\nFinished\n')
 
   close_keystrokes()
 
@@ -637,6 +614,6 @@ if __name__ == '__main__':
   try:
     main()
   except KeyboardInterrupt:
-    print '\nCtrl+C makes me a sad SHARC ;-(\n'
+    print('\nCtrl+C makes me a sad SHARC ;-(\n')
 
     quit(0)

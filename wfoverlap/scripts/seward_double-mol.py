@@ -1,10 +1,10 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 #******************************************
 #
 #    SHARC Program Suite
 #
-#    Copyright (c) 2019 University of Vienna
+#    Copyright (c) 2023 University of Vienna
 #
 #    This file is part of SHARC.
 #
@@ -23,7 +23,6 @@
 #
 #******************************************
 
-#!/usr/bin/env python2
 import os
 import sys
 import re
@@ -111,7 +110,7 @@ MULTipoles
       continue
     if isinfo(line):
       if line!=data[ln]:
-        print ' WARNING: Inconsistent basis set information in line %i!' % (ln+1)
+        print(' WARNING: Inconsistent basis set information in line %i!' % (ln+1))
         #sys.exit(1)
       molcasin.write(line)
     if isatom(line):
@@ -119,7 +118,7 @@ MULTipoles
       parts[0] = re.sub("\d+", "", parts[0])
       oldatom=re.sub("\d+", "", data[ln].split()[0])
       if parts[0]!=oldatom:
-        print ' WARNING: Different atoms in line %i!' % (ln+1)
+        print(' WARNING: Different atoms in line %i!' % (ln+1))
         #sys.exit(2)
       parts[0]+='%s' % (atom)
       atom+=1
@@ -128,12 +127,12 @@ MULTipoles
   
   molcasin.write('End of Input\n')
   molcasin.close()
-  print "File %s written."%molcasin_name
+  print("File %s written."%molcasin_name)
   
 def run_seward(molcasin_name):
     import subprocess
     
-    print "Running seward ..."
+    print("Running seward ...")
     os.environ['Project']='double'
     os.environ['WorkDir']=os.getcwd()
     os.environ['ThisDir']=os.getcwd()
@@ -142,7 +141,7 @@ def run_seward(molcasin_name):
     retval = subprocess.call(['molcas', molcasin_name], stdout=mout)
     mout.close()
     
-    print "   Finished with returncode: %i\n"%retval
+    print("   Finished with returncode: %i\n"%retval)
     if not retval==0:
       sys.exit(retval)
     
@@ -150,9 +149,9 @@ def run_seward(molcasin_name):
     os.symlink('%s/%s.OneInt'%(os.environ['WorkDir'], os.environ['Project']),  'ONEINT')
     
 def write_ciovin(olddir, newdir, ciovin='cioverlap.input'):
-  print "Creating file %s"%ciovin
+  print("Creating file %s"%ciovin)
   if os.path.exists(ciovin):
-    print "File already exists, exiting ..."
+    print("File already exists, exiting ...")
     return
     
   cin = open(ciovin, 'w')
@@ -164,14 +163,14 @@ def write_ciovin(olddir, newdir, ciovin='cioverlap.input'):
   cin.write("ao_read=1\n")
 
   cin.close()
-  print "File %s written."%ciovin
+  print("File %s written."%ciovin)
 
 # ========================== Start of Code =============================== #
 
 if __name__ == '__main__':
 
   if len(sys.argv)<3 or len(sys.argv)>4:
-    print numargerror
+    print(numargerror)
     quit()
   
   olddir=sys.argv[1]

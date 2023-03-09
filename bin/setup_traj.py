@@ -4532,7 +4532,7 @@ def writeRunscript(INFOS, iconddir):
     # ================================
     if INFOS['pysharc']:
         driver = Interfaces[INFOS['interface']]['pysharc_driver']
-        exestring = '. $SHARC/sharcvars.sh\n$ANACONDA/bin/python2 $SHARC/%s input' % driver
+        exestring = '. $SHARC/sharcvars.sh\n$ANACONDA/bin/python $SHARC/%s input' % driver
     else:
         exestring = '$SHARC/sharc.x input'
 

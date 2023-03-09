@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 #******************************************
 #
@@ -23,7 +23,6 @@
 #
 #******************************************
 
-#!/usr/bin/env python2
 
 # Interactive script for the calculation of time constant errors
 # 
@@ -59,26 +58,6 @@ try:
   NONUMPY=False
 except ImportError:
   NONUMPY=True
-
-# =========================================================0
-# compatibility stuff
-
-if sys.version_info[0]!=2:
-  print 'This is a script for Python 2!'
-  sys.exit(0)
-
-if sys.version_info[1]<5:
-  def any(iterable):
-    for element in iterable:
-      if element:
-        return True
-    return False
-
-  def all(iterable):
-    for element in iterable:
-      if not element:
-        return False
-    return True
 
 
 # some constants
@@ -143,7 +122,7 @@ def readfile(filename):
     out=f.readlines()
     f.close()
   except IOError:
-    print 'File %s does not exist!' % (filename)
+    print('File %s does not exist!' % (filename))
     sys.exit(12)
   return out
 
@@ -158,10 +137,10 @@ def writefile(filename,content):
     elif isinstance(content,str):
       f.write(content)
     else:
-      print 'Content %s cannot be written to file!' % (content)
+      print('Content %s cannot be written to file!' % (content))
     f.close()
   except IOError:
-    print 'Could not write to file %s!' % (filename)
+    print('Could not write to file %s!' % (filename))
     sys.exit(13)
 
 # ======================================================================= #
@@ -169,20 +148,20 @@ def mkdir(DIR):
     # mkdir the DIR, or clean it if it exists
     if os.path.exists(DIR):
         if os.path.isfile(DIR):
-            print '%s exists and is a file!' % (DIR)
+            print('%s exists and is a file!' % (DIR))
             sys.exit(69)
         elif os.path.isdir(DIR):
             if DEBUG:
-                print 'Remake\t%s' % DIR
+                print('Remake\t%s' % DIR)
             shutil.rmtree(DIR)
             os.makedirs(DIR)
     else:
         try:
             if DEBUG:
-                print 'Make\t%s' % DIR
+                print('Make\t%s' % DIR)
             os.makedirs(DIR)
         except OSError:
-            print 'Can not create %s\n' % (DIR)
+            print('Can not create %s\n' % (DIR))
             sys.exit(70)
 
 
@@ -201,7 +180,7 @@ def centerstring(string,n,pad=' '):
     return  pad*((n-l+1)/2)+string+pad*((n-l)/2)
 
 def displaywelcome():
-  print 'Script for bootstrap analysis of population fits started...\n'
+  print('Script for bootstrap analysis of population fits started...\n')
   string='\n'
   string+='  '+'='*80+'\n'
   string+='||'+centerstring('',80)+'||\n'
@@ -217,7 +196,7 @@ def displaywelcome():
 This script reads ensemble populations (from populations.py) and a kinetic model (from make_fitscript.py)
 and computes statistics on the kinetic model fitting.
   '''
-  print string
+  print(string)
 
 # ======================================================================================================================
 # ======================================================================================================================
@@ -236,7 +215,7 @@ def close_keystrokes():
 def question(question,typefunc,default=None,autocomplete=True,ranges=False):
   if typefunc==int or typefunc==float:
     if not default==None and not isinstance(default,list):
-      print 'Default to int or float question must be list!'
+      print('Default to int or float question must be list!')
       quit(1)
   if typefunc==str and autocomplete:
     readline.set_completer_delims(' \t\n;')
@@ -260,7 +239,7 @@ def question(question,typefunc,default=None,autocomplete=True,ranges=False):
       s+=' (range comprehension enabled)'
     s+=' '
 
-    line=raw_input(s)
+    line=input(s)
     line=re.sub('#.*$','',line).strip()
     if not typefunc==str:
       line=line.lower()
@@ -282,7 +261,7 @@ def question(question,typefunc,default=None,autocomplete=True,ranges=False):
         KEYSTROKES.write(line+' '*(40-len(line))+' #'+s+'\n')
         return False
       else:
-        print 'I didn''t understand you.'
+        print('I didn''t understand you.')
         continue
 
     if typefunc==str:
@@ -298,7 +277,7 @@ def question(question,typefunc,default=None,autocomplete=True,ranges=False):
         KEYSTROKES.write(line+' '*(40-len(line))+' #'+s+'\n')
         return f
       except ValueError:
-        print 'Please enter floats!'
+        print('Please enter floats!')
         continue
 
     if typefunc==int:
@@ -317,9 +296,9 @@ def question(question,typefunc,default=None,autocomplete=True,ranges=False):
         return out
       except ValueError:
         if ranges:
-          print 'Please enter integers or ranges of integers (e.g. "-3~-1  2  5~7")!'
+          print('Please enter integers or ranges of integers (e.g. "-3~-1  2  5~7")!')
         else:
-          print 'Please enter integers!'
+          print('Please enter integers!')
         continue
 
 # ======================================================================================================================
@@ -354,27 +333,27 @@ def get_general():
   ''''''
 
   INFOS={}
-  print centerstring('Paths to bootstrap data',60,'-')
-  print '\nPlease enter the path to the directory containing the raw bootstrap data.\nThis data can be generated with populations.py\n'
+  print(centerstring('Paths to bootstrap data',60,'-'))
+  print('\nPlease enter the path to the directory containing the raw bootstrap data.\nThis data can be generated with populations.py\n')
   while True:
     path=question('Path: ',str,'bootstrap_data/')
     path=os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
     if not os.path.isdir(path):
-      print 'Does not exist or is not a directory: %s' % (path)
+      print('Does not exist or is not a directory: %s' % (path))
       continue
     ls=os.listdir(path)
-    print ls
+    print(ls)
     count=0
     for i in ls:
       if 'pop_' in i:
         count+=1
     if count==0:
-      print 'Directory does not contain bootstrap data!'
+      print('Directory does not contain bootstrap data!')
       continue
-    print 'Found %i bootstrap data files.' % count
+    print('Found %i bootstrap data files.' % count)
     break
   INFOS['bootstrap_dir']=path
-  print
+  print()
 
   # detect number, step, length, ncols
   data=readfile(os.path.join(path,ls[0]))
@@ -403,12 +382,12 @@ def get_general():
   INFOS['ncol']=ncol
 
   # nboot
-  print centerstring('Number of bootstrap cycles',60,'-')
-  print '\nPlease enter the number of bootstrapping cycles to be performed.'
+  print(centerstring('Number of bootstrap cycles',60,'-'))
+  print('\nPlease enter the number of bootstrapping cycles to be performed.')
   INFOS['nboot']=question('Number of bootstrap cycles: ',int,[10])[0]
 
   # Random number seed
-  print '\nPlease enter a random number generator seed (type "!" to initialize the RNG from the system time).'
+  print('\nPlease enter a random number generator seed (type "!" to initialize the RNG from the system time).')
   while True:
     line=question('RNG Seed: ',str,'!',False)
     if line=='!':
@@ -418,29 +397,29 @@ def get_general():
       rngseed=int(line)
       random.seed(rngseed)
     except ValueError:
-      print 'Please enter an integer or "!".'
+      print('Please enter an integer or "!".')
       continue
     break
-  print ''
+  print('')
 
   # fitting script
-  print centerstring('Fitting script',60,'-')
-  print '\nPlease provide the path to the desired fitting script.\nThis script can be generated with make_fitscript.py, and should subsequently me adjusted (suitable guesses for fitted constants).'
+  print(centerstring('Fitting script',60,'-'))
+  print('\nPlease provide the path to the desired fitting script.\nThis script can be generated with make_fitscript.py, and should subsequently me adjusted (suitable guesses for fitted constants).')
   while True:
     path=question('Path: ',str,'model_fit.gp')
     path=os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
     if not os.path.isfile(path):
-      print 'Does not exist: %s' % (path)
+      print('Does not exist: %s' % (path))
       continue
     break
   INFOS['fitfile']=path
 
-  print '\nPlease provide the command to execute gnuplot.'
+  print('\nPlease provide the command to execute gnuplot.')
   INFOS['gnuplot']=question('Command: ',str,'gnuplot')
 
   #parallel runs       TODO: currently is very inefficient due to subprocess creation overhead
-  print centerstring('Parallel computation',60,'-')
-  print '\nbootstrap.py can run the fitting (which is done through Gnuplot) on multiple CPU).\n(however, the overhead is currently large, so speedup is limited)'
+  print(centerstring('Parallel computation',60,'-'))
+  print('\nbootstrap.py can run the fitting (which is done through Gnuplot) on multiple CPU).\n(however, the overhead is currently large, so speedup is limited)')
   INFOS['ncpu']=question('Number of CPUs to use: ',int,[1])[0]
   #INFOS['ncpu']=1
   # how many runs to do per cycle
@@ -480,7 +459,7 @@ def do_calc(INFOS):
   #print fit2
 
   # read in the ensemble data
-  print '>>>>>>>>>>>>> Reading the ensemble data ...'
+  print('>>>>>>>>>>>>> Reading the ensemble data ...')
   ls=os.listdir(INFOS['bootstrap_dir'])
   pop_full=[ [ [0. for j in range(INFOS['ncol']) ] for i in range(INFOS['steps']) ] for k in range(INFOS['ntraj']) ]
   for ifile,filename in enumerate(sorted(ls)):
@@ -488,7 +467,7 @@ def do_calc(INFOS):
       continue
     filename2=os.path.join(INFOS['bootstrap_dir'],filename)
     data=readfile(filename2)
-    print ifile,filename2
+    print(ifile,filename2)
     istep=-1
     for line in data:
       if '#' in line:
@@ -510,15 +489,15 @@ def do_calc(INFOS):
 
 
   # enter the main loop: generating files for gnuplot, running gnuplot, reading out...
-  print '\n>>>>>>>>>>>>> Starting the bootstrapping cycles ...'
+  print('\n>>>>>>>>>>>>> Starting the bootstrapping cycles ...')
   if INFOS['ncpu']>1:
-    print '             (do not use Ctrl-C in parallel mode)\n'
+    print('             (do not use Ctrl-C in parallel mode)\n')
   else:
-    print '             (use Ctrl-C to skip the remaining cycles and go to the final analysis)\n'
+    print('             (use Ctrl-C to skip the remaining cycles and go to the final analysis)\n')
   outfile=open('bootstrap_cycles.out','w')
   string='Step | %14s | %6s: %8s     %8s | ...\n' % ('Run Time','Key','g.Mean','g.Stdv')
   string+='='*59
-  print string
+  print(string)
   outfile.write(string+'\n')
   starttime=datetime.datetime.now()
   begintime=datetime.datetime.now()
@@ -565,7 +544,7 @@ def do_calc(INFOS):
             constants_step.append(constants)
           pool.close()
           pool.join()
-        except Exception, e:
+        except Exception as e:
           pool.close()
           pool.join()
           os.chdir(prevdir)
@@ -579,7 +558,7 @@ def do_calc(INFOS):
             constants=make_job(pop_full,indices[icpu],INFOS['dt'],directory,fit2,INFOS['gnuplot'],idone+icpu-idone_step+1,nactualcol)
             #print datetime.datetime.now(), constants
             constants_step.append(constants)
-        except Exception, e:
+        except Exception as e:
           os.chdir(prevdir)
           raise KeyboardInterrupt
       #print datetime.datetime.now(), 'Finished gnuplot'
@@ -590,7 +569,7 @@ def do_calc(INFOS):
       if len(constants_all)>=3:
         string=print_intermediate_statistics(constants_all)
         s='%4i | %s %s' % (idone,datetime.datetime.now()-starttime,string)
-        print s
+        print(s)
         outfile.write(s+'\n')
         outfile.flush()
         starttime=datetime.datetime.now()
@@ -598,13 +577,13 @@ def do_calc(INFOS):
       if idone>=INFOS['nboot']:
         break
     except KeyboardInterrupt:
-      print 'Aborted, going to final analysis...'
+      print('Aborted, going to final analysis...')
       time.sleep(0.5)
       break
     except ValueError:
-      print 'Value Error (e.g., negative time constant), ignoring results of this cycle...'
+      print('Value Error (e.g., negative time constant), ignoring results of this cycle...')
       continue
-  print 'Run time =',datetime.datetime.now()-begintime
+  print('Run time =',datetime.datetime.now()-begintime)
   outfile.close()
 
 
@@ -615,7 +594,7 @@ def do_calc(INFOS):
 
 
   # final analysis
-  print '\n>>>>>>>>>>>>> Finished the bootstrapping cycles ...'
+  print('\n>>>>>>>>>>>>> Finished the bootstrapping cycles ...')
   string_all=''
 
   for key in allconsts:
@@ -654,7 +633,7 @@ def do_calc(INFOS):
        mini,
        maxi
        )
-    print string
+    print(string)
     string_all+=string+'\n'
 
     # make histogram
@@ -693,7 +672,7 @@ def do_calc(INFOS):
         string+=' %5.1f' % (i)
       else:
         string+=' %5i' % (i)
-    print string
+    print(string)
     string_all+=string+'\n'
 
   #write results to file
@@ -715,7 +694,7 @@ def do_calc(INFOS):
     string+='\n'
   string_all+=string
 
-  print '\nOutput (analysis and full fitted data) written to "bootstrap.out".'
+  print('\nOutput (analysis and full fitted data) written to "bootstrap.out".')
   writefile('bootstrap.out',string_all)
 
 
@@ -751,10 +730,10 @@ def make_job(pop_full,indices,dt,directory,fit2,gnuplot,idone,nactualcol):
     #print datetime.datetime.now(), 'Finished running'
   except KeyboardInterrupt:
     raise KeyboardInterruptError()
-  except Exception, problem:
-    print '*'*50+'\nException in make_job(%s)!' % (directory)
+  except Exception as problem:
+    print('*'*50+'\nException in make_job(%s)!' % (directory))
     traceback.print_exc()
-    print '*'*50+'\n'
+    print('*'*50+'\n')
     raise problem
 
   return constants
@@ -789,7 +768,7 @@ def run_gnuplot(directory,filename,gnuplot):
   ps = sp.Popen(string, shell=True, stdout=sp.PIPE,stderr=sp.STDOUT)
   output = ps.communicate()[0]
   if ps.returncode!=0:
-    print 'ERROR: gnuplot call not successful!'
+    print('ERROR: gnuplot call not successful!')
   output=output.split('\n')
   constants={}
   for line in output:
@@ -901,12 +880,12 @@ and computes error statistics for the model fit.
 
   INFOS=get_general()
 
-  print centerstring('Full input',60,'#')+'\n'
+  print(centerstring('Full input',60,'#')+'\n')
   for item in INFOS:
-    print item, ' '*(25-len(item)), INFOS[item]
-  print ''
+    print(item, ' '*(25-len(item)), INFOS[item])
+  print('')
   calc=question('Do you want to do the specified analysis?',bool,True)
-  print ''
+  print('')
 
   close_keystrokes()
   if calc:
@@ -920,5 +899,5 @@ if __name__ == '__main__':
   try:
     main()
   except KeyboardInterrupt:
-    print '\nCtrl+C makes me a sad SHARC ;-(\n'
+    print('\nCtrl+C makes me a sad SHARC ;-(\n')
     quit(0)
