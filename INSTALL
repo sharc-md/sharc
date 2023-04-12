@@ -52,7 +52,6 @@ and edit the Makefile by adjusting the
 USE_PYSHARC
 USE_COMPILER
 USE_LIBS
-ANACONDA
 variables. It might also be necessary to modify other parts of the Makefile,
 e.g., the F90 and CC variables.
 Issuing the command:
