@@ -2729,7 +2729,7 @@ module input
       endif
     endif
 
-    ctrl%calc_dipole=0
+    ctrl%calc_dipole=1
 
     if (ctrl%laser/=0) then
       ctrl%calc_dipole=1
@@ -2954,6 +2954,47 @@ module input
         ctrl%temperature=2*ctrl%thermostat_const(1)*1.38064852e-23*ctrl%temperature*2.2937126583579e+17*ctrl%dtstep ! var=2*alpha*k_bT*dt (1 J = 2.29...e+17 a.u.)
       endif
     endif
+
+
+#ifdef __PYSHARC__
+
+    ! catch all options that are not yet compatible with pysharc
+
+    if (ctrl%zpe_correction/=0) then
+        write(0,*) 'ZPE correction not yet compatible with pysharc!'
+        stop 1
+    endif
+
+    if (ctrl%army_ants/=0) then
+        write(0,*) 'Army Ants not yet compatible with pysharc!'
+        stop 1
+    endif
+
+    if (ctrl%time_uncertainty/=0) then
+        write(0,*) 'Fewest switches with time uncertainty not yet compatible with pysharc!'
+        stop 1
+    endif
+
+    if (ctrl%decoherence==11) then
+        write(0,*) 'Decay of mixing decoherence not yet compatible with pysharc!'
+        stop 1
+    endif
+
+    if (ctrl%integrator/=2) then
+        write(0,*) 'Bulirsch-Stoer-Hack and adaptive velocity Verlet integrators not yet compatible with pysharc!'
+        stop 1
+    endif
+
+    if (ctrl%method/=0) then
+        write(0,*) 'Self-consistent potential/Ehrenfest not yet compatible with pysharc!'
+        stop 1
+    endif
+
+
+
+#endif
+
+
 
     if (printlevel>0) then
       write(u_log,*)

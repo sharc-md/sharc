@@ -261,14 +261,14 @@ subroutine write_list_header(u)
   implicit none
   integer :: u
 
-  write(u,'(a1,a)') '#',repeat('=',239)
-  write(u,'(a1,A11,1X,A14,1X,A15,1X,A68,1X,3(A22,1X),A45,1X,A12)') '#',&
+  write(u,'(a1,a)') '#',repeat('=',175)
+  write(u,'(a1,A11,1X,A14,1X,A15,1X,A44,1X,3(A14,1X),A29,1X,A12)') '#',&
   &'Step |','Time |','State |','Energy |','Angular |','Gradient |','Density |','Expectation Value |','Runtime |'
-  write(u,'(a1,A11,1X,A14,1X,2(A7,1X),8(A22,1X),A12)') '#',&
+  write(u,'(a1,A11,1X,A14,1X,2(A7,1X),8(A14,1X),A12)') '#',&
   &'|','|','diag |','MCH |','kin |','pot |','tot |','Momentum |','RMS |','Total |','DM |','S |','|'
-  write(u,'(a1,A11,1X,A14,1X,2(A7,1X),8(A22,1X),A12)') '#',&
+  write(u,'(a1,A11,1X,A14,1X,2(A7,1X),8(A14,1X),A12)') '#',&
   &'|','[fs] |','|','|','[eV] |','[eV] |','[eV] |','[hbar] |','[eV/Ang] |','|','[Debye] |','|','[sec] |'
-  write(u,'(a1,a)') '#',repeat('=',239)
+  write(u,'(a1,a)') '#',repeat('=',175)
 
 endsubroutine
 
@@ -380,7 +380,7 @@ subroutine write_list_line(u, traj, ctrl)
   endselect
   endif
 
-  write(u,'(1X,I9,3X,F12.5,3X,2(I5,3X),8(F20.10,3X),I10)') &
+  write(u,'(1X,I9,3X,F12.5,3X,2(I5,3X),8(F12.6,3X),I10)') &
   &traj%step, au2fs*traj%microtime, &
   &traj%state_diag, traj%state_MCH, &
   &traj%Ekin*au2eV, traj%Epot*au2eV, traj%Etot*au2eV, &

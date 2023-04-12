@@ -50,10 +50,12 @@ library=libsharcnc.so
 all: lib
 
 lib: $(OBJ_LIB)
+	[ -d ../lib ] || mkdir ../lib
 	ar -cvq ../lib/$(library) $(OBJ_LIB)
 
 clean:
 	rm ../lib/$(library)
+	rm *.o
 
 %.o: %.c
 	$(CC) $(SHARED) $(INC) $(OPT) -c $<

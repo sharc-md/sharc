@@ -1146,7 +1146,7 @@ subroutine initial_step(IRestart)
     use definitions
     use misc, only: set_time
     use nuclear,  only: Calculate_etot
-    use qm, only: Mix_gradients, Update_old, do_initial_qm
+    use qm, only: Mix_gradients, Update_old, do_initial_qm, QM_processing, NAC_processing
     use restart, only: mkdir_restart, write_restart_ctrl!, write_restart_traj 
     use output, only: write_list_header, write_dat, &
                       write_list_line, write_geom
@@ -1154,10 +1154,14 @@ subroutine initial_step(IRestart)
     __INT__, intent(in)   :: IRestart
 
     if ( IRestart .eq. 0 ) then
+        call QM_processing(traj,ctrl)
+        call NAC_processing(traj, ctrl)
+        call Calculate_etot(traj,ctrl)   ! not sure if necessary here...
         call Mix_gradients(traj,ctrl)
         call Update_old(traj,ctrl)
         call Calculate_etot(traj,ctrl)
         call set_time(traj)
+        traj%microtime=ctrl%dtstep*traj%step
         call write_dat_new(u_dat, traj, ctrl)    
         if (ctrl%output_format==0) then
           call write_geom(u_geo,traj,ctrl)
@@ -1192,7 +1196,7 @@ end subroutine Verlet_xstep
 subroutine Verlet_vstep(IRedo)
     use memory_module, only: traj, ctrl
     use definitions
-    use qm, only: Adjust_phases, Mix_gradients
+    use qm, only: Adjust_phases, Mix_gradients, QM_processing, NAC_processing
     use electronic, only: propagate, surface_hopping, decoherence, &
                           Calculate_cMCH
     use electronic_laser, only: propagate_laser
@@ -1204,10 +1208,15 @@ subroutine Verlet_vstep(IRedo)
     __INT__, intent(out) :: IRedo
 
     IRedo = 0
-    ! Adjust Phases
-    call Adjust_phases(traj,ctrl)
+  ! QM Processing
+  call QM_processing(traj,ctrl)
+  ! Adjust Phases
+  call Adjust_phases(traj,ctrl)
+  ! Compute NAC in diagonal basis
+  call NAC_processing(traj, ctrl)
     ! Mix Gradients
     call Mix_gradients(traj,ctrl)
+
     ! Velocity Verlet v    (before SH)
     call VelocityVerlet_vstep(traj,ctrl)
     if (ctrl%dampeddyn/=1.d0) call Damp_Velocities(traj,ctrl)
@@ -1227,6 +1236,7 @@ subroutine Verlet_vstep(IRedo)
     call Decoherence(traj,ctrl)
     ! obtain the correct gradient
     call Calculate_cMCH(traj,ctrl)
+    traj%microtime=ctrl%dtstep*traj%step
     if (ctrl%calc_grad>=1) then
         IRedo = 1
     endif

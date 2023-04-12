@@ -170,9 +170,7 @@ static PyObject * get_current_coordinates(PyObject * self, PyObject * args)
     for (int i=0; i<NAtoms; i++){
         PyObject * pylst = PyList_New(3);
         for (int j =0; j<3; j++){
-            PyObject * pyfloat = PyFloat_FromDouble( *(Crd+i*3+j) );
-            Py_INCREF(pyfloat);
-            PyList_SetItem(pylst, j, pyfloat);
+            PyList_SetItem(pylst, j, PyFloat_FromDouble( *(Crd+i*3+j)));
         }
         PyList_SetItem(lst, i, pylst);
     }

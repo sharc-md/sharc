@@ -233,7 +233,7 @@ class SHARC_INTERFACE(object):
         self.savedir = basic_info['savedir']
         self.NAtoms = basic_info['NAtoms']
         self.nsteps = basic_info['NSteps']
-        self.istep = basic_info['istep']
+        self.istep  = basic_info['istep']
         self.constants = sharc.get_constants()
         self.QMin = {'savedir': basic_info['savedir']}
 
@@ -330,6 +330,7 @@ class SHARC_INTERFACE(object):
 
         call do_qm_job for what ever job there is
         """
+        sys.stdout.flush()
         # setup_calculation
         self.initial_setup(**kwargs)                    # nothing (dummy)
         # setup sharc
