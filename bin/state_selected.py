@@ -6,7 +6,7 @@
 #
 #    SHARC-MN Extension
 #
-#    Copyright (c) 2019 University of Vienna
+#    Copyright (c) 2023 University of Vienna
 #    Copyright (c) 2022 University of Minnesota
 #
 #    This file is part of SHARC-MN.
