@@ -38,11 +38,11 @@ rasscf_thrs_egrd        1e-4
     ## ======== METHOD settings ============
 
     ## Method to be used.
-    ## can be "casscf", "caspt2" and "ms-caspt2", default "casscf"
+    ## can be "casscf", "caspt2", "ms-caspt2", "mc-pdft", "xms-pdft", or "cms-pdft", default "casscf"
 method casscf
 
     ## use non-relativistic Hamiltonian, default is to use DKH
-#no-douglas-kroll
+#douglas-kroll
 
     ## Sets the IPEA shift for CASPT2, default 0.25
 #ipea 0.00
@@ -61,10 +61,6 @@ method casscf
     ## Cholesky decomposition accuracy
     ## see CDTHreshold in &GATEWAY
 cholesky_accu 1e-4
-
-    ## Use this in combination with "cholesky" to use Cholesky-accelerated SA-CASSCF gradients.
-    ## This will only work for very recent MOLCAS versions.
-#cholesky_analytical
 
     ## Enables electrostatic embeddding QM/MM with TINKER.
     ## 
