@@ -894,7 +894,7 @@ subroutine Adaptive_Stepsize(traj,ctrl)
   endif
   if (ctrl%dtstep.lt.ctrl%dtstep_min) then
     if (printlevel>2) then
-      write(u_log,*) "adaptive time step bellow minimum value:",ctrl%dtstep_min*au2fs,"fs"
+      write(u_log,*) "adaptive time step below minimum value:",ctrl%dtstep_min*au2fs,"fs"
     endif
     ctrl%dtstep=ctrl%dtstep_min
   endif

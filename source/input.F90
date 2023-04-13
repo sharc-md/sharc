@@ -1534,6 +1534,10 @@ module input
     ctrl%output_steps_stride=1
     line=get_value_from_key('output_dat_steps',io)
     if (io==0) then
+         if (ctrl%integrator/=2) then
+             write(0,*) 'Bulirsch-Stoer-Hack and adaptive velocity Verlet integrators not yet compatible with variable output stride!'
+             stop 1
+         endif 
       call split(line,' ',values,n)
       if (n>=1) then
         read(values(1),*) i
