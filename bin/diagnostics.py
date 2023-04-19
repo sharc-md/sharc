@@ -912,6 +912,8 @@ def check_intruders(path, trajectories, INFOS, lis, tana, problem_length):
                     break
             if 'RESTART requested.' in line:
                 prevstep -= 1
+            if 'upcoming time step' in line:
+                prevstep += 1
             if 'State: ' in line:
                 intruder = int(line.split()[1])
                 if not notpossible:
