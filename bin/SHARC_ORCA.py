@@ -2186,7 +2186,7 @@ def readQMin(QMinfilename):
                'auxbasis': '',
                'functional': 'PBE',
                'dispersion': '',
-               'grid': '2',
+               'grid': '',
                'gridx': '',
                'gridxc': '',
                'ri': '',
