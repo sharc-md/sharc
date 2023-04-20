@@ -74,8 +74,8 @@ except BaseException:
     print('Plotting not possible (probably because pylab/matplotlib is not installed or because there is no X connection)')
     plot_possible = False
 
-version = '2.1'
-versiondate = datetime.date(2019, 9, 1)
+version = '3.0'
+versiondate = datetime.date(2023, 4, 1)
 
 # ======================================================================= #
 

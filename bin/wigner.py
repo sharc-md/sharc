@@ -57,8 +57,8 @@ U_TO_AMU = 1. / 5.4857990943e-4            # conversion from g/mol to amu
 ANG_TO_BOHR = 1. / 0.529177211  # 1.889725989      # conversion from Angstrom to bohr
 PI = math.pi
 
-version = '2.1'
-versiondate = datetime.date(2019, 9, 1)
+version = '3.0'
+versiondate = datetime.date(2023, 4, 1)
 
 
 NUMBERS = {'H': 1, 'He': 2,

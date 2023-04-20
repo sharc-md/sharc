@@ -52,8 +52,8 @@ except ImportError:
     print('file_handler, vib_molden, traj_manip or struc_linalg not found. They should be part of this package. Check the installation and if $SHARC/../lib is part of the PYTHONPATH environment variable.')
     sys.exit()
 
-version = '2.1'
-versiondate = datetime.date(2019, 9, 1)
+version = '3.0'
+versiondate = datetime.date(2023, 4, 1)
 
 # ======================================================================= #
 

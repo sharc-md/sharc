@@ -67,8 +67,8 @@ ANG_TO_BOHR = 1./0.529177211    #1.889725989      # conversion from Angstrom to 
 PI = math.pi
 KB = 3.1668154e-6               #Boltzmann in hartee/K
 
-version='2.1'
-versiondate=datetime.date(2019,9,1)
+version = '3.0'
+versiondate = datetime.date(2023, 4, 1)
 
 
 NUMBERS = {'H':1, 'He':2,

@@ -45,8 +45,8 @@ from copy import deepcopy
 import colorsys
 
 # =========================================================0
-version = '2.1'
-versiondate = datetime.date(2019, 9, 1)
+version = '3.0'
+versiondate = datetime.date(2023, 4, 1)
 
 # hash table for conversion of multiplicity to the keywords used in MOLPRO
 IToMult = {

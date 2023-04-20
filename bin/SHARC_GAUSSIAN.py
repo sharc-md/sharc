@@ -57,8 +57,8 @@ import ast
 
 # =========================================================0
 
-version = '2.1'
-versiondate = datetime.date(2019, 9, 1)
+version = '3.0'
+versiondate = datetime.date(2023, 4, 1)
 
 
 
