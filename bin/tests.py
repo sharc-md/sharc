@@ -59,9 +59,8 @@ Essential dynamics analysis not possible.''' + '*' * 80 + '\n')
     time.sleep(5)
 
 
-version = '2.1'
-versiondate = datetime.date(2019, 8, 14)
-
+version = '3.0'
+versiondate = datetime.date(2023, 4, 1)
 
 
 INTERFACES = set(['MOLPRO', 'MOLCAS', 'COLUMBUS', 'Analytical', 'AMS-ADF', 'TURBOMOLE', 'GAUSSIAN', 'LVC', 'scripts', 'BAGEL', 'ORCA'])  # TODO: ???

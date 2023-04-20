@@ -59,8 +59,8 @@ U_TO_AMU = 1. / 5.4857990943e-4
 BOHR_TO_ANG = 0.529177211
 PI = math.pi
 
-version = '2.1'
-versiondate = datetime.date(2019, 9, 1)
+version = '3.0'
+versiondate = datetime.date(2023, 4, 1)
 
 
 # hash table for conversion of multiplicity to the keywords used in MOLPRO

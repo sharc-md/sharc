@@ -32,8 +32,8 @@ import datetime
 from optparse import OptionParser
 
 # =========================================================0
-version = '2.1'
-versiondate = datetime.date(2019, 9, 1)
+version = '3.0'
+versiondate = datetime.date(2023, 4, 1)
 
 allowedreq = ['a', 'd', 'r', 'p', 'q', 'x', 'y', 'z', '5', '6', 'c', 'i', 'j', 'k', 'l']
 

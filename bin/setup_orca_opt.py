@@ -57,9 +57,9 @@ U_TO_AMU = 1. / 5.4857990943e-4            # conversion from g/mol to amu
 BOHR_TO_ANG = 0.529177211
 PI = math.pi
 
-version = '2.1'
+version = '3.0'
 versionneeded = [0.2, 1.0, 2.0, 2.1, float(version)]
-versiondate = datetime.date(2019, 9, 1)
+versiondate = datetime.date(2023, 4, 1)
 
 
 IToMult = {
@@ -3067,11 +3067,12 @@ PRIMARY_DIR=%s/
 cd $PRIMARY_DIR
 
 %s
-export PATH=$SHARC:$PATH
+export ORCADIR=%s
+export PATH=$SHARC:$ORCADIR:$PATH
 
-$ORCADIR/orca orca.inp > orca.log
+orca orca.inp > orca.log
 
-''' % (projname, os.path.abspath(iconddir), intstring)
+''' % (projname, os.path.abspath(iconddir), intstring, INFOS['orca'])
 
     runscript.write(string)
     runscript.close()
@@ -3111,7 +3112,7 @@ def writeOrcascript(INFOS, iconddir):
     if INFOS['opttype'] == 'cross' and INFOS['calc_ci'] and 'nacdr' not in Interfaces[INFOS['interface']]['features']:
         string += '#SHARC: param %f %f\n' % (INFOS['sigma'], INFOS['alpha'])
     string += '''
-! ExtOpt
+! ExtOpt Opt
 
 %%geom
   maxstep %f
@@ -3123,12 +3124,25 @@ end
 
 ''' % (INFOS['maxstep'], -INFOS['maxstep'], 'geom.xyz')
 
-
-
     runscript.write(string)
     runscript.close()
-    filename = '%s/orca.inp' % (iconddir)
 
+    filename = '%s/otool_external.inp' % (iconddir)
+    string = '''#
+SHARC: states %s
+SHARC: interface %s
+SHARC: opt %s %i''' % (' '.join([str(i) for i in INFOS['states']]),
+                        Interfaces[INFOS['interface']]['name'],
+                        INFOS['opttype'],
+                        INFOS['cas.root1'])
+    if INFOS['opttype'] == 'cross':
+        string += ' %i' % INFOS['cas.root2']
+    string += '\n'
+    if INFOS['opttype'] == 'cross' and INFOS['calc_ci'] and 'nacdr' not in Interfaces[INFOS['interface']]['features']:
+        string += 'SHARC: param %f %f\n' % (INFOS['sigma'], INFOS['alpha'])
+    runscript = open(filename, 'w')    
+    runscript.write(string)
+    runscript.close()
 
     return
 

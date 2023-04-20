@@ -56,8 +56,8 @@ import struct
 
 # ======================================================================= #
 
-version = '2.1'
-versiondate = datetime.date(2019, 9, 1)
+version = '3.0'
+versiondate = datetime.date(2023, 4, 1)
 
 
 changelogstring = '''
@@ -2186,7 +2186,7 @@ def readQMin(QMinfilename):
                'auxbasis': '',
                'functional': 'PBE',
                'dispersion': '',
-               'grid': '2',
+               'grid': '',
                'gridx': '',
                'gridxc': '',
                'ri': '',
@@ -3084,7 +3084,8 @@ def ORCAinput_string(QMin):
     for i in keys:
         string += '%s ' % (i)
 
-    string += 'grid%s ' % QMin['template']['grid']
+    if QMin['template']['grid']:
+      string += 'grid%s ' % QMin['template']['grid']
     if QMin['template']['gridx']:
         string += 'gridx%s ' % QMin['template']['gridx']
 # In this way, one can change grid on individual atoms:
@@ -4721,7 +4722,8 @@ def getQMout(QMin):
             outfile = os.path.join(QMin['scratchdir'], 'master_%i/ORCA.gbw' % (job))
             shutil.copy(outfile, os.path.join(copydir, "ORCA_%i.gbw" % job))
             outfile = os.path.join(QMin['scratchdir'], 'master_%i/ORCA.cis' % (job))
-            shutil.copy(outfile, os.path.join(copydir, "ORCA_%i.cis" % job))
+            if os.path.isfile(outfile):
+                shutil.copy(outfile, os.path.join(copydir, "ORCA_%i.cis" % job))
 
 
 
@@ -4796,7 +4798,12 @@ def getenergy(logfile, ijob, QMin):
                 if 'STATE' in line:
                     # print line
                     s = line.replace(':', ' ').split()
-                    e = gsenergy + float(s[-2]) * rcm_to_Eh
+                    ikey = 0
+                    while True:
+                        ikey -= 1
+                        if 'cm**-1' in s[ikey]:
+                            break
+                    e = gsenergy+float(s[ikey-1])*rcm_to_Eh
                     i = int(s[1])
                     if i > nstates:
                         break

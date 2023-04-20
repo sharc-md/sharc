@@ -66,9 +66,9 @@ if sys.version_info[0] != 3:
     print('This is a script for Python 3!')
     sys.exit(0)
 
-version = '2.1'
+version = '3.0'
 versionneeded = [0.2, 1.0, 2.0, 2.1, float(version)]
-versiondate = datetime.date(2019, 9, 1)
+versiondate = datetime.date(2023, 4, 1)
 
 
 # ======================================================================= #

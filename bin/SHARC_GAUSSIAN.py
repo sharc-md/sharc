@@ -57,8 +57,8 @@ import ast
 
 # =========================================================0
 
-version = '2.1'
-versiondate = datetime.date(2019, 9, 1)
+version = '3.0'
+versiondate = datetime.date(2023, 4, 1)
 
 
 
@@ -1887,12 +1887,14 @@ def readQMin(QMinfilename):
     if len(QMin['states_to_do']) >= 4:
         for imult, nstate in enumerate(QMin['states_to_do'][3:]):
             if nstate > 0:
-                jobs[len(jobs) + 1] = {'mults': [imult + 4], 'restr': False}
+                #jobs[len(jobs) + 1] = {'mults': [imult + 4], 'restr': False}
+                jobs[imult+4] = {'mults': [imult + 4], 'restr': False}
     QMin['jobs'] = jobs
 
     # make the multmap (mapping between multiplicity and job)
     # multmap[imult]=ijob
     # multmap[-ijob]=[imults]
+    #print(jobs)
     multmap = {}
     for ijob in jobs:
         job = jobs[ijob]
@@ -1901,6 +1903,7 @@ def readQMin(QMinfilename):
         multmap[-(ijob)] = job['mults']
     multmap[1] = 1
     QMin['multmap'] = multmap
+    #print(QMin['multmap'])
 
     # get the joblist
     joblist = set()

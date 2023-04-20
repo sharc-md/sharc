@@ -57,9 +57,10 @@ charge 0 +1 0 +1 0
 
     ## This keyword controls the integration grid.
     ## If not given, Orca defaults will be used
-grid 3     # Options: 1-7
-gridx 3
-gridxc 3
+    ## Use these keywords only for ORCA 4. To change grids in ORCA 5, use the "keys" keyword
+#grid 3     # Options: 1-7
+#gridx 3
+#gridxc 3
 
     ## This keyword sets the density fitting scheme.
     ## this is off by default and can be activated with:

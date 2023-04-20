@@ -97,8 +97,8 @@ import ast
 
 # ======================================================================= #
 
-version = '2.1'
-versiondate = datetime.date(2019, 9, 1)
+version = '3.0'
+versiondate = datetime.date(2023, 4, 1)
 
 
 changelogstring = '''
@@ -2435,7 +2435,7 @@ def get_arch(turbodir):
     os.environ['TURBODIR'] = turbodir
     string = os.path.join(turbodir, 'scripts', 'sysname')
     proc = sp.Popen([string], stdout=sp.PIPE)
-    output = proc.communicate()[0].strip()
+    output = proc.communicate()[0].strip().decode("utf-8")
     print('Architecture: %s' % output)
     return output
 
@@ -2815,6 +2815,7 @@ def readQMin(QMinfilename):
     os.environ['TURBODIR'] = QMin['turbodir']
     arch = get_arch(QMin['turbodir'])
     os.environ['PATH'] = '%s/scripts:%s/bin/%s:' % (QMin['turbodir'], QMin['turbodir'], arch) + os.environ['PATH']
+    # print('Added to PATH:', '%s/scripts:%s/bin/%s:' % (QMin['turbodir'], QMin['turbodir'], arch))
 
     # set ORCA paths
     if 'soc' in QMin:
