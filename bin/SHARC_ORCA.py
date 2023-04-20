@@ -4802,7 +4802,7 @@ def getenergy(logfile, ijob, QMin):
                     while True:
                         ikey -= 1
                         if 'cm**-1' in s[ikey]:
-                        break
+                            break
                     e = gsenergy+float(s[ikey-1])*rcm_to_Eh
                     i = int(s[1])
                     if i > nstates:
