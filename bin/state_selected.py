@@ -1252,7 +1252,7 @@ as a list containing all initial condition objects."""
         ic = sample_initial_condition(molecule, modes, vibselect, vibdist, vibstate, vibene, method, template)
         ic_list.append(ic)
         idone += 1
-        done = idone*width/(amount)
+        done = idone*width//(amount)
         sys.stdout.write('\rProgress: ['+'='*done+' '*(width-done)+'] %3i%%' % (done*100/width))
         sys.stdout.flush()
     print('\n')
