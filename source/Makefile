@@ -35,7 +35,7 @@ USE_PYSHARC := true
 USE_COMPILER := gnu
 
 #mkl,gnu
-USE_LIBS := mkl
+USE_LIBS := gnu
 
 #Static libraries
 COMP_STATIC := false
