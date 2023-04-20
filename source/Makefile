@@ -29,7 +29,7 @@
 
 # =======================================
 #true, false     # also implies NETCDF
-USE_PYSHARC := true
+USE_PYSHARC := false
 
 #intel, gnu
 USE_COMPILER := gnu
