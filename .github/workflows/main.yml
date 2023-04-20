@@ -27,7 +27,7 @@ jobs:
 
       # Runs a single command using the runners shell
       - name: Run a one-line script
-        run: sudo apt-get install -y gfortran libblas-dev liblapack-dev fftw3 fftw3-dev
+        run: sudo apt-get install -y gfortran libblas-dev liblapack-dev fftw3 fftw3-dev netcdf
 
       # Runs a set of commands using the runners shell
       - name: Run a multi-line script
