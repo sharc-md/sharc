@@ -120,6 +120,7 @@ Interfaces = {
                      'dyson': ['wfoverlap'],
                      'phases': ['wfoverlap'],
                      'nacdr': [],
+                     'ktdc': [],
                      'soc': []},
         'pysharc': False
         },
@@ -241,13 +242,49 @@ Method={
 
 Couplings={
   1: {'name':        'nacdt',
-      'description': 'DDT     =  < a|d/dt|b >        Hammes-Schiffer-Tully scheme   '
+      'description': 'DDT     =  < a|d/dt|b >                      Hammes-Schiffer-Tully scheme   '
      },
   2: {'name':        'nacdr',
-      'description': 'DDR     =  < a|d/dR|b >        Original Tully scheme          '
+      'description': 'DDR     =  < a|d/dR|b >                      Original Tully scheme          '
      },
-  3: {'name':        'overlap',
-      'description': 'overlap = < a(t0)|b(t) >       Local Diabatization scheme     '
+  3: {'name':        'ktdc',
+      'description': 'ktdc    = 0.5*sqrt(d2(deltaV)/dt2/(deltaV))  Curvature Driven TDC scheme     '
+     },
+  4: {'name':        'overlap',
+      'description': 'overlap = < a(t0)|b(t) >                     Local Diabatization scheme/Norm-Preserving Interpolation scheme     '
+     }
+  }
+
+Neom={
+  1: {'name':        'ddr',
+      'description': 'Nuclear EOM propagation with NACdR   '
+     },
+  2: {'name':        'gdiff',
+      'description': 'Nuclear EOM propagation effective NAC based on gradient difference    '
+     }
+  }
+
+Integrator={
+  1: {'name':        'avv',
+      'description': 'adaptive timestep Velocity-Verlet integrator'
+     },
+  2: {'name':        'fvv',
+      'description': 'fixed timestep Velocity-Verlet integrator'
+     }
+  }
+
+GradCorrect={
+  1: {'name':        'none',
+      'description': 'mixed gradients are calculated as linear combination of MCH gradients only',
+      'required':   []
+      },
+  2: {'name':        'ngh',
+      'description': 'mixed gradients are calculated by correction of MCH gradients with non-adiabatic coupling vector',
+      'required':   ['nacdr']
+     },
+  3: {'name':        'tdh',
+      'description': 'mixed gradients are calculated by rescaling of the MCH gradients according to time derivatives in diagonal and MCH representations',
+      'required':   []
      }
   }
 
@@ -262,14 +299,34 @@ EkinCorrect={
       'description_refl': 'Reflect the full velocity vector.',
       'required':   []
      },
-  3: {'name':             'parallel_nac',
+  3: {'name':             'parallel_pvel',
+      'description':      'Adjust kinetic energy only with the component of the velocity vector along the vibrational velocity vector.',
+      'description_refl': 'Reflect the vibrational velocity vector.',
+      'required':   []
+     },
+  4: {'name':             'parallel_nac',
       'description':      'Adjust kinetic energy only with the component of the velocity vector along the non-adiabatic coupling vector.',
       'description_refl': 'Reflect only the component of the velocity vector along the non-adiabatic coupling vector.',
       'required':   ['nacdr']
      },
-  4: {'name':             'parallel_diff',
+  5: {'name':             'parallel_diff',
       'description':      'Adjust kinetic energy only with the component of the velocity vector along the gradient difference vector.',
       'description_refl': 'Reflect only the component of the velocity vector along the gradient difference vector.',
+      'required':   []
+     },
+  6: {'name':             'parallel_pnac',
+      'description':      'Adjust kinetic energy only with the component of the velocity vector along the projected non-adiabatic coupling vector.',
+      'description_refl': 'Reflect only the component of the velocity vector along the projected non-adiabatic coupling vector.',
+      'required':   ['nacdr']
+     },
+  7: {'name':             'parallel_enac',
+      'description':      'Adjust kinetic energy only with the component of the velocity vector along the effective non-adiabatic coupling vector.',
+      'description_refl': 'Reflect only the component of the velocity vector along the effective non-adiabatic coupling vector.',
+      'required':   []
+     },
+  8: {'name':             'parallel_penac',
+      'description':      'Adjust kinetic energy only with the component of the velocity vector along the projected effective non-adiabatic coupling vector.',
+      'description_refl': 'Reflect only the component of the velocity vector along the projected effective non-adiabatic coupling vector.',
       'required':   []
      }
   }
@@ -1138,8 +1195,23 @@ from the initconds.excited files as provided by excite.py.
     print(string)
 
 
+    # Method
+    print(centerstring('Nonadiabatic dynamics method', 60, '-') + '\n')
+    print('Please choose the dynamics you want to perform.')
+    cando = list(Method)
+    for i in Method:
+        print('%i\t%s' % (i, Method[i]['description']))
+    while True:
+        dyn=question('Method:',int,[1])[0]
+        if dyn in Method and dyn in cando:
+            break
+        else:
+            print('Please input one of the following: %s!' % ([i for i in cando]))
+    INFOS['method']=Method[dyn]['name']
+
+
     # Simulation time
-    print(centerstring('Simulation time', 60, '-') + '\n')
+    print('\n' + centerstring('Simulation time', 60, '-') + '\n')
     print('Please enter the total simulation time.')
     while True:
         num2 = question('Simulation time (fs):', float, [1000.])[0]
@@ -1161,26 +1233,29 @@ from the initconds.excited files as provided by excite.py.
     INFOS['dtstep'] = dt
     print('\nSimulation will have %i timesteps.' % (num2 // dt + 1))
 
-  # Integrator
-  print('\nPlease choose the integrator you want to use')
-  cando=list(Integrator)
-  for i in Integrator:
-    print('%i\t%s' % (i, Integrator[i]['description']))
-  while True:
-    itg=question('Integrator:',int,[2])[0]
-    if itg in Integrator and itg in cando:
-      break
-    else:
-      print('Please input one of the following: %s!' % ([i for i in cando]))
-  INFOS['integrator']=Integrator[itg]['name']
+    # Integrator
+    print('\nPlease choose the integrator you want to use')
+    cando = list(Integrator)
+    for i in Integrator:
+        print('%i\t%s' % (i, Integrator[i]['description']))
+    while True:
+        itg=question('Integrator:',int,[2])[0]
+        if itg in Integrator and itg in cando:
+            break
+        else:
+            print('Please input one of the following: %s!' % ([i for i in cando]))
+    INFOS['integrator']=Integrator[itg]['name']
 
-  # convergence threshold
-  if INFOS['integrator']=='avv':
-    conv=question('Convergence threshold (eV):',float,[0.00005])[0]
-    if conv<=0:
-      print('Must be positive!')
-    print('\nConvergence threshold: %f.' % (conv))
-    INFOS['convthre']=conv
+    # convergence threshold
+    if INFOS['integrator']=='avv':
+        while True:
+            conv=question('Convergence threshold (eV):',float,[0.00005])[0]
+            if conv<=0:
+                print('Must be positive!')
+                continue
+            break
+        print('\nConvergence threshold: %f.' % (conv))
+        INFOS['convthre']=conv
 
     # number of substeps
     print('\nPlease enter the number of substeps for propagation (25 recommended).')
@@ -1211,9 +1286,18 @@ from the initconds.excited files as provided by excite.py.
 
 
     # SHARC or FISH
-    print('\nDo you want to perform the dynamics in the diagonal representation (SHARC dynamics) or in the MCH representation (regular surface hopping)?')
+    print('\nDo you want to perform the dynamics in the diagonal representation (SHARC dynamics) or in the MCH representation (regular surface hopping/MCH SCP dynamics)?')
     surf = question('SHARC dynamics?', bool, True)
-    INFOS['surf'] = ['mch', 'diagonal'][surf]
+    if INFOS['method']=='tsh':
+        INFOS['surf'] = ['mch', 'diagonal'][surf]
+    elif INFOS['method']=='scp':
+        INFOS['surf'] = 'diagonal'
+        if surf==True:
+            INFOS['pointer_basis'] = 'diag'
+            INFOS['neom_rep'] = 'diag' 
+        else:
+            INFOS['pointer_basis'] = 'diag'
+            INFOS['neom_rep'] = 'MCH'
 
     # SOC or not
     # recommended=True
@@ -1280,298 +1364,298 @@ from the initconds.excited files as provided by excite.py.
             if INFOS['phases_from_interface']:
                 INFOS['needed'].extend(Interfaces[INFOS['interface']]['features']['phases'])
 
-  # Gradient correction (only for SHARC)
-  if INFOS['surf']=='diagonal':
-    print('\nFor SHARC dynamics, the evaluation of the mixed gradients necessitates to be corrected from MCH gradients')
-    print('\nPlease choose the gradient correction scheme you want to use')
-    cando=list(GradCorrect)
-    for i in GradCorrect:
-      print('%i\t%s' % (i, GradCorrect[i]['description']))
-    if Couplings[INFOS['coupling']]['name']=='nacdr':
-      recommended=1
+    # Gradient correction (only for SHARC)
+    if INFOS['surf'] == 'diagonal':
+        print('\nFor SHARC dynamics, the evaluation of the mixed gradients necessitates to be corrected from MCH gradients')
+        print('\nPlease choose the gradient correction scheme you want to use')
+        cando=list(GradCorrect)
+        for i in GradCorrect:
+            print('%i\t%s' % (i, GradCorrect[i]['description']))
+        if Couplings[INFOS['coupling']]['name']=='nacdr':
+            recommended = 2
+        else:
+            recommended = 1
+        while True:
+            gct = question('GradCorrect:',int,[recommended])[0]
+            if gct in GradCorrect and gct in cando:
+                break
+            else:
+                print('Please input one of the following: %s!' % ([i for i in cando]))
+        INFOS['gradcorrect'] = gct
+        possible = ('nacdr' in Interfaces[INFOS['interface']]['features'])
+        if GradCorrect[gct]['name'] == 'ngh' and not possible:
+            print('... but interface cannot provide non-adiabatic coupling vectors, turning option off.')
+            INFOS['gradcorrect'] = 1
     else:
-      recommended=2
-    while True:
-      gct=question('GradCorrect:',int,[recommended])[0]
-      if gct in GradCorrect and gct in cando:
-        break
-      else:
-        print('Please input one of the following: %s!' % ([i for i in cando]))
-    INFOS['gradcorrect']=GradCorrect[gct]['name']
-    possible= ('nacdr' in Interfaces[INFOS['interface']]['features'])
-    if GradCorrect[gct]['name']=='ngh' and not possible:
-      print('... but interface cannot provide non-adiabatic coupling vectors, turning option off.')
-      INFOS['gradcorrect']='none'
-  else:
-    INFOS['gradcorrect']='none'
+        INFOS['gradcorrect'] = 1
 
-  #===============================
-  # Begin Surace hopping details
-  #=============================== 
-  if INFOS['method']=='tsh':
-    # Kinetic energy modification
-    print('\nDuring a surface hop, the kinetic energy has to be modified in order to conserve total energy. There are several options to that:')
-    cando = []
-    for i in EkinCorrect:
-        recommended = len(EkinCorrect[i]['required']) == 0 or Couplings[INFOS['coupling']]['name'] in EkinCorrect[i]['required']
-        possible = all([j in Interfaces[INFOS['interface']]['features'] for j in EkinCorrect[i]['required']])
-        if possible:
-            cando.append(i)
-        if not possible:
-            print('%i\t%s%s' % (i, EkinCorrect[i]['description'], '\n\t(not possible)'))
-        else:
-            print('%i\t%s%s' % (i, EkinCorrect[i]['description'], ['\n\t(extra computational cost)', ''][recommended]))
-    while True:
-        ekinc = question('EkinCorrect:', int, [2])[0]
-        if ekinc in EkinCorrect and ekinc in cando:
-            break
-        else:
-            print('Please input one of the following: %s!' % ([i for i in cando]))
-    INFOS['ekincorrect'] = ekinc
-    if INFOS['ekincorrect']:
-      for i in EkinCorrect[INFOS['ekincorrect']]['required']:
-        INFOS['needed'].extend(Interfaces[INFOS['interface']]['features'][i])
+    #===============================
+    # Begin Surface hopping details
+    #=============================== 
+    if INFOS['method']=='tsh':
+        # Kinetic energy modification
+        print('\nDuring a surface hop, the kinetic energy has to be modified in order to conserve total energy. There are several options to that:')
+        cando = []
+        for i in EkinCorrect:
+            recommended = len(EkinCorrect[i]['required']) == 0 or Couplings[INFOS['coupling']]['name'] in EkinCorrect[i]['required']
+            possible = all([j in Interfaces[INFOS['interface']]['features'] for j in EkinCorrect[i]['required']])
+            if possible:
+                cando.append(i)
+            if not possible:
+                print('%i\t%s%s' % (i, EkinCorrect[i]['description'], '\n\t(not possible)'))
+            else:
+                print('%i\t%s%s' % (i, EkinCorrect[i]['description'], ['\n\t(extra computational cost)', ''][recommended]))
+        while True:
+            ekinc = question('EkinCorrect:', int, [2])[0]
+            if ekinc in EkinCorrect and ekinc in cando:
+                break
+            else:
+                print('Please input one of the following: %s!' % ([i for i in cando]))
+        INFOS['ekincorrect'] = ekinc
+        if INFOS['ekincorrect']:
+            for i in EkinCorrect[INFOS['ekincorrect']]['required']:
+                INFOS['needed'].extend(Interfaces[INFOS['interface']]['features'][i])
  
 
 
-    # frustrated reflection
-    print('\nIf a surface hop is refused (frustrated) due to insufficient energy, the velocity can either be left unchanged or reflected:')
-    cando = []
-    for i in EkinCorrect:
-        recommended = len(EkinCorrect[i]['required']) == 0 or Couplings[INFOS['coupling']]['name'] in EkinCorrect[i]['required']
-        possible = all([j in Interfaces[INFOS['interface']]['features'] for j in EkinCorrect[i]['required']])
-        if possible:
-            cando.append(i)
-        if not possible:
-            print('%i\t%s%s' % (i, EkinCorrect[i]['description_refl'], '\n\t(not possible)'))
-        else:
-            print('%i\t%s%s' % (i, EkinCorrect[i]['description_refl'], ['\n\t(extra computational cost)', ''][recommended]))
-    while True:
-        reflect = question('Reflect frustrated:', int, [1])[0]
-        if reflect in EkinCorrect and reflect in cando:
-            break
-        else:
-            print('Please input one of the following: %s!' % ([i for i in cando]))
-    INFOS['reflect'] = reflect
-    if INFOS['reflect']:
-        for i in EkinCorrect[INFOS['ekincorrect']]['required']:
+        # frustrated reflection
+        print('\nIf a surface hop is refused (frustrated) due to insufficient energy, the velocity can either be left unchanged or reflected:')
+        cando = []
+        for i in EkinCorrect:
+            recommended = len(EkinCorrect[i]['required']) == 0 or Couplings[INFOS['coupling']]['name'] in EkinCorrect[i]['required']
+            possible = all([j in Interfaces[INFOS['interface']]['features'] for j in EkinCorrect[i]['required']])
+            if possible:
+                cando.append(i)
+            if not possible:
+                print('%i\t%s%s' % (i, EkinCorrect[i]['description_refl'], '\n\t(not possible)'))
+            else:
+                print('%i\t%s%s' % (i, EkinCorrect[i]['description_refl'], ['\n\t(extra computational cost)', ''][recommended]))
+        while True:
+            reflect = question('Reflect frustrated:', int, [1])[0]
+            if reflect in EkinCorrect and reflect in cando:
+                break
+            else:
+                print('Please input one of the following: %s!' % ([i for i in cando]))
+        INFOS['reflect'] = reflect
+        if INFOS['reflect']:
+            for i in EkinCorrect[INFOS['ekincorrect']]['required']:
+                INFOS['needed'].extend(Interfaces[INFOS['interface']]['features'][i])
+
+
+
+        # decoherence
+        print('\nPlease choose a decoherence correction for the %s states:' % (['MCH', 'diagonal'][INFOS['surf'] == 'diagonal']))
+        cando = []
+        for i in DecoherencesTSH:
+            recommended = len(DecoherencesTSH[i]['required']) == 0 or Couplings[INFOS['coupling']]['name'] in DecoherencesTSH[i]['required']
+            possible = all([j in Interfaces[INFOS['interface']]['features'] for j in DecoherencesTSH[i]['required']])
+            if possible:
+                cando.append(i)
+            if not possible:
+                print('%i\t%s%s' % (i, DecoherencesTSH[i]['description'], '\n\t(not possible)'))
+            else:
+                print('%i\t%s%s' % (i, DecoherencesTSH[i]['description'], ['\n\t(extra computational cost)', ''][recommended]))
+        while True:
+            decoh = question('Decoherence scheme:', int, [2])[0]
+            if decoh in DecoherencesTSH and decoh in cando:
+                break
+            else:
+                print('Please input one of the following: %s!' % ([i for i in cando]))
+        INFOS['decoherence'] = [DecoherencesTSH[decoh]['name'], DecoherencesTSH[decoh]['params']]
+        for i in DecoherencesTSH[decoh]['required']:
             INFOS['needed'].extend(Interfaces[INFOS['interface']]['features'][i])
 
 
-
-    # decoherence
-    print('\nPlease choose a decoherence correction for the %s states:' % (['MCH', 'diagonal'][INFOS['surf'] == 'diagonal']))
-    cando = []
-    for i in DecoherencesTSH:
-        recommended = len(DecoherencesTSH[i]['required']) == 0 or Couplings[INFOS['coupling']]['name'] in DecoherencesTSH[i]['required']
-        possible = all([j in Interfaces[INFOS['interface']]['features'] for j in DecoherencesTSH[i]['required']])
-        if possible:
-            cando.append(i)
-        if not possible:
-            print('%i\t%s%s' % (i, DecoherencesTSH[i]['description'], '\n\t(not possible)'))
-        else:
-            print('%i\t%s%s' % (i, DecoherencesTSH[i]['description'], ['\n\t(extra computational cost)', ''][recommended]))
-    while True:
-        decoh = question('Decoherence scheme:', int, [2])[0]
-        if decoh in DecoherencesTSH and decoh in cando:
-            break
-        else:
-            print('Please input one of the following: %s!' % ([i for i in cando]))
-    INFOS['decoherence'] = [DecoherencesTSH[decoh]['name'], DecoherencesTSH[decoh]['params']]
-    for i in DecoherencesTSH[decoh]['required']:
-        INFOS['needed'].extend(Interfaces[INFOS['interface']]['features'][i])
-
-
-    # surface hopping scheme
-    print('\nPlease choose a surface hopping scheme for the %s states:' % (['MCH', 'diagonal'][INFOS['surf'] == 'diagonal']))
-    cando = list(HoppingSchemes)
-    for i in HoppingSchemes:
-        print('%i\t%s' % (i, HoppingSchemes[i]['description']))
-    while True:
-        hopping = question('Hopping scheme:', int, [2])[0]
-        if hopping in HoppingSchemes and hopping in cando:
-            break
-        else:
-            print('Please input one of the following: %s!' % ([i for i in cando]))
-    INFOS['hopping'] = HoppingSchemes[hopping]['name']
-
-    # Forced hops to lowest state
-    print('\nDo you want to perform forced hops to the lowest state based on a energy gap criterion?')
-    print('(Note that this ignores spin multiplicity)')
-    INFOS['force_hops'] = question('Forced hops to ground state?', bool, False)
-    if INFOS['force_hops']:
-        INFOS['force_hops_dE'] = abs(question('Energy gap threshold for forced hops (eV):', float, [0.1])[0])
-    else:
-        INFOS['force_hops_dE'] = 9999.
-
-    # Scaling
-    print('\nDo you want to scale the energies and gradients?')
-    scal = question('Scaling?', bool, False)
-    if scal:
+        # surface hopping scheme
+        print('\nPlease choose a surface hopping scheme for the %s states:' % (['MCH', 'diagonal'][INFOS['surf'] == 'diagonal']))
+        cando = list(HoppingSchemes)
+        for i in HoppingSchemes:
+            print('%i\t%s' % (i, HoppingSchemes[i]['description']))
         while True:
-            fscal = question('Scaling factor (>0.0): ', float)[0]
-            if fscal <= 0:
-                print('Please enter a positive real number!')
-                continue
-            break
-        INFOS['scaling'] = fscal
-    else:
-        INFOS['scaling'] = False
+            hopping = question('Hopping scheme:', int, [2])[0]
+            if hopping in HoppingSchemes and hopping in cando:
+                break
+            else:
+                print('Please input one of the following: %s!' % ([i for i in cando]))
+        INFOS['hopping'] = HoppingSchemes[hopping]['name']
+
+        # Forced hops to lowest state
+        print('\nDo you want to perform forced hops to the lowest state based on a energy gap criterion?')
+        print('(Note that this ignores spin multiplicity)')
+        INFOS['force_hops'] = question('Forced hops to ground state?', bool, False)
+        if INFOS['force_hops']:
+            INFOS['force_hops_dE'] = abs(question('Energy gap threshold for forced hops (eV):', float, [0.1])[0])
+        else:
+            INFOS['force_hops_dE'] = 9999.
+
+        # Scaling
+        print('\nDo you want to scale the energies and gradients?')
+        scal = question('Scaling?', bool, False)
+        if scal:
+            while True:
+                fscal = question('Scaling factor (>0.0): ', float)[0]
+                if fscal <= 0:
+                    print('Please enter a positive real number!')
+                    continue
+                break
+            INFOS['scaling'] = fscal
+        else:
+            INFOS['scaling'] = False
 
 
-    # Damping
-    print('\nDo you want to damp the dynamics (Kinetic energy is reduced at each timestep by a factor)?')
-    damp = question('Damping?', bool, False)
-    if damp:
-        while True:
-            fdamp = question('Scaling factor (0-1): ', float)[0]
-            if not 0 <= fdamp <= 1:
-                print('Please enter a real number 0<=r<=1!')
-                continue
-            break
-        INFOS['damping'] = fdamp
-    else:
-        INFOS['damping'] = False
+        # Damping
+        print('\nDo you want to damp the dynamics (Kinetic energy is reduced at each timestep by a factor)?')
+        damp = question('Damping?', bool, False)
+        if damp:
+            while True:
+                fdamp = question('Scaling factor (0-1): ', float)[0]
+                if not 0 <= fdamp <= 1:
+                    print('Please enter a real number 0<=r<=1!')
+                    continue
+                break
+            INFOS['damping'] = fdamp
+        else:
+            INFOS['damping'] = False
 
 
-    # atommask
-    INFOS['atommaskarray'] = []
-    if (INFOS['decoherence'][0] == 'edc') or (INFOS['ekincorrect'] == 2) or (INFOS['reflect'] == 2):
-        print('\nDo you want to use an atom mask for velocity rescaling or decoherence?')
-        if question('Atom masking?', bool, False):
-            print('\nPlease enter all atom indices (start counting at 1) of the atoms which should considered for velocity rescaling and dechoerence. \nRemember that you can also enter ranges (e.g., "-1~-3  5  11~21").')
-#      print('\nPlease enter all atom indices (start counting at 1) of the atoms which should be masked. \nRemember that you can also enter ranges (e.g., "-1~-3  5  11~21").')
-            arr = question('Masked atoms:', int, ranges=True)
-            for i in arr:
-                if 1 <= i <= INFOS['natom']:
-                    INFOS['atommaskarray'].append(i)
+        # atommask
+        INFOS['atommaskarray'] = []
+        if (INFOS['decoherence'][0] == 'edc') or (INFOS['ekincorrect'] == 2) or (INFOS['reflect'] == 2):
+            print('\nDo you want to use an atom mask for velocity rescaling or decoherence?')
+            if question('Atom masking?', bool, False):
+                print('\nPlease enter all atom indices (start counting at 1) of the atoms which should considered for velocity rescaling and dechoerence. \nRemember that you can also enter ranges (e.g., "-1~-3  5  11~21").')
+    #      print('\nPlease enter all atom indices (start counting at 1) of the atoms which should be masked. \nRemember that you can also enter ranges (e.g., "-1~-3  5  11~21").')
+                arr = question('Masked atoms:', int, ranges=True)
+                for i in arr:
+                    if 1 <= i <= INFOS['natom']:
+                        INFOS['atommaskarray'].append(i)
 
-    # selection of gradients (only for SHARC) and NACs (only if NAC=ddr)
-    print('\n' + centerstring('Selection of Gradients and NACs', 60, '-') + '\n')
-    print('''In order to speed up calculations, SHARC is able to select which gradients and NAC vectors it has to calculate at a certain timestep. The selection is based on the energy difference between the state under consideration and the classical occupied state.
+        # selection of gradients (only for SHARC) and NACs (only if NAC=ddr)
+        print('\n' + centerstring('Selection of Gradients and NACs', 60, '-') + '\n')
+        print('''In order to speed up calculations, SHARC is able to select which gradients and NAC vectors it has to calculate at a certain timestep. The selection is based on the energy difference between the state under consideration and the classical occupied state.
 ''')
-    if INFOS['surf'] == 'diagonal':
-        if INFOS['soc']:
-            sel_g = question('Select gradients?', bool, False)
+        if INFOS['surf'] == 'diagonal':
+            if INFOS['soc']:
+                sel_g = question('Select gradients?', bool, False)
+            else:
+                sel_g = True
         else:
-            sel_g = True
-    else:
-        sel_g = False
-    INFOS['sel_g'] = sel_g
-    if Couplings[INFOS['coupling']]['name'] == 'ddr' or INFOS['gradcorrect'] or EkinCorrect[INFOS['ekincorrect']]['name'] == 'parallel_nac':
-        sel_t = question('Select non-adiabatic couplings?', bool, False)
-    else:
-        sel_t = False
-    INFOS['sel_t'] = sel_t
-    if sel_g or sel_t:
-        if not sel_t and not INFOS['soc']:
-            INFOS['eselect'] = 0.001
-            print('\nSHARC dynamics without SOC and NAC: setting minimal selection threshold.')
+            sel_g = False
+        INFOS['sel_g'] = sel_g
+        if Couplings[INFOS['coupling']]['name'] == 'ddr' or 'nacdr' in GradCorrect[INFOS['gradcorrect']]['required'] or 'nacdr' in EkinCorrect[INFOS['ekincorrect']]['required']:
+            sel_t = question('Select non-adiabatic couplings?', bool, False)
         else:
-            print('\nPlease enter the energy difference threshold for the selection of gradients and non-adiabatic couplings (in eV). (0.5 eV recommended, or even larger if SOC is strong in this system.)')
-            eselect = question('Selection threshold (eV):', float, [0.5])[0]
-            INFOS['eselect'] = abs(eselect)
+            sel_t = False
+        INFOS['sel_t'] = sel_t
+        if sel_g or sel_t:
+            if not sel_t and not INFOS['soc']:
+                INFOS['eselect'] = 0.001
+                print('\nSHARC dynamics without SOC and NAC: setting minimal selection threshold.')
+            else:
+                print('\nPlease enter the energy difference threshold for the selection of gradients and non-adiabatic couplings (in eV). (0.5 eV recommended, or even larger if SOC is strong in this system.)')
+                eselect = question('Selection threshold (eV):', float, [0.5])[0]
+                INFOS['eselect'] = abs(eselect)
 
-#===============================
-  # End Surace hopping details
-  #===============================
+    #===============================
+    # End Surace hopping details
+    #===============================
 
-  #========================================
-  # Begin Self-Consistent Potential Methods details 
-  #========================================
-  if INFOS['method']=='scp':
+    #========================================
+    # Begin Self-Consistent Potential Methods details 
+    #========================================
+    if INFOS['method']=='scp':
 
-    # Nuclear EOM
-    print('\nPlease choose the nuclear EOM propagator for SCP:')
-    cando=list(Neom)
-    for i in Neom:
-      print('%i\t%s' % (i, Neom[i]['description']))
-    while True:
-      if INFOS['coupling']==3:
-        eom=question('Neom:',int,[2])[0]
-      else:
-        eom=question('Neom:',int,[1])[0]
-      if eom in Neom and eom in cando:
-        break
-      else:
-        print('Please input one of the following: %s!' % (l))
-    INFOS['neom']=Neom[eom]['name']
+        # Nuclear EOM
+        print('\nPlease choose the nuclear EOM propagator for SCP:')
+        cando=list(Neom)
+        for i in Neom:
+            print('%i\t%s' % (i, Neom[i]['description']))
+        while True:
+            if INFOS['coupling']==3:
+                eom=question('Neom:',int,[2])[0]
+            else:
+                eom=question('Neom:',int,[1])[0]
+            if eom in Neom and eom in cando:
+                break
+            else:
+                print('Please input one of the following: %s!' % (cando))
+        INFOS['neom']=Neom[eom]['name']
 
-    # decoherence
-    print('\nPlease choose a decoherence correction for the %s states:' % (['MCH','diagonal'][INFOS['surf']=='diagonal']))
-    cando=[]
-    for i in DecoherencesSCP:
-      recommended=len(DecoherencesSCP[i]['required'])==0  or Couplings[INFOS['coupling']]['name'] in DecoherencesSCP[i]['required']
-      possible= all([ j in Interfaces[INFOS['interface']]['features']  for j in DecoherencesSCP[i]['required']])
-      if possible:
-        cando.append(i)
-      if not possible:
-        print('%i\t%s%s' % (i, DecoherencesSCP[i]['description'],'\n\t(not possible)' ))
-      else:
-        print('%i\t%s%s' % (i, DecoherencesSCP[i]['description'],['\n\t(extra computational cost)',''][ recommended ]))
-    while True:
-      decoh=question('Decoherence scheme:',int,[2])[0]
-      if decoh in DecoherencesSCP and decoh in cando:
-        break
-      else:
-        print('Please input one of the following: %s!' % ([i for i in cando]))
-    INFOS['decoherence']=[DecoherencesSCP[decoh]['name'],DecoherencesSCP[decoh]['params']]
-    for i in DecoherencesSCP[decoh]['required']:
-      INFOS['needed'].extend(Interfaces[INFOS['interface']]['features'][i])
+        # decoherence
+        print('\nPlease choose a decoherence correction for the %s states:' % (['MCH','diagonal'][INFOS['surf']=='diagonal']))
+        cando=[]
+        for i in DecoherencesSCP:
+            recommended=len(DecoherencesSCP[i]['required'])==0  or Couplings[INFOS['coupling']]['name'] in DecoherencesSCP[i]['required']
+            possible= all([ j in Interfaces[INFOS['interface']]['features']  for j in DecoherencesSCP[i]['required']])
+            if possible:
+                cando.append(i)
+            if not possible:
+                print('%i\t%s%s' % (i, DecoherencesSCP[i]['description'],'\n\t(not possible)' ))
+            else:
+                print('%i\t%s%s' % (i, DecoherencesSCP[i]['description'],['\n\t(extra computational cost)',''][ recommended ]))
+        while True:
+            decoh=question('Decoherence scheme:',int,[2])[0]
+            if decoh in DecoherencesSCP and decoh in cando:
+                break
+            else:
+                print('Please input one of the following: %s!' % ([i for i in cando]))
+        INFOS['decoherence']=[DecoherencesSCP[decoh]['name'],DecoherencesSCP[decoh]['params']]
+        for i in DecoherencesSCP[decoh]['required']:
+            INFOS['needed'].extend(Interfaces[INFOS['interface']]['features'][i])
 
-    # surface switching scheme for decay of mixing methods
-    if INFOS['decoherence'][0]=='dom':
-      print('\nPlease choose a surface switching scheme for the %s states:' % (['MCH','diagonal'][INFOS['surf']=='diagonal']))
-      cando=list(SwitchingSchemes)
-      for i in SwitchingSchemes:
-        print('%i\t%s' % (i, SwitchingSchemes[i]['description']))
-      while True:
-        switching=question('Switching scheme:',int,[2])[0]
-        if switching in SwitchingSchemes and switching in cando:
-          break
+        # surface switching scheme for decay of mixing methods
+        if INFOS['decoherence'][0]=='dom':
+            print('\nPlease choose a surface switching scheme for the %s states:' % (['MCH','diagonal'][INFOS['surf']=='diagonal']))
+            cando=list(SwitchingSchemes)
+            for i in SwitchingSchemes:
+                print('%i\t%s' % (i, SwitchingSchemes[i]['description']))
+            while True:
+                switching=question('Switching scheme:',int,[2])[0]
+                if switching in SwitchingSchemes and switching in cando:
+                    break
+                else:
+                    print('Please input one of the following: %s!' % ([i for i in cando]))
+            INFOS['switching']=SwitchingSchemes[switching]['name']
+
+        # decoherence time method
+        if INFOS['decoherence'][0]=='dom':
+            print('\nPlease choose a decoherence time scheme:')
+            cando=list(DecotimeSCP)
+            for i in DecotimeSCP:
+                print('%i\t%s' % (i, DecotimeSCP[i]['description']))
+            while True:
+                decotimemethod=question('Decoherence time scheme:',int,[1])[0]
+                if decotimemethod in DecotimeSCP and decotimemethod in cando:
+                    break
+                else:
+                    print('Please input one of the following: %s!' % ([i for i in cando]))
+            INFOS['decotime']=DecotimeSCP[decotimemethod]['name']
+
+        # gaussian width parameter for Decoherence time scheme=fp2
+        if INFOS['decotime']=='fp2':
+            width=question('Gaussian width (bohr^-2):',float,[6.0])[0]
+            if width<=0:
+                print('Must be positive!')
+            print('\nGaussian width: %f.' % (width))
+            INFOS['width']=width
+
+        # Damping
+        print('\nDo you want to damp the dynamics (Kinetic energy is reduced at each timestep by a factor)?')
+        damp=question('Damping?',bool,False)
+        if damp:
+            while True:
+                fdamp=question('Scaling factor (0-1): ',float)[0]
+                if not 0<=fdamp<=1:
+                    print('Please enter a real number 0<=r<=1!')
+                    continue
+                break
+            INFOS['damping']=fdamp
         else:
-          print('Please input one of the following: %s!' % ([i for i in cando]))
-      INFOS['switching']=SwitchingSchemes[switching]['name']
+            INFOS['damping']=False
 
-    # decoherence time method
-    if INFOS['decoherence'][0]=='dom':
-      print('\nPlease choose a decoherence time scheme:')
-      cando=list(DecotimeSCP)
-      for i in DecotimeSCP:
-        print('%i\t%s' % (i, DecotimeSCP[i]['description']))
-      while True:
-        decotimemethod=question('Decoherence time scheme:',int,[1])[0]
-        if decotimemethod in DecotimeSCP and decotimemethod in cando:
-          break
-        else:
-          print('Please input one of the following: %s!' % ([i for i in cando]))
-      INFOS['decotime']=DecotimeSCP[decotimemethod]['name']
-
-    # gaussian width parameter for Decoherence time scheme=fp2
-    if INFOS['decotime']=='fp2':
-      width=question('Gaussian width (bohr^-2):',float,[6.0])[0]
-      if width<=0:
-        print('Must be positive!')
-      print('\nGaussian width: %f.' % (width))
-      INFOS['width']=width
-
-    # Damping
-    print('\nDo you want to damp the dynamics (Kinetic energy is reduced at each timestep by a factor)?')
-    damp=question('Damping?',bool,False)
-    if damp:
-      while True:
-        fdamp=question('Scaling factor (0-1): ',float)[0]
-        if not 0<=fdamp<=1:
-          print('Please enter a real number 0<=r<=1!')
-          continue
-        break
-      INFOS['damping']=fdamp
-    else:
-      INFOS['damping']=False
-
-  #===========================================
-  # End Self-Consistent Potential Methods details 
-  #===========================================
+    #===========================================
+    # End Self-Consistent Potential Methods details 
+    #===========================================
     # Laser file
     print('\n\n' + centerstring('Laser file', 60, '-') + '\n')
     INFOS['laser'] = question('Do you want to include a laser field in the simulation?', bool, False)
@@ -2842,33 +2926,6 @@ exit $err''' % (Interfaces[INFOS['interface']]['script'])
 # ======================================================================================================================
 # ======================================================================================================================
 
-
-def checktemplate_RICC2(filename, INFOS):
-    necessary = ['basis']
-    try:
-        f = open(filename)
-        data = f.readlines()
-        f.close()
-    except IOError:
-        print('Could not open template file %s' % (filename))
-        return False
-    valid = []
-    for i in necessary:
-        for li in data:
-            line = li.lower()
-            if i in re.sub('#.*$', '', line):
-                valid.append(True)
-                break
-        else:
-            valid.append(False)
-    if not all(valid):
-        print('The template %s seems to be incomplete! It should contain: ' % (filename) + str(necessary))
-        return False
-    return True
-
-# =================================================
-
-
 def qmmm_job(filename, INFOS):
     necessary = ['qmmm']
     try:
@@ -2891,6 +2948,7 @@ def qmmm_job(filename, INFOS):
         else:
             valid.append(False)
     if not all(valid):
+        print('The template %s seems to be incomplete! It should contain: ' % (filename) +str(necessary))
         return False
     return True
 
@@ -3184,6 +3242,31 @@ exit $err''' % (Interfaces[INFOS['interface']]['script'])
 # ==================================================================
 # ==================================================================
 # ==================================================================
+
+def checktemplate_RICC2(filename, INFOS):
+    necessary = ['basis']
+    try:
+        f = open(filename)
+        data = f.readlines()
+        f.close()
+    except IOError:
+        print('Could not open template file %s' % (filename))
+        return False
+    valid = []
+    for i in necessary:
+        for li in data:
+            line = li.lower()
+            if i in re.sub('#.*$', '', line):
+                valid.append(True)
+                break
+        else:
+            valid.append(False)
+    if not all(valid):
+        print('The template %s seems to be incomplete! It should contain: ' % (filename) + str(necessary))
+        return False
+    return True
+
+# =================================================
 
 
 def get_RICC2(INFOS):
@@ -4371,44 +4454,70 @@ def writeSHARCinput(INFOS, initobject, iconddir, istate):
     s += 'ezero %18.10f\n' % (INFOS['eref'])
 
     s += 'tmax %f\nstepsize %f\nnsubsteps %i\n' % (INFOS['tmax'], INFOS['dtstep'], INFOS['nsubstep'])
+    s+='integrator %s\n' % (INFOS['integrator'])
+    if INFOS['integrator']=='avv':
+        s+='convthre %s\n' % (INFOS['convthre'])
     if INFOS['kill']:
         s += 'killafter %f\n' % (INFOS['killafter'])
     s += '\n'
 
-    if INFOS['atommaskarray']:
-        s += 'atommask external\natommaskfile "atommask"\n\n'
-
+    s += 'method %s\n' % (INFOS['method'])
     s += 'surf %s\n' % (INFOS['surf'])
     s += 'coupling %s\n' % (Couplings[INFOS['coupling']]['name'])
-    s += '%sgradcorrect\n' % (['no', ''][INFOS['gradcorrect']])
-    s += 'ekincorrect %s\n' % (EkinCorrect[INFOS['ekincorrect']]['name'])
-    s += 'reflect_frustrated %s\n' % (EkinCorrect[INFOS['reflect']]['name'])
-    s += 'decoherence_scheme %s\n' % (INFOS['decoherence'][0])
-    if INFOS['decoherence'][1]:
-        s += 'decoherence_param %s\n' % (INFOS['decoherence'][1])
-    s += 'hopping_procedure %s\n' % (INFOS['hopping'])
-    if INFOS['force_hops']:
-        s += 'force_hop_to_gs %f\n' % (INFOS['force_hops_dE'])
-    if INFOS['scaling']:
-        s += 'scaling %f\n' % (INFOS['scaling'])
-    if INFOS['damping'] is not False:
-        s += 'dampeddyn %f\n' % (INFOS['damping'])
-    if INFOS['phases_from_interface']:
-        s += 'phases_from_interface\n'
+    if INFOS['method'] == 'scp':
+        s += 'pointer_basis %s\n' % (INFOS['pointer_basis'])
+        s += 'neom_rep %s\n' % (INFOS['neom_rep'])
+        s += 'neom %s\n' % (INFOS['neom'])
+    if GradCorrect[INFOS['gradcorrect']]['name'] == 'none':
+        s += 'nogradcorrect\n'
+    else:
+        s += 'gradcorrect %s\n' % (GradCorrect[INFOS['gradcorrect']]['name'])
+    if INFOS['method']=='tsh':
+        if INFOS['atommaskarray']:
+            s += 'atommask external\natommaskfile "atommask"\n\n'
+        s += 'ekincorrect %s\n' % (EkinCorrect[INFOS['ekincorrect']]['name'])
+        s += 'reflect_frustrated %s\n' % (EkinCorrect[INFOS['reflect']]['name'])
+        s += 'decoherence_scheme %s\n' % (INFOS['decoherence'][0])
+        if INFOS['decoherence'][1]:
+            s += 'decoherence_param %s\n' % (INFOS['decoherence'][1])
+        s += 'hopping_procedure %s\n' % (INFOS['hopping'])
+        if INFOS['force_hops']:
+            s += 'force_hop_to_gs %f\n' % (INFOS['force_hops_dE'])
+        if INFOS['scaling']:
+            s += 'scaling %f\n' % (INFOS['scaling'])
+        if INFOS['damping'] is not False:
+            s += 'dampeddyn %f\n' % (INFOS['damping'])
+        if INFOS['phases_from_interface']:
+            s += 'phases_from_interface\n'
+
+    if INFOS['method']=='scp':
+        s += 'decoherence_scheme %s\n' % (INFOS['decoherence'][0])
+        if INFOS['decoherence'][1]:
+            s += 'decoherence_param %s\n' % (INFOS['decoherence'][1])
+        if INFOS['decoherence'][0]=='dom':
+            s += 'switching_procedure %s\n' % (INFOS['switching'])
+        if INFOS['decoherence'][0]=='dom':
+            s += 'decotime_method %s\n' % (INFOS['decotime'])
+            if INFOS['decotime']=='fp2':
+                s += 'gaussian_width %s\n' % (INFOS['width'])
+        if INFOS['damping']:
+            s += 'dampeddyn %f\n' % (INFOS['damping'])
+
     if INFOS['pysharc']:
         s += 'notrack_phase\n'
 
-    if INFOS['sel_g']:
-        s += 'grad_select\n'
-    else:
-        s += 'grad_all\n'
-    if INFOS['sel_t']:
-        s += 'nac_select\n'
-    else:
-        if Couplings[INFOS['coupling']]['name'] == 'ddr' or INFOS['gradcorrect'] or EkinCorrect[INFOS['ekincorrect']]['name'] == 'parallel_nac':
-            s += 'nac_all\n'
-    if 'eselect' in INFOS:
-        s += 'eselect %f\n' % (INFOS['eselect'])
+    if INFOS['method']=='tsh':
+        if INFOS['sel_g']:
+            s += 'grad_select\n'
+        else:
+            s += 'grad_all\n'
+        if INFOS['sel_t']:
+            s += 'nac_select\n'
+        else:
+            if Couplings[INFOS['coupling']]['name'] == 'ddr' or 'nacdr' in GradCorrect[INFOS['gradcorrect']]['required'] or 'nacdr' in EkinCorrect[INFOS['ekincorrect']]['required']:
+                s += 'nac_all\n'
+        if 'eselect' in INFOS:
+            s += 'eselect %f\n' % (INFOS['eselect'])
 #  if Interfaces[INFOS['interface']]['script']=='SHARC_COLUMBUS.py':
 #    s+='select_directly\n'
 #  if Interfaces[INFOS['interface']]['script']=='SHARC_ADF.py':
@@ -4424,7 +4533,7 @@ def writeSHARCinput(INFOS, initobject, iconddir, istate):
 #  if Interfaces[INFOS['interface']]['script']=='SHARC_ORCA.py':
 #    s+='select_directly\n'
     # TODO: maybe could be deactivated in the future for some interfaces
-    s += 'select_directly\n'
+        s += 'select_directly\n'
 
     if not INFOS['soc']:
         s += 'nospinorbit\n'
@@ -4496,16 +4605,17 @@ def writeSHARCinput(INFOS, initobject, iconddir, istate):
         laserfname = iconddir + '/laser'
         shutil.copy(INFOS['laserfile'], laserfname)
 
-    # atommask file
-    if INFOS['atommaskarray']:
-        atommfname = iconddir + '/atommask'
-        atommf = open(atommfname, 'w')
-        for i, atom in enumerate(initobject.atomlist):
-            if i + 1 in INFOS['atommaskarray']:
-                atommf.write('T\n')
-            else:
-                atommf.write('F\n')
-        atommf.close()
+    if INFOS['method']=='tsh':
+        # atommask file
+        if INFOS['atommaskarray']:
+            atommfname = iconddir + '/atommask'
+            atommf = open(atommfname, 'w')
+            for i, atom in enumerate(initobject.atomlist):
+                if i + 1 in INFOS['atommaskarray']:
+                    atommf.write('T\n')
+                else:
+                    atommf.write('F\n')
+            atommf.close()
 
     return
 
