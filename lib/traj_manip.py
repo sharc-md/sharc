@@ -8,19 +8,19 @@ import os, sys
 try:
     import numpy
 except ImportError:
-    print 'numpy package not installed'
+    print('numpy package not installed')
     sys.exit()
     
 try:
     import openbabel
 except ImportError:
-    print 'openbabel.py package not installed'
+    print('openbabel.py package not installed')
     sys.exit()
 
 try:
     import file_handler, vib_molden, struc_linalg
 except ImportError:
-    print 'file_handler, vib_molden or struc_linalg not found. They should be part of this package. Check the installation or change the PYTHONPATH environment variable.'
+    print('file_handler, vib_molden or struc_linalg not found. They should be part of this package. Check the installation or change the PYTHONPATH environment variable.')
 
 class trajectory:
     """
@@ -117,7 +117,7 @@ class trajectory:
         
         ac_list = []
         for disp in xrange(self.num_tsteps):
-            print disp
+            print(disp)
             ac_list += [self.ret_autocorr_disp(disp=disp, mass_mat=mass_mat)]
             
         for disp in xrange(self.num_tsteps):
@@ -142,7 +142,7 @@ class trajectory:
             #print ind, (ind+disp)%self.num_tsteps
             ret_num += numpy.dot(vec, coor_mat[(ind+disp)%self.num_tsteps])
             
-        ret_num = ret_num / self.num_tsteps
+        ret_num = ret_num // self.num_tsteps
             
         return ret_num
 

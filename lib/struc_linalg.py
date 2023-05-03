@@ -419,4 +419,4 @@ class mol_calc:
 if __name__ == '__main__':
     test_struc = structure()
     test_struc.read_file(file_path = '/home2/plasserf/BIP/opt/gs/b3lyp/SVP/coord', file_type='tmol')
-    print test_struc.ret_3xN_matrix()
+    print(test_struc.ret_3xN_matrix())

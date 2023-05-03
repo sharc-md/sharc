@@ -8,7 +8,7 @@ import sys
 try:
     import numpy
 except:
-    print 'numpy not installed'
+    print('numpy not installed')
     sys.exit()
 
 class superposition:
