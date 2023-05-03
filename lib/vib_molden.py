@@ -217,4 +217,4 @@ if __name__ == '__main__':
     mol_calc = struc_linalg.mol_calc(def_file_path='coord', file_type='tmol')
     vmol = vib_molden()
     vmol.read_molden_file('molden.input')
-    print vmol.ret_eff_masses(mol_calc)
+    print(vmol.ret_eff_masses(mol_calc))

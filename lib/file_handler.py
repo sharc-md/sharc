@@ -215,7 +215,7 @@ if __name__ == '__main__':
     cm.write_word('r')
     cm.new_line()
     cm.write_word('t')
-    print cm.return_csv()
+    print(cm.return_csv())
 
     #cm.write_to_file('test.txt')
 

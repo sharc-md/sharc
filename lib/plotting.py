@@ -15,7 +15,7 @@ def mean_std_from_files(mean_file, out_dir, xlist, std_file=None, col_list=None)
     Optionally <std_file> can be left out and just the means are plotted.
     If <col_list> is given, a joined plot with the modes contained in <col_list> is given.
     """
-    figwidth = 2*8.5/2.54
+    figwidth = 2.*8.5/2.54
 
     try:
         os.makedirs(out_dir)
@@ -115,7 +115,7 @@ def bars_from_file(in_file, out_dir):
     """
     Create a bar graph from data in a file.
     """
-    figwidth = 2*8.5/2.54
+    figwidth = 2.*8.5/2.54
 
     try:
         os.makedirs(out_dir)
@@ -151,7 +151,7 @@ def mean_std_from_file(file, out_dir, col_list=None, num_steps=None):
     If <col_list> is given, a joined plot with the modes contained in <col_list> is given.
     <num_steps> gives the maximum number of plotted steps.
     """
-    figwidth = 2*8.5/2.54
+    figwidth = 2.*8.5/2.54
 
     try:
         os.makedirs(out_dir)
@@ -166,12 +166,12 @@ def mean_std_from_file(file, out_dir, col_list=None, num_steps=None):
         if not words[1] == '0':
             read_list += [[eval(word) for word in words]]
         else:
-            print 'No trajectories at timestep ' + str(words[0])
+            print('No trajectories at timestep ' + str(words[0]))
         
     plot_array = numpy.array(read_list, float).transpose()
     
     if col_list == None:
-        for i in xrange(numpy.size(plot_array, 0)/2-1):
+        for i in xrange(numpy.size(plot_array, 0)//2-1):
             pylab.figure(figsize=(figwidth, .75*figwidth))
             pylab.plot(plot_array[0].tolist(), plot_array[2+2*i].tolist(), color=[0.,0.,0.], linewidth=1)
             plot_std(plot_array[2+2*i].tolist(), plot_array[3+2*i].tolist(), plot_array[0].tolist())
