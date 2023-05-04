@@ -1665,8 +1665,8 @@ subroutine EDC_step(traj,ctrl)
         endif
       else if (ediff==0.d0) then
         c(istate)=traj%coeff_diag_s(istate)
-        sumc=sumc+abs(c(istate))**2
       endif
+      sumc=sumc+abs(c(istate))**2
     endif
   enddo
 

@@ -320,7 +320,7 @@ subroutine write_list_line(u, traj, ctrl)
   ! total density
   den=0.d0
   do istate=1,ctrl%nstates
-    den=den+traj%coeff_diag_s(istate)*conjg(traj%coeff_diag_s(istate))
+    den=den+real(traj%coeff_diag_s(istate)*conjg(traj%coeff_diag_s(istate)))
   enddo
 
   ! angular momentum 
