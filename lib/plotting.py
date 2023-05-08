@@ -50,7 +50,7 @@ def mean_std_from_files(mean_file, out_dir, xlist, std_file=None, col_list=None)
     #print std_array
 
     if col_list == None:
-        for i in xrange(numpy.size(mean_array, 0)):
+        for i in range(numpy.size(mean_array, 0)):
             pylab.figure(figsize=(figwidth, .75*figwidth))
             pylab.plot(xlist[:len(mean_array[i].tolist())], mean_array[i].tolist()[:len(xlist)], color='k', linewidth=1)
             if with_std: plot_std(mean_array[i].tolist()[:len(xlist)], std_array[i].tolist()[:len(xlist)], xlist[:len(mean_array[i].tolist())])
@@ -171,7 +171,7 @@ def mean_std_from_file(file, out_dir, col_list=None, num_steps=None):
     plot_array = numpy.array(read_list, float).transpose()
     
     if col_list == None:
-        for i in xrange(numpy.size(plot_array, 0)//2-1):
+        for i in range(numpy.size(plot_array, 0)//2-1):
             pylab.figure(figsize=(figwidth, .75*figwidth))
             pylab.plot(plot_array[0].tolist(), plot_array[2+2*i].tolist(), color=[0.,0.,0.], linewidth=1)
             plot_std(plot_array[2+2*i].tolist(), plot_array[3+2*i].tolist(), plot_array[0].tolist())
@@ -216,4 +216,4 @@ if __name__ == '__main__':
     #pylab.show()
     
 if False:
-    mean_std_from_files(mean_file='NMA/mean_against_time.txt',std_file='NMA/std_against_time.txt',out_dir='NMA/time_plots',xlist=[.5 * i for i in xrange(601)])
+    mean_std_from_files(mean_file='NMA/mean_against_time.txt',std_file='NMA/std_against_time.txt',out_dir='NMA/time_plots',xlist=[.5 * i for i in range(601)])

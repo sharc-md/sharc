@@ -12,7 +12,7 @@ except ImportError:
     sys.exit()
     
 try:
-    import openbabel
+    from openbabel import openbabel
 except ImportError:
     print('openbabel.py package not installed')
     sys.exit()
@@ -116,11 +116,11 @@ class trajectory:
         tm = file_handler.table_maker(2 * [20])
         
         ac_list = []
-        for disp in xrange(self.num_tsteps):
+        for disp in range(self.num_tsteps):
             print(disp)
             ac_list += [self.ret_autocorr_disp(disp=disp, mass_mat=mass_mat)]
             
-        for disp in xrange(self.num_tsteps):
+        for disp in range(self.num_tsteps):
             tm.write_line([float(disp)*self.dt, ac_list[disp]])
             
         tm.write_to_file(out_file)
@@ -162,7 +162,7 @@ class trajectory:
         
         tm = file_handler.table_maker([35]+len(def_vect)*[20])
 
-        if header == None: header = [i+1 for i in xrange(len(def_vect))]
+        if header == None: header = [i+1 for i in range(len(def_vect))]
         tm.write_header_line(header[0])
         tm.write_header_line(header[1])
         tm.write_header_line(header[2])
