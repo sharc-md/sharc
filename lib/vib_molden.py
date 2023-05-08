@@ -172,7 +172,7 @@ def make_molden_file(struc, freqs, vibs, out_file, title='Essential dynamics', n
 
     # normal modes
     out_str += '[FR-NORM-COORD]\n'
-    for ind in xrange(len(vibs)):
+    for ind in range(len(vibs)):
         out_str += ' vibration' + str(ind + 1).rjust(5) + '\n'
 #        tblm = file_handler.table_maker([1] + 3*[21])
         for j in range(num_at):
@@ -192,7 +192,7 @@ def ret_Atoms_table(struc):
     Create the atoms part in the molden file.
     """
     tblmaker = file_handler.table_maker([6, 4, 3, 21, 21, 21])
-    for i in xrange(struc.ret_num_at()):
+    for i in range(struc.ret_num_at()):
         atom = struc.mol.GetAtom(i+1)
         tblmaker.write_line([struc.ret_symbol(i+1),i+1,atom.GetAtomicNum()]+[atom.x()/b_in_a]+[atom.y()/b_in_a]+[atom.z()/b_in_a])
 
@@ -203,7 +203,7 @@ def ret_FRCOORD_table(struc):
     Create the FRCOORD part in the molden file.
     """
     tblmaker = file_handler.table_maker([4, 21, 21, 21])
-    for i in xrange(struc.ret_num_at()):
+    for i in range(struc.ret_num_at()):
         atom = struc.mol.GetAtom(i+1)
         vec = atom.GetVector()
         tblmaker.write_line([struc.ret_symbol(i+1)]+[atom.x()/b_in_a]+[atom.y()/b_in_a]+[atom.z()/b_in_a])

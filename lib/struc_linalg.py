@@ -8,7 +8,7 @@ usage: package to perform linear algebra operations on structures.
 
 import os, shutil, locale
 import numpy
-import openbabel
+from openbabel import openbabel
 import superposition
 import file_handler
 
@@ -46,7 +46,7 @@ class structure:
         """
         self.read_file(def_file_path, file_type) # like this because copying objects doesn't work
 
-        for i in xrange(self.mol.NumAtoms()):
+        for i in range(self.mol.NumAtoms()):
             atom = self.mol.GetAtom(i+1)
             atom.SetVector(vector[3*i], vector[3*i+1], vector[3*i+2])
 
@@ -66,14 +66,14 @@ class structure:
         """
         Read in a 3xN matrix.
         """
-        for i in xrange(self.mol.NumAtoms()):
+        for i in range(self.mol.NumAtoms()):
             atom = self.mol.GetAtom(i+1)
             atom.SetVector(coor_mat[i][0], coor_mat[i][1], coor_mat[i][2])
 
     def ret_vector(self):
         " All the coordinates in one vector "
         vec_list = []
-        for i in xrange(self.mol.NumAtoms()):
+        for i in range(self.mol.NumAtoms()):
             atom = self.mol.GetAtom(i+1)
             vec_list += [atom.x(), atom.y(), atom.z()]
            
@@ -85,7 +85,7 @@ class structure:
 
         #for i, atom in enumerate(openbabel.OBMolAtomIter(self.mol)):
 
-        for i in xrange(self.mol.NumAtoms()):
+        for i in range(self.mol.NumAtoms()):
             atom = self.mol.GetAtom(i+1)
             mat_list += [[atom.x(), atom.y(), atom.z()]]
             
@@ -187,7 +187,7 @@ class structure:
         
         trans_mat = numpy.zeros((num_at, num_at), float) # matrix multiplication with this matrix leads to the structure with permutated atom numbering
         for cycle in perm_list:
-            for i in xrange(len(cycle)-1):
+            for i in range(len(cycle)-1):
                 trans_mat[cycle[i]-1, cycle[i+1]-1] = 1
             trans_mat[cycle[len(cycle)-1]-1, cycle[0]-1] = 1
 
@@ -263,7 +263,7 @@ class structure:
         Returns a vector with the masses of the atoms (each 1 time) taken to the <power> power.
         """
         mass_list = []
-        for i in xrange(self.mol.NumAtoms()):
+        for i in range(self.mol.NumAtoms()):
             atom = self.mol.GetAtom(i+1)
             mass_list += [atom.GetAtomicMass()**power]
 
@@ -395,12 +395,12 @@ class mol_calc:
         def_struc.read_file(self.def_file_path, self.file_type) # mass weighing in this case not needed
         mass_list = []
         #for atom in openbabel.OBMolAtomIter(def_struc.mol):
-        for i in xrange(def_struc.mol.NumAtoms()):
+        for i in range(def_struc.mol.NumAtoms()):
             atom = def_struc.mol.GetAtom(i+1)
             mass_list += 3*[atom.GetAtomicMass()**power]
 
         ret_mat = numpy.zeros((len(mass_list), len(mass_list)), dtype=float)
-        for i in xrange(len(mass_list)):
+        for i in range(len(mass_list)):
             ret_mat[i,i]=mass_list[i]
 
         return ret_mat

@@ -310,7 +310,7 @@ def loewdin_orthonormalization(A):
     # normalize A_lo
     A_lo = A_lo.T
     length = len(A_lo)
-    A_lon = np.zeros((length, length), dtype=np.complex)
+    A_lon = np.zeros((length, length), dtype=complex)
 
     for i in range(length):
         norm_of_col = np.linalg.norm(A_lo[i])
