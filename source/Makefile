@@ -32,10 +32,10 @@
 USE_PYSHARC := false
 
 #intel, gnu
-USE_COMPILER := intel
+USE_COMPILER := gnu
 
 #mkl,gnu
-USE_LIBS := mkl
+USE_LIBS := gnu
 
 #Static libraries
 COMP_STATIC := false
