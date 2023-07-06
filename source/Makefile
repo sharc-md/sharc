@@ -32,10 +32,10 @@
 USE_PYSHARC := false
 
 #intel, gnu
-USE_COMPILER := gnu
+USE_COMPILER := intel
 
 #mkl,gnu
-USE_LIBS := gnu
+USE_LIBS := mkl
 
 #Static libraries
 COMP_STATIC := false
@@ -85,7 +85,7 @@ ifeq ($(USE_COMPILER), gnu)
 else ifeq ($(USE_COMPILER), intel)
   CC:=icc
   F90:=ifort
-  EXTRAFLAGS :=
+  EXTRAFLAGS := -DIFORT
 endif
 
 
