@@ -539,6 +539,8 @@ def printQMin(QMin):
         parts.append('Imaginary Shift=%4.2f' % (QMin['template']['imaginary']))
     if QMin['template']['frozen'] != -1:
         parts.append('CASPT2 frozen orbitals=%i' % (QMin['template']['frozen']))
+    if QMin['template']['diab_num_grad']:
+        parts.append('diabatization for num. grad')
     if len(parts) > 0:
         string += '\t('
         string += ','.join(parts)
@@ -3819,7 +3821,7 @@ def arrangeQMout(QMin, QMoutall, QMoutDyson):
                     displ = QMin['displ']
 
                     # diabatization
-                    if 'diab_num_grad' in QMin:
+                    if QMin['template']['diab_num_grad']:
                         Hmaster = QMoutall['master']['h']
                         Hpos = deepcopy(QMoutall[namep]['h'])
                         Spos = deepcopy(QMoutall[namep]['overlap'])
@@ -3897,7 +3899,7 @@ def arrangeQMout(QMin, QMoutall, QMoutDyson):
                             continue
 
                         # diabatization
-                        if 'diab_num_grad' in QMin:
+                        if QMin['template']['diab_num_grad']:
                             Hmaster = QMoutall['master']['h']
 
                             Hpos = deepcopy(QMoutall[namep]['h'])
@@ -3942,7 +3944,7 @@ def arrangeQMout(QMin, QMoutall, QMoutDyson):
                         for jstate in range(QMin['nmstates']):
 
                             # diabatization
-                            if 'diab_num_grad' in QMin:
+                            if QMin['template']['diab_num_grad']:
                                 Hmaster = QMoutall['master']['dm'][ipol]
 
                                 Hpos = deepcopy(QMoutall[namep]['dm'][ipol])
