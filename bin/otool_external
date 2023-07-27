@@ -413,6 +413,7 @@ def write_QMin(INFOS):
     string += 'unit angstrom\n'
     string += 'savedir %s\n' % (INFOS['savedir'])
     string += 'H\n'
+    string += 'molden\n'
     if INFOS['opt_mode'] == 0:
         string += 'grad %i\n' % (INFOS['opt'][1])
     elif INFOS['opt_mode'] in [1, 2, 3]:

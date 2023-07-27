@@ -3847,9 +3847,9 @@ def format_ci_vectors(ci_vectors):
                 string += 'd'
         for istate in range(len(ci_vectors)):
             if det in ci_vectors[istate]:
-                string += ' %11.7f ' % ci_vectors[istate][det]
+                string += ' %15.11f ' % ci_vectors[istate][det]
             else:
-                string += ' %11.7f ' % 0.
+                string += ' %15.11f ' % 0.
         string += '\n'
     return string
 

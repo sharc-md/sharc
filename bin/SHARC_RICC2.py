@@ -2430,6 +2430,17 @@ def transform_QM_QMMM(QMin, QMout):
 # =============================================================================================== #
 # =============================================================================================== #
 
+def get_turbomole_version(turbodir):
+    ls = os.listdir(turbodir)
+    v = 0.0
+    for f in ls:
+        if "TURBOMOLE_" in f:
+            s=f.split('_')
+            v = int(s[1])/10
+            break
+    print('Turbomole version:',v)
+    return v
+
 
 def get_arch(turbodir):
     os.environ['TURBODIR'] = turbodir
@@ -2814,6 +2825,10 @@ def readQMin(QMinfilename):
     QMin['turbodir'] = get_sh2cc2_environ(sh2cc2, 'turbodir')
     os.environ['TURBODIR'] = QMin['turbodir']
     arch = get_arch(QMin['turbodir'])
+    version = get_turbomole_version(QMin['turbodir'])
+    QMin['arch'] = arch
+    QMin['tmversion'] = version
+    #print('Turbomole version detected: %f    Turbomole architecture detected: %s' % (version, arch) )
     os.environ['PATH'] = '%s/scripts:%s/bin/%s:' % (QMin['turbodir'], QMin['turbodir'], arch) + os.environ['PATH']
     # print('Added to PATH:', '%s/scripts:%s/bin/%s:' % (QMin['turbodir'], QMin['turbodir'], arch))
 
@@ -4018,12 +4033,20 @@ def prep_control(QMin, job):
 
     # ricc2 restart
     if 'E' not in job and 'no_ricc2_restart' not in QMin:
-        add_option_to_control_section(control, '$ricc2', 'restart')
+        if QMin['tmversion'] >= 7.7:
+            add_option_to_control_section(control, '$ricc2', 'restart on')
+        else:
+            add_option_to_control_section(control, '$ricc2', 'restart')
         restartfile = os.path.join(QMin['scratchdir'], 'JOB/restart.cc')
         try:
             os.remove(restartfile)
         except OSError:
             pass
+    else:
+        if QMin['tmversion'] >= 7.7:
+            add_option_to_control_section(control, '$ricc2', 'restart off')
+        else:
+            add_option_to_control_section(control, '$ricc2', 'norestart')
 
     # D1 and D2 diagnostic
     if DEBUG and 'E' in job:
@@ -4094,7 +4117,10 @@ def get_AO_OVL(path, QMin):
     controlfile = os.path.join(path, 'control')
     remove_section_in_control(controlfile, '$scfiterlimit')
     add_section_to_control(controlfile, '$scfiterlimit 0')
-    add_section_to_control(controlfile, '$intsdebug sao')
+    if QMin['tmversion'] >= 7.7:
+        add_section_to_control(controlfile, '$intsdebug 1 sao')
+    else:
+        add_section_to_control(controlfile, '$intsdebug sao')
     add_section_to_control(controlfile, '$closed shells')
     add_option_to_control_section(controlfile, '$closed shells', 'a 1-2')
     add_section_to_control(controlfile, '$scfmo none')
