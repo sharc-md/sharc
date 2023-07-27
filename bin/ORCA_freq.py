@@ -129,7 +129,7 @@ for line in lines:
             continue
         if 'Mode' in line:
             continue
-        if 'The first' in line or 'APPROXIMATE' in line:
+        if 'The first' in line or 'APPROXIMATE' in line or "epsilon" in  line:
             intensity = False
             read = False
             continue
