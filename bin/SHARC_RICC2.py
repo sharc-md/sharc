@@ -4220,6 +4220,7 @@ def run_dscf(QMin):
     workdir = os.path.join(QMin['scratchdir'], 'JOB')
     if QMin['ncpu'] > 1:
         string = 'dscf_omp'
+        # TODO: check when to use OMP and when SMP, or make option
     else:
         string = 'dscf'
     runerror = runProgram(string, workdir, 'dscf.out')
@@ -4315,6 +4316,11 @@ def change_pre_states(workdir, itrials):
         if 'maxiter 45' in line:
             data2[i] = 'maxiter 100\n'
     writefile(filename, data2)
+    # TODO: check how these can be added nicely and whether they improve convergence robustly
+    # string = 'thrdiis = 5'
+    # add_option_to_control_section(filename, '$excitations', string)
+    # string = 'thrpreopt = 6'
+    # add_option_to_control_section(filename, '$excitations', string)
 
 # ======================================================================= #
 
