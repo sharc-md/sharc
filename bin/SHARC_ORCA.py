@@ -4531,6 +4531,9 @@ def getQMout(QMin):
             g = getgrad(logfile, QMin)
             # print g
             if QMin['qmmm']:
+                # TODO: seems ORCA.pcgrad.ground is not written in ORCA 5 
+                if 'ground' in fname:
+                    fname = ''
                 logfile = os.path.join(QMin['scratchdir'], path, 'ORCA.pcgrad' + fname)
                 gpc = getpcgrad(logfile, QMin)
             for istate in QMin['statemap']:
