@@ -364,8 +364,41 @@ def partition_matrix(matrix, multiplicity, states):
 
 # ======================================================================= #
 
-
 def phase_correction(matrix):
+    U = np.array(matrix).real
+    #print(U)
+    det = np.linalg.det(U)
+    #print(det)
+    if det < 0:
+        U[:,0]*=-1.   # this row/column convention is correct
+    #printmatrix(U)
+
+    # sweeps
+    l = len(U)
+    while True:
+        done = True
+        for j in range(l):
+            for k in range(j+1,l):
+                delta  = 3.*(U[j,j]**2+U[k,k]**2)
+                delta += 6.*U[k,j]*U[j,k]
+                delta += 8.*(U[k,k]+U[j,j])
+                for i in range(l):
+                    delta -= 3.*(U[j,i]*U[i,j]+U[k,i]*U[i,k])
+                #print(j,k,delta)
+                if delta<0:
+                    U[:,j]*=-1.   # this row/column convention is correct
+                    U[:,k]*=-1.   # this row/column convention is correct
+                    #printmatrix(U)
+                    #print(np.linalg.det(U))
+                    done = False
+        if done:
+            break
+
+    return U.tolist()
+
+
+# ======================================================================= #
+def phase_correction_old(matrix):
     length = len(matrix)
     phase_corrected_matrix = [[.0 for x in range(length)] for x in range(length)]
 
@@ -415,15 +448,26 @@ def calculate_W_dQi(H, S, e_ref, normal_mode, displ):
     H = np.diag([e - e_ref for e in np.diag(H)])
 
     # do phase correction if necessary
-    if any([x for x in np.diag(S) if x < 0]):
-        S = phase_correction(S)
+    # if any([x for x in np.diag(S) if x < 0]):
+    S = phase_correction(S)
 
     # do loewdin orthonorm. on overlap matrix
     U = loewdin_orthonormalization(np.matrix(S))
+    U = np.array(phase_correction(U))
 
-    return np.dot(np.dot(U.T, H), U)
+    return np.dot(np.dot(U, H), U.T)   # TODO: or transposed the other way around?
+    # return np.dot(np.dot(U.T, H), U)
 
 # ======================================================================= #
+
+def printmatrix(M,title=''):
+    s='%s\n' % title
+    for i in M:
+      for j in i:
+        s+='%6.3f ' % j.real
+      s+='\n'
+    print(s)
+    
 
 
 def write_LVC_template(INFOS):
@@ -574,6 +618,11 @@ def write_LVC_template(INFOS):
 
             # calculate displacement matrix
             pos_W_dQi = calculate_W_dQi(pos_H, pos_S, e_ref, normal_mode, 'p')
+            print('Mode %s positive' % normal_mode)
+            # printmatrix(pos_H, 'Hpos')
+            # printmatrix(pos_S, 'Spos')
+            # print(np.linalg.det(pos_S))
+            #printmatrix(pos_W_dQi, 'Wpos')
 
 
             # Check for two-sided differentiation
@@ -593,6 +642,14 @@ def write_LVC_template(INFOS):
 
                 # calculate displacement matrix
                 neg_W_dQi = calculate_W_dQi(neg_H, neg_S, e_ref, normal_mode, 'n')
+                print('Mode %s negative' % normal_mode)
+                # printmatrix(neg_H, 'Hneg')
+                # printmatrix(neg_S, 'Sneg')
+                # print(np.linalg.det(neg_S))
+                #printmatrix(neg_W_dQi, 'Wneg')
+            #if twosided:
+                #printmatrix(pos_W_dQi-neg_W_dQi, 'Difference')
+
 
 
             # Loop over multiplicities to get kappas and lambdas

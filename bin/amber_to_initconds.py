@@ -988,6 +988,9 @@ The data is then transformed and written to initconds format.
     INFOS = {}
     INFOS['filename_prmtop'] = args[0]
     INFOS['filename_rsts'] = args[1:]
+    if len(INFOS['filename_rsts'])<2:
+        print('Please provide at least 2 rst7 files (one for reference, 1+ for actual initial conditions)')
+        sys.exit(1)
     if not options.t:
         print('ERROR: please specify the length of the time step employed in Amber with the -t option!\nThis is necessary to correctly convert the Amber data (leapfrog-style) to SHARC data (velocity-Verlet style).')
         sys.exit(1)
