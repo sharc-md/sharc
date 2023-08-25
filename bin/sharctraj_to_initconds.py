@@ -45,6 +45,7 @@ HARTREE_TO_EV = 27.211396132    # conversion factor from Hartree to eV
 U_TO_AMU = 1. / 5.4857990943e-4            # conversion from g/mol to amu
 ANG_TO_BOHR = 1. / 0.529177211  # 1.889725989      # conversion from Angstrom to bohr
 AMBERVEL_TO_AU = 0.0009350161
+ATU_TO_FS = 0.024188843
 PI = math.pi
 
 version = '3.0'
@@ -755,33 +756,34 @@ def remove_rotations(ic):
         # sys.exit(1)
 
 def check_output_dat(data, timepoints):
-  inf={}
-  line=data[0].lower()
-  if 'sharc_version' in line:
-    inf['version']=float( line.split()[-1] )
-  else:
-    inf['version']=1.0
+    inf={}
+    line=data[0].lower()
+    if 'sharc_version' in line:
+        inf['version']=float( line.split()[-1] )
+    else:
+        inf['version']=1.0
 
 
-  integers=['integrator',
-            'maxmult',
-            'natom',
-            'calc_overlap',
-            'laser',
-            'nsteps',
-            'nsubsteps',
-            'write_overlap',
-            'write_grad',
-            'write_nacdr',
-            'write_property1d',
-            'write_property2d',
-            'n_property1d',
-            'n_property2d'
-            ]
-  floats=  ['dtstep',
-            'ezero'
-            ]
-  special= ['nstates_m']
+    integers=['integrator',
+              'maxmult',
+              'natom',
+              'calc_overlap',
+              'laser',
+              'nsteps',
+              'nsubsteps',
+              'write_overlap',
+              'write_grad',
+              'write_nacdr',
+              'write_property1d',
+              'write_property2d',
+              'n_property1d',
+              'n_property2d'
+              ]
+    floats=  ['dtstep',
+              'ezero'
+              ]
+    special= ['nstates_m']
+    inf['integrator'] = 0
 
     if inf['version'] == 1.0:
         stopstring = '! 0 step'
@@ -813,6 +815,8 @@ def check_output_dat(data, timepoints):
                     inf[label] = [int(i) for i in s[1:-1]]
         else:
             continue
+    # print(inf)
+    # print(ilines)
 
     if inf['version'] == 1.0:
         ilines -= 1
@@ -832,6 +836,9 @@ def check_output_dat(data, timepoints):
         for i in range(inf['natom']):
             inf['masses'].append(float(data[ilines]))
             ilines += 1
+    # print(inf)
+    # print(ilines)
+    head_end = ilines
 
     nmax = -1
     while True:
@@ -840,69 +847,66 @@ def check_output_dat(data, timepoints):
             break
         line = data[ilines]
         if '! 0 Step' in line:
-            nmax = int(data[ilines + 1])
+            nmax = int(data[ilines + 1].split()[0])
+            if inf['integrator']==1:
+                tmax = float(data[ilines + 1].split()[1])
     inf['nmax'] = nmax
-
-  nmax=-1
-  while True:
-    ilines+=1
-    if ilines>=len(data):
-      break
-    line=data[ilines]
-    if '! 0 Step' in line:
-      nmax=int(data[ilines+1])
-  inf['nmax']=nmax
-
-  return inf
+    if inf['integrator']==0:
+        inf["tmax"] = nmax * inf["dtstep"] * ATU_TO_FS
+    elif inf['integrator']==1:
+        inf['tmax'] = tmax
+    # print(nmax)
 
 
-  # now figure out the steps corredpond to time
-  ilines=head_end
-  last_step=0
-  last_time=0.0
-  while True:
-    ilines+=1
-    if ilines>=len(data):
-      break
-    line=data[ilines]
-    if '! 0 Step' in line:
-      line1=data[ilines+1].split()
-      if inf['integrator']==1 or inf['integrator']==0:
-        current_time=float(line1[1])
-        current_step=int(line1[0])
-        if current_time>timepoints[0]:
-          break
-        last_step=current_step
-        last_time=current_time
+    # now figure out the steps corresponding to time
+    if timepoints[0] < 0:
+        timepoints = (timepoints[0]+inf['tmax'],timepoints[1])
+    if timepoints[1] < 0:
+        timepoints = (timepoints[0],timepoints[1]+inf['tmax'])
+
+    # get the earliest time step that is eligible
+    ilines=head_end
+    current_step=0
+    while True:
+        ilines+=1
+        if ilines>=len(data):
+            break
+        line=data[ilines]
+        if '! 0 Step' in line:
+            line1=data[ilines+1].split()
+            current_step=int(line1[0])
+            if inf['integrator']==0:
+                current_time=current_step * inf["dtstep"] * ATU_TO_FS
+            elif inf['integrator']==1:
+                current_time=float(line1[1])
+            if current_time>=timepoints[0]:
+                break
+    a=current_step
+
+    # get the latest time step that is eligible
+    ilines=head_end
+    current_step=0
+    while True:
+        ilines+=1
+        if ilines>=len(data):
+            break
+        line=data[ilines]
+        if '! 0 Step' in line:
+            line1=data[ilines+1].split()
+            current_step=int(line1[0])
+            if inf['integrator']==0:
+                current_time=current_step * inf["dtstep"] * ATU_TO_FS
+            elif inf['integrator']==1:
+                current_time=float(line1[1])
+            if current_time>=timepoints[1]:
+                break
+    b=current_step
  
-  a=int(last_step)
-
-  ilines=head_end
-  while True:
-    ilines+=1
-    if ilines>=len(data):
-      break
-    line=data[ilines]
-    if '! 0 Step' in line:
-      line1=data[ilines+1].split()
-      if inf['integrator']==1 or inf['integrator']==0:
-        current_time=float(line1[1])
-        current_step=int(line1[0])
-        if current_time>timepoints[1]:
-          break
-
-  b=int(current_step)
- 
-  if timepoints[0]<0.0:
-    a=nmax
-  if timepoints[1]<0.0:
-    b=nmax
-  if not (0<=a<=b<=nmax):
-    print('reset a=b=last step')
-    a=nmax
-    b=nmax
-
-  return inf, a, b
+    if not (0<=a<=b<=nmax):
+        print('Trajectory does not have valid time step. Skipped.')
+        a=-1
+        b=-1
+    return inf, a, b
 
 # ======================================================================================================================
 
@@ -989,22 +993,25 @@ def get_coords(INFOS):
     ic_list = []
     igeom = 0
 
-  # go through the data
-  for filename in filelist:
-    if INFOS['debug']:
-      print('%-40s'%'  reading ...',datetime.datetime.now()-starttime)
-    data=readfile(filename)
-    if INFOS['debug']:
-      print('%-40s'%'  header ...',datetime.datetime.now()-starttime)
-    
-    # a and b may be updated because of setting up time 
-    inf, a, b=check_output_dat(data, INFOS['time'])
-    if inf['version']==1.0:
-      print('(skipping version 1.0 file)')
-      continue
+    # go through the data
+    for filename in filelist:
+        if INFOS['debug']:
+            print('%-40s'%'  reading ...',datetime.datetime.now()-starttime)
+        data=readfile(filename)
+        if INFOS['debug']:
+            print('%-40s'%'  header ...',datetime.datetime.now()-starttime)
+        
+        # a and b may be updated because of setting up time 
+        inf, a, b=check_output_dat(data, INFOS['time'])
+        if inf['version']==1.0:
+            print('(skipping version 1.0 file)')
+            continue
 
-    # choose the step:
-    step=random.randint( a,b )
+        # choose the step:
+        if a == -1:
+            continue
+        step=random.randint( a,b )
+
 
         # get the atoms
         if INFOS['debug']:
@@ -1100,19 +1107,19 @@ TRAJ_to_initconds.py [options] Dir1 [ [ Dir2] ... ]
 This script reads the output.dat files from an emsemble of trajectories.
 The data is then transformed and written to initconds format.
 '''
-  description=''
-  parser = OptionParser(usage=usage, description=description)
-  parser.add_option('-r', dest='r', type=int, nargs=1, default=16661, help="Seed for the random number generator (integer, default=16661)")
-  parser.add_option('-T', dest='T', type=float, nargs=2, default=(-1.0,-1.0), help="Range of time from which to randomly choose the step to extract (from/to)")
-  #parser.add_option('-S', dest='S', type=int, nargs=2, default=(-1,-1), help="Range of time steps from which to randomly choose the step to extract (from/to)")
-  parser.add_option('-o', dest='o', type=str, nargs=1, default='initconds', help="Output filename (string, default=""initconds"")")
-  parser.add_option('-x', dest='X', action='store_true',help="Generate a xyz file with the sampled geometries in addition to the initconds file")
-  #parser.add_option('-m', dest='m', action='store_true',help="Enter non-default atom masses")
-  parser.add_option('--keep_trans_rot', dest='KTR', action='store_true',help="Keep translational and rotational components")
-  #parser.add_option('--use_eq_geom',    dest='UEG', action='store_true',help="For all samples, use the equilibrium geometry (only sample velocities)")
-  parser.add_option('--use_zero_veloc', dest='UZV', action='store_true',help="For all samples, set velocities to zero")
-  parser.add_option('--debug', dest='debug', action='store_true',help="Show timings")
-  parser.add_option('--give_TRAJ_paths', dest='TRAJ', action='store_true',help="Allows specifying directly the TRAJ_..... directories to use (default: automatically recurses into all subdirectories)")
+    description=''
+    parser = OptionParser(usage=usage, description=description)
+    parser.add_option('-r', dest='r', type=int, nargs=1, default=16661, help="Seed for the random number generator (integer, default=16661)")
+    parser.add_option('-T', dest='T', type=float, nargs=2, default=(-1.0,-1.0), help="Range of time from which to randomly choose the step to extract (from/to)")
+    #parser.add_option('-S', dest='S', type=int, nargs=2, default=(-1,-1), help="Range of time steps from which to randomly choose the step to extract (from/to)")
+    parser.add_option('-o', dest='o', type=str, nargs=1, default='initconds', help="Output filename (string, default=""initconds"")")
+    parser.add_option('-x', dest='X', action='store_true',help="Generate a xyz file with the sampled geometries in addition to the initconds file")
+    #parser.add_option('-m', dest='m', action='store_true',help="Enter non-default atom masses")
+    parser.add_option('--keep_trans_rot', dest='KTR', action='store_true',help="Keep translational and rotational components")
+    #parser.add_option('--use_eq_geom',    dest='UEG', action='store_true',help="For all samples, use the equilibrium geometry (only sample velocities)")
+    parser.add_option('--use_zero_veloc', dest='UZV', action='store_true',help="For all samples, set velocities to zero")
+    parser.add_option('--debug', dest='debug', action='store_true',help="Show timings")
+    parser.add_option('--give_TRAJ_paths', dest='TRAJ', action='store_true',help="Allows specifying directly the TRAJ_..... directories to use (default: automatically recurses into all subdirectories)")
 
     # arg processing
     (options, args) = parser.parse_args()
@@ -1120,17 +1127,17 @@ The data is then transformed and written to initconds format.
         print(usage)
         quit(1)
 
-  # options
-  INFOS={}
-  INFOS['dirs']=args[0:]
-  #INFOS['step']=options.S
-  INFOS['time']=options.T
-  INFOS['outfile']=options.o
-  INFOS['KTR']=options.KTR
-  INFOS['UZV']=options.UZV
-  INFOS['debug']=options.debug
-  INFOS['TRAJ_']=options.TRAJ
-  random.seed(options.r)
+    # options
+    INFOS={}
+    INFOS['dirs']=args[0:]
+    #INFOS['step']=options.S
+    INFOS['time']=options.T
+    INFOS['outfile']=options.o
+    INFOS['KTR']=options.KTR
+    INFOS['UZV']=options.UZV
+    INFOS['debug']=options.debug
+    INFOS['TRAJ_']=options.TRAJ
+    random.seed(options.r)
 
 
 
@@ -1145,8 +1152,8 @@ OUTPUT file                    = "%s"''' % (INFOS['dirs'],
                                          #['','(negative indices are counted from the end)'][any(i<0 for i in options.S)],
                                          options.T[0],options.T[1],
                                          ['','(negative times are counted from the end)'][any(i<0.0 for i in options.T)],
-                                        INFOS['outfile']
-                                        )
+                                         INFOS['outfile']
+                                         ))
 
 
     # print('Generating %i initial conditions' % amount)
