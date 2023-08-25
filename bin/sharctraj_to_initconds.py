@@ -755,7 +755,7 @@ def remove_rotations(ic):
         # print('No default mass for atom %s' % (symb))
         # sys.exit(1)
 
-def check_output_dat(data, timepoints):
+def check_output_dat(data, INFOS):
     inf={}
     line=data[0].lower()
     if 'sharc_version' in line:
@@ -859,10 +859,19 @@ def check_output_dat(data, timepoints):
 
 
     # now figure out the steps corresponding to time
-    if timepoints[0] < 0:
-        timepoints = (timepoints[0]+inf['tmax'],timepoints[1])
-    if timepoints[1] < 0:
-        timepoints = (timepoints[0],timepoints[1]+inf['tmax'])
+    if INFOS['use_times']:
+        timepoints = INFOS['time']
+        if timepoints[0] < 0:
+            timepoints = (timepoints[0]+inf['tmax'],timepoints[1])
+        if timepoints[1] < 0:
+            timepoints = (timepoints[0],timepoints[1]+inf['tmax'])
+    else:
+        steps = INFOS['step']
+        if steps[0] < 0:
+            steps = (steps[0]+inf['nmax'], steps[1])
+        if steps[1] < 0:
+            steps = (steps[0], steps[1]+inf['nmax'])
+
 
     # get the earliest time step that is eligible
     ilines=head_end
@@ -879,8 +888,12 @@ def check_output_dat(data, timepoints):
                 current_time=current_step * inf["dtstep"] * ATU_TO_FS
             elif inf['integrator']==1:
                 current_time=float(line1[1])
-            if current_time>=timepoints[0]:
-                break
+            if INFOS['use_times']:
+                if current_time>=timepoints[0]:
+                    break
+            else:
+                if current_step>=steps[0]:
+                    break
     a=current_step
 
     # get the latest time step that is eligible
@@ -898,8 +911,13 @@ def check_output_dat(data, timepoints):
                 current_time=current_step * inf["dtstep"] * ATU_TO_FS
             elif inf['integrator']==1:
                 current_time=float(line1[1])
-            if current_time>=timepoints[1]:
-                break
+            if INFOS['use_times']:
+                if current_time>=timepoints[1]:
+                    break
+            else:
+                if current_step>=steps[1]:
+                    break
+
     b=current_step
  
     if not (0<=a<=b<=nmax):
@@ -1002,7 +1020,7 @@ def get_coords(INFOS):
             print('%-40s'%'  header ...',datetime.datetime.now()-starttime)
         
         # a and b may be updated because of setting up time 
-        inf, a, b=check_output_dat(data, INFOS['time'])
+        inf, a, b=check_output_dat(data, INFOS)
         if inf['version']==1.0:
             print('(skipping version 1.0 file)')
             continue
@@ -1111,7 +1129,7 @@ The data is then transformed and written to initconds format.
     parser = OptionParser(usage=usage, description=description)
     parser.add_option('-r', dest='r', type=int, nargs=1, default=16661, help="Seed for the random number generator (integer, default=16661)")
     parser.add_option('-T', dest='T', type=float, nargs=2, default=(-1.0,-1.0), help="Range of time from which to randomly choose the step to extract (from/to)")
-    #parser.add_option('-S', dest='S', type=int, nargs=2, default=(-1,-1), help="Range of time steps from which to randomly choose the step to extract (from/to)")
+    parser.add_option('-S', dest='S', type=int, nargs=2, default=(-1,-1), help="Range of time steps from which to randomly choose the step to extract (from/to)")
     parser.add_option('-o', dest='o', type=str, nargs=1, default='initconds', help="Output filename (string, default=""initconds"")")
     parser.add_option('-x', dest='X', action='store_true',help="Generate a xyz file with the sampled geometries in addition to the initconds file")
     #parser.add_option('-m', dest='m', action='store_true',help="Enter non-default atom masses")
@@ -1120,6 +1138,7 @@ The data is then transformed and written to initconds format.
     parser.add_option('--use_zero_veloc', dest='UZV', action='store_true',help="For all samples, set velocities to zero")
     parser.add_option('--debug', dest='debug', action='store_true',help="Show timings")
     parser.add_option('--give_TRAJ_paths', dest='TRAJ', action='store_true',help="Allows specifying directly the TRAJ_..... directories to use (default: automatically recurses into all subdirectories)")
+
 
     # arg processing
     (options, args) = parser.parse_args()
@@ -1130,8 +1149,20 @@ The data is then transformed and written to initconds format.
     # options
     INFOS={}
     INFOS['dirs']=args[0:]
-    #INFOS['step']=options.S
-    INFOS['time']=options.T
+    if options.S != (-1,-1) and options.T != (-1.0,-1.0):
+        print('Options -T and -S cannot be used together!')
+        sys.exit(1)
+    elif options.T != (-1.0,-1.0):
+        INFOS['time']=options.T
+        INFOS['use_times'] = True
+    elif options.S != (-1,-1):
+        INFOS['step']=options.S
+        INFOS['use_times'] = False
+    else:
+        INFOS['step']=options.S
+        INFOS['use_times'] = False
+    # INFOS['step']=options.S
+    # INFOS['time']=options.T
     INFOS['outfile']=options.o
     INFOS['KTR']=options.KTR
     INFOS['UZV']=options.UZV
@@ -1146,12 +1177,15 @@ The data is then transformed and written to initconds format.
 directories                    = "%s"
 Random number generator seed   = %i
 Pick randomly from these times = %f to %f  %s
+Pick randomly from these steps = %i to %i  %s
 OUTPUT file                    = "%s"''' % (INFOS['dirs'], 
                                          options.r,
                                          #options.S[0],options.S[1],
                                          #['','(negative indices are counted from the end)'][any(i<0 for i in options.S)],
                                          options.T[0],options.T[1],
                                          ['','(negative times are counted from the end)'][any(i<0.0 for i in options.T)],
+                                         options.S[0],options.S[1],
+                                         ['','(negative steps are counted from the end)'][any(i<0 for i in options.S)],
                                          INFOS['outfile']
                                          ))
 
