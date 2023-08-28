@@ -662,7 +662,8 @@ def nm_analysis(INFOS):
     std_list = [0 for i in range(num_vib)]
 
     for i in range(num_steps):
-        tm_mean.write_line([coor / cross_num_array[i] for coor in cross_sum_array[i]])
+        # tm_mean.write_line([                    coor / cross_num_array[i]  for coor in cross_sum_array[i]])
+        tm_mean.write_line([ "{:16.10f}".format(coor / cross_num_array[i]) for coor in cross_sum_array[i]])
         cross_mean_array[i] = cross_sum_array[i] / cross_num_array[i]
         for j in range(num_vib):
             exp_x = cross_sum_array[i, j] / cross_num_array[i]
