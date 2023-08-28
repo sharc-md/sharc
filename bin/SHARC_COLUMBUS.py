@@ -4240,7 +4240,7 @@ class civfl_ana:
             print("%s/cipc.x for state %i, CSFs %i to %i" % (self.columbus, istate, istart, iend))
             starttime = datetime.datetime.now()
             sys.stdout.write('\t%s' % (starttime))
-            cipx = sp.Popen(command, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
+            cipx = sp.Popen(command, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, text=True)
             cipout, ciperr = cipx.communicate(cipstr)
             if self.debug:
                 open('pycipcin.st%i.%i' % (istate, i), 'w').write(cipstr)
