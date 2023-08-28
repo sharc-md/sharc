@@ -1105,7 +1105,7 @@ def istate_in_job(m1, s1, ms1, states):
         for ist in range(states[im]):
             for ims in range(im + 1):
                 k += 1
-                if (im + 1, ims - im / 2 + 1 / 2, ist + 1) == (m1, ms1, s1):
+                if (im + 1, ims - im // 2 + 1 // 2, ist + 1) == (m1, ms1, s1):
                     return k
 
 # ======================================================================= #
