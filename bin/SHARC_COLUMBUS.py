@@ -1180,7 +1180,7 @@ def getsocme(runls, QMin, istate, jstate):
     eref = float(runls[ilines].split()[3])
 
     # find the matrix
-    while '-------------- HT matrix not in cm-1 -------------------' in runls[ilines]:
+    while '-------------- HT matrix in cm-1 -------------------' not in runls[ilines]:
         ilines += 1
         if ilines == len(runls):
             print('SO Matrix not found!')
