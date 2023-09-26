@@ -1,9 +1,10 @@
 """
-version 1.0
-author: Felix Plasser
+version 1.1
+author: Felix Plasser, Hans Georg Gallmetzer
 usage: Package for reading a molden input vibration file.
     This input is used for normal mode analysis by nma.py.
     Also a multiple xyz vibration file that can be read by jmol can be printed out.
+changes: xrange() changed to range() for compatability with python 3.11.4
 """
 
 import os

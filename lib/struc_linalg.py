@@ -1,14 +1,15 @@
 """
-version 1.0.1
-author: Felix Plasser
+version 1.1
+author: Felix Plasser, Hans Georg Gallmetzer
 usage: package to perform linear algebra operations on structures.
+changes: xrange() changed to range() for compatability with python 3.11.4
 """
 
 # improvment: use return to pass structures by value (?).
 
 import os, shutil, locale
 import numpy
-from openbabel import openbabel
+import openbabel
 import superposition
 import file_handler
 
