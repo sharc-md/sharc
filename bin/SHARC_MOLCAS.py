@@ -2850,10 +2850,14 @@ def gettasks(QMin):
 
         # RASSI for overlaps
         if 'overlap' in QMin:
-            if 'displacement' in QMin:
-                tasks.append(['link', os.path.join(QMin['savedir'], 'MOLCAS.%i.JobIph.master' % (imult + 1)), 'JOB001'])
+            if 'overlap_nacs' in QMin:
+                tasks.append(['link', 'MOLCAS.%i.JobIph' % (imult + 1), 'JOB001'])
+                tasks.append(['link', 'MOLCAS.JobIph', 'JOB002'])
             else:
-                tasks.append(['link', os.path.join(QMin['savedir'], 'MOLCAS.%i.JobIph.old' % (imult + 1)), 'JOB001'])
+                if 'displacement' in QMin:
+                    tasks.append(['link', os.path.join(QMin['savedir'], 'MOLCAS.%i.JobIph.master' % (imult + 1)), 'JOB001'])
+                else:
+                    tasks.append(['link', os.path.join(QMin['savedir'], 'MOLCAS.%i.JobIph.old' % (imult + 1)), 'JOB001'])
             tasks.append(['link', 'MOLCAS.%i.JobIph' % (imult + 1), 'JOB002'])
             tasks.append(['rassi', 'overlap', [nstates, nstates]])
 
@@ -3447,6 +3451,8 @@ def generate_joblist(QMin):
             QMin3 = deepcopy(QMin2)
             QMin3['nacmap'] = [nac]
             QMin3['gradmap'] = []
+            QMin3['overlap'] = [[j + 1, i + 1] for i in range(QMin['nmstates']) for j in range(i + 1)]
+            QMin3['overlap_nacs'] = []
             QMin3['ncpu'] = cpu_per_run[icount]
             icount += 1
             joblist[-1]['nacdr_%i_%i_%i_%i' % nac] = QMin3
@@ -3885,6 +3891,12 @@ def arrangeQMout(QMin, QMoutall, QMoutDyson):
                     name = 'nacdr_%i_%i_%i_%i' % (m1, min(s1, s2), m2, max(s1, s2))
                     QMout['nacdr'][i - 1][j - 1] = deepcopy(QMoutall[name]['nacdr'][i - 1][j - 1])
                     QMout['nacdr'][j - 1][i - 1] = deepcopy(QMoutall[name]['nacdr'][j - 1][i - 1])
+                    ovl = QMoutall[name]['overlap'][i - 1][i - 1].real
+                    ovl *= QMoutall[name]['overlap'][j - 1][j - 1].real
+                    for iatom in range(QMin['natom']):
+                        for xyz in range(3):
+                            QMout['nacdr'][i - 1][j - 1][iatom][xyz] *= ovl
+                            QMout['nacdr'][j - 1][i - 1][iatom][xyz] *= ovl
 
     if 'socdr' in QMin:
         socdr = [[[[0.0 for xyz in range(3)] for iatom in range(QMin['natom'])] for istate in range(QMin['nmstates'])] for jstate in range(QMin['nmstates'])]
@@ -4755,10 +4767,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
-# kate: indent-width 4
