@@ -896,7 +896,7 @@ def check_intruders(path, trajectories, INFOS, lis, tana, problem_length):
         if not check_printlevel(f):
             notpossible = True
         prevstep = 0
-        for line in f:
+        for iline,line in enumerate(f):
             if 'ntering timestep' in line:
                 tstep = int(line.split()[3])
                 if tstep == 0:
@@ -912,7 +912,7 @@ def check_intruders(path, trajectories, INFOS, lis, tana, problem_length):
                     break
             if 'RESTART requested.' in line:
                 prevstep -= 1
-            if 'upcoming time step' in line:
+            if 'time step in restart files' in line:
                 prevstep += 1
             if 'State: ' in line:
                 intruder = int(line.split()[1])
