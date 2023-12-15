@@ -527,7 +527,7 @@ def printQMin(QMin):
         string += '|%i' % (i)
     string += ')-'
     string += QMin['template']['method'].upper()
-    string += '(%i,%i)/%s' % (QMin['template']['nactel'], QMin['template']['ras2'], QMin['template']['basis'])
+    string += '(%s,%s)/%s' % (tuple(QMin['template']['nactel']), (QMin['template']['ras1'],QMin['template']['ras2'],QMin['template']['ras3']), QMin['template']['basis'])
     parts = []
     if QMin['template']['cholesky']:
         parts.append('RICD')
@@ -553,11 +553,11 @@ def printQMin(QMin):
     # say, if CAS(n-1,m) is used for any multiplicity
     oddmults = False
     for i in QMin['statemap'].values():
-        if (QMin['template']['nactel'] + i[0]) % 2 == 0:
+        if (QMin['template']['nactel'][0] + i[0]) % 2 == 0:
             oddmults = True
     if oddmults:
-        string = '\t\t' + ['Even ', 'Odd '][QMin['template']['nactel'] % 2 == 0]
-        string += 'numbers of electrons are treated with CAS(%i,%i).' % (QMin['template']['nactel'] - 1, QMin['template']['ras2'])
+        string = '\t\t' + ['Even ', 'Odd '][QMin['template']['nactel'][0] % 2 == 0]
+        string += 'numbers of electrons are treated with CAS(%i,%i).' % (QMin['template']['nactel'][0] - 1, QMin['template']['ras2'])
         print(string)
     # CAS(2,2) does not allow for SOC calculations (bug in MOLCAS)
     # if QMin['template']['nactel']==2 and QMin['template']['ras2']==2:
@@ -2383,7 +2383,7 @@ def readQMin(QMinfilename):
     template = readfile('MOLCAS.template')
 
     QMin['template'] = {}
-    integers = ['nactel', 'inactive', 'ras2', 'frozen']
+    integers = ['nactel', 'inactive', 'ras2', 'frozen', 'ras1', 'ras3']
     strings = ['basis', 'method', 'baslib', 'pdft-functional']
     floats = ['ipea', 'imaginary', 'gradaccumax', 'gradaccudefault', 'displ', 'rasscf_thrs_e', 'rasscf_thrs_rot', 'rasscf_thrs_egrd', 'cholesky_accu']
     booleans = ['cholesky', 'no-douglas-kroll', 'douglas-kroll', 'qmmm', 'cholesky_analytical', 'diab_num_grad', 'cobramm', 'caspt2_ana_grad']
@@ -2391,6 +2391,9 @@ def readQMin(QMinfilename):
         QMin['template'][i] = False
     QMin['template']['roots'] = [0 for i in range(8)]
     QMin['template']['rootpad'] = [0 for i in range(8)]
+    QMin['template']['ras1'] = 0
+    QMin['template']['ras3'] = 0
+
     QMin['template']['method'] = 'casscf'
     QMin['template']['pdft-functional'] = 't:pbe'
     QMin['template']['baslib'] = ''
@@ -2420,6 +2423,8 @@ def readQMin(QMinfilename):
         elif 'roots' in line[0]:
             for i, n in enumerate(line[1:]):
                 QMin['template']['roots'][i] = int(n)
+        elif 'nactel' in line[0]:
+            QMin['template']['nactel'] = [int(i) for i in line[1:]]
         elif 'rootpad' in line[0]:
             for i, n in enumerate(line[1:]):
                 QMin['template']['rootpad'][i] = int(n)
@@ -2456,6 +2461,16 @@ def readQMin(QMinfilename):
         if not n >= QMin['states'][i]:
             print('Too few states in state-averaging in multiplicity %i! %i requested, but only %i given' % (i + 1, QMin['states'][i], n))
             sys.exit(59)
+
+    # check nactel
+    if len(QMin['template']['nactel']) == 1:
+        QMin['template']['nactel'] = [ QMin['template']['nactel'][0], 0, 0 ]
+    elif len(QMin['template']['nactel']) == 3:
+        pass
+    else:
+        print('You must specify either 1 or 3 numbers for "nactel"!')
+        sys.exit(59)
+
 
     # check rootpad
     for i, n in enumerate(QMin['template']['rootpad']):
@@ -2974,17 +2989,25 @@ def writeMOLCASinput(tasks, QMin):
             string += '>> RM %s\n\n' % (task[1])
 
         elif task[0] == 'rasscf':
-            nactel = QMin['template']['nactel']
+            nactel = QMin['template']['nactel'][0]
+            nhole = QMin['template']['nactel'][1]
+            nelec = QMin['template']['nactel'][2]
             npad = QMin['template']['rootpad'][task[1] - 1]
             if (nactel - task[1]) % 2 == 0:
                 nactel -= 1
-            string += '&RASSCF\nSPIN=%i\nNACTEL=%i 0 0\nINACTIVE=%i\nRAS2=%i\nITERATIONS=%i,%i\n' % (
+            string += '&RASSCF\nSPIN=%i\nNACTEL=%i %i %i\nINACTIVE=%i\nRAS2=%i\nITERATIONS=%i,%i\n' % (
                 task[1],
                 nactel,
+                nhole,
+                nelec,
                 QMin['template']['inactive'],
                 QMin['template']['ras2'],
                 QMin['template']['iterations'][0],
                 QMin['template']['iterations'][1])
+            if QMin['template']['ras1'] > 0:
+                string += 'RAS1=%i\n' % (QMin['template']['ras1'])
+            if QMin['template']['ras3'] > 0:
+                string += 'RAS3=%i\n' % (QMin['template']['ras3'])
             if npad == 0:
                 string += 'CIROOT=%i %i 1\n' % (task[2], task[2])
             else:
