@@ -85,7 +85,7 @@ ifeq ($(USE_COMPILER), gnu)
 else ifeq ($(USE_COMPILER), intel)
   CC:=icc
   F90:=ifort
-  EXTRAFLAGS := -DIFORT
+  EXTRAFLAGS := -D__INTEL_COMPILER
 endif
 
 
