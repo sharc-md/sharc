@@ -47,6 +47,7 @@ from optparse import OptionParser
 import readline
 import colorsys
 import random
+from socket import gethostname
 
 import numpy as np
 import scipy.integrate as spint
@@ -1783,7 +1784,7 @@ set rmargin 22
 
     # Put time stamp infos at the end
     string += '\n\n# *** Infos: ***\n'
-    string += '# %s@%s\n' % (os.environ['USER'], os.environ['HOSTNAME'])
+    string += '# %s@%s\n' % (os.environ['USER'], gethostname())
     string += '# Date: %s\n' % (datetime.datetime.now())
     string += '# Current directory: %s\n\n' % (os.getcwd())
 

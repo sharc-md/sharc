@@ -46,6 +46,7 @@ import datetime
 from optparse import OptionParser
 import readline
 import colorsys
+from socket import gethostname
 
 try:
   import numpy
@@ -1314,7 +1315,7 @@ set key at %.2f,1.00 top right
   # For saving the final plot to a file and a table
   string+='# *** File output: ***\n'
   string+='#<<\n'
-  string+='set title "%s@%s, %s\\nFile:%s"\n' % (os.environ['USER'],os.environ['HOSTNAME'],datetime.datetime.now(),INFOS['popfile'])
+  string+='set title "%s@%s, %s\\nFile:%s"\n' % (os.environ['USER'],gethostname(),datetime.datetime.now(),INFOS['popfile'])
   string+='set term pngcairo size 800,480\nset out "model_fit.png"\nreplot\n'
   string+='#>>\n'
   string+='set table "model_fit.txt"\nreplot\n\n'
@@ -1327,7 +1328,7 @@ set key at %.2f,1.00 top right
 
   # Put time stamp infos at the end
   string+='# *** Infos: ***\n'
-  string+='# %s@%s\n' % (os.environ['USER'],os.environ['HOSTNAME'])
+  string+='# %s@%s\n' % (os.environ['USER'],gethostname())
   string+='# Date: %s\n' % (datetime.datetime.now())
   string+='# Current directory: %s\n\n' % (os.getcwd())
 
