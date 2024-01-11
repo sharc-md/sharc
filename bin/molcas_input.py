@@ -758,7 +758,7 @@ def setup_input(INFOS):
                 s += 'method CASPT2\n'
         s += '\n\n'
         s += '#     Infos:\n'
-        s += '#     %s@%s\n' % (os.environ['USER'], os.environ['HOSTNAME'])
+        s += '#     %s@%s\n' % (os.environ['USER'], gethostname())
         s += '#     Date: %s\n' % (datetime.datetime.now())
         s += '#     Current directory: %s\n\n' % (os.getcwd())
         inp.write(s)

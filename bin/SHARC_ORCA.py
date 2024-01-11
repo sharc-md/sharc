@@ -3617,7 +3617,7 @@ def get_dets_from_cis(filename, QMin):
             nstates_to_skip[i] = 0
         elif i + 1 == gsmult:
             nstates_to_extract[i] -= 1
-    # print job,restr,mults,gsmult,nstates_to_extract
+    # print(job,restr,mults,gsmult,nstates_to_extract)
 
     # get infos from logfile
     logfile = os.path.join(os.path.dirname(filename), 'ORCA.log')
