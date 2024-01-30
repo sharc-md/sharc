@@ -2547,10 +2547,10 @@ def readQMin(QMinfilename):
             if QMin['template']['pdft-functional'] == m:
                 QMin['pdft-functional'] = i
                 break
-        else:
-            print('Warning! No analytical gradients for cms-pdft and "%s" given in MOLCAS.template' % (QMin['template']['pdft-functional']))
-            print('Using numerical gradients. Analytical gradients only for t:pbe, ft:pbe, t:blyp, ft:blyp, t:revPBE, ft:revPBE, t:LSDA, or ft:LSDA.')
-            QMin['pdft-functional'] = -1
+            else:
+                print('Warning! No analytical gradients for cms-pdft and "%s" given in MOLCAS.template' % (QMin['template']['pdft-functional']))
+                print('Using numerical gradients. Analytical gradients only for t:pbe, ft:pbe, t:blyp, ft:blyp, t:revPBE, ft:revPBE, t:LSDA, or ft:LSDA.')
+                QMin['pdft-functional'] = -1
 
     # decide which type of gradients to do:
     # 0 = analytical CASSCF gradients in one MOLCAS input file (less overhead, but recommended only under certain circumstances)
