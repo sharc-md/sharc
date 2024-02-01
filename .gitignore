@@ -1,0 +1,7 @@
+source/*.o
+source/*.x
+source/*.mod
+source/build_info.inc
+*/sharcvars.csh
+*/sharcvars.sh
+bin/*.x
