@@ -27,7 +27,6 @@
 #
 # usage: python setup_traj.py
 
-import copy
 import math
 import sys
 import re
@@ -226,6 +225,16 @@ Interfaces = {
                       'phases':  [],
                       'ktdc':    [],
                       'phases': [], },
+         'pysharc': False
+         },
+    11: {'script': 'SHARC_PYSCF.py',
+         'name': 'pyscf',
+         'description': 'PySCF (CASSCF, L-PDFT)',
+         'get_routine': 'get_PYSCF',
+         'prepare_routine': 'prepare_PYSCF',
+         'features': {'ktdc': [],
+                      'overlap': [],
+         },
          'pysharc': False
          },
 }
