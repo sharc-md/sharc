@@ -1,6 +1,6 @@
-source/*.o
-source/*.x
-source/*.mod
+*.o
+*.x
+*.mod
 source/build_info.inc
-source/sharcvars.csh
-source/sharcvars.sh
+*/sharcvars.csh
+*/sharcvars.sh
