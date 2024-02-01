@@ -2833,7 +2833,7 @@ The MOLCAS interface will generate the appropriate MOLCAS input automatically.
         INFOS['molcas.guess'] = {}
 
 
-    print(centerstring('MOLCAS Ressource usage', 60, '-') + '\n')
+    print(centerstring('MOLCAS Resource usage', 60, '-') + '\n')
     print('''Please specify the amount of memory available to MOLCAS (in MB). For calculations including moderately-sized CASSCF calculations and less than 150 basis functions, around 2000 MB should be sufficient.
 ''')
     INFOS['molcas.mem'] = abs(question('MOLCAS memory:', int)[0])
@@ -4352,6 +4352,86 @@ exit $err''' % (Interfaces[INFOS['interface']]['script'])
     os.chmod(runname, os.stat(runname).st_mode | stat.S_IXUSR)
 
     return
+
+
+# =============================================================================
+
+def get_PYSCF(INFOS):
+    """This routine asks for all questions specific to PySCF:
+        - scratch directory
+        - PYSCF>template
+        - 
+    """
+    string = '\n  ' + '=' * 80 + '\n'
+    string += '||' + centerstring('PySCF Interface setup', 80) + '||\n'
+    string += '  ' + '=' * 80 + '\n\n'
+    print(string)
+
+    print(centerstring('Scratch directory', 60, '-') + '\n')
+    print('Please specify an appropriate scratch directory. This will be used to temporally store the integrals. The scratch directory will be deleted after the calculation. Remember that this script cannot check whether the path is valid, since you may run the calculations on a different machine. The path will not be expanded by this script.')
+    INFOS['scratchdir'] = question('Path to scratch directory:', str)
+    print('')
+
+
+    print(centerstring('PySCF input template file', 60, '-') + '\n')
+    print("""Pleasespecify the path to the PYSCF.template file. This file must contain the following settings:
+
+basis <Basis set>
+ncas <Number of active orbitals>
+nelecas <Number of active electrons>
+roots <Number of roots for state-averaging>
+
+The PySCF interface will generate the appropriate PySCF input/script automatically. 
+""")
+    if os.path.isfile("PYSCF.template"):
+        if checktemplate_PYSCF("PYSCF.template", INFOS):
+            print("Valid file 'PYSCF.template' detected.")
+            usethisone = question("Use this template file?", bool, True)
+            if use this one:
+                INFOS['pyscf.template'] = 'PYSCF.template'
+
+    if 'pyscf.template' not in INFOS:
+        while True:
+            filename = question("Template filename: ", str)
+            if not os.path.isfile(filename):
+                print(f"File {filename} does not exist!")
+            elif checktemplate_PYSCF(filename, INFOS):
+                break
+
+        INFOS['pyscf.template'] = filename
+
+    print("")
+
+
+    print(centerstring('Initial wave function: chkfile', 60, '-') + '\n')
+    print("Please specify the path to a PySCF chk file containing stuitable starting MOs for the CASSCF calculation. Please note that this script cannot check whether the wave function file and the input template are consistent!")
+
+    string = "Do you have initial wave function files for "
+    for mult, state in enumerate(INFOS['states']):
+        if state <= 0:
+            continue
+        
+        string += f"{IToMult[mult+1]}, "
+
+    string = string[:-2] + "?"
+    if question(string, bool, True):
+        while True:
+            filename = question("PySCF chkfile: ", str)
+            if not os.path.isfile(filename):
+                print(f"File {filename} does not exist!")
+
+            else:
+                INFOS['pyscf.guess'] = filename
+                break
+
+    else:
+        print("WARNING: Remember that CASSCF calculations may run very long and/or yield wrong results without proper starting MOs.")
+        time.sleep(2)
+        INFOS['pyscf.guess'] = None
+
+    # TODO (MRH): start from line 2836 with MOLCAS resources
+
+
 
 
 # ======================================================================================================================
