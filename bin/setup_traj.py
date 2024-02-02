@@ -4416,8 +4416,9 @@ def checktemplate_PYSCF(filename, INFOS):
             string = string[:-2] + '!'
             print(string)
             return False
-    
+
     return True
+
 def get_PYSCF(INFOS):
     """This routine asks for all questions specific to PySCF:
         - scratch directory
@@ -4506,6 +4507,39 @@ The PySCF interface will generate the appropriate PySCF input/script automatical
     
     return INFOS
 
+def prepare_PYSCF(INFOS, iconddir):
+    string = f"""scratchdir {os.path.join(INFOS['scratchdir'], iconddir)}
+savedir {os.path.join(INFOS['copydir'], iconddir, 'restart')}
+memory {INFOS['pyscf.mem']}
+ncpu {INFOS['pyscf.ncpu']}"""
+    try:
+        with open(os.path.join(iconddir, "QM/PYSCF.resources"), 'w') as sh2cas:
+            sh2cas.write(string)
+
+    except IOError:
+        print(f"IOError during prepare_PYSCF, iconddir={iconddir}")
+        quit(1)
+
+    # Copy MOs and template
+    template_source = INFOS['pyscf.template']
+    template_target = os.path.join(iconddir, "QM/PYSCF.template")
+    shutil.copy(template_source, template_target)
+    if INFOS['pyscf.guess'] is not None:
+        chk_source = INFOS['pyscf.guess']
+        chk_target = os.path.join(iconddir, "QM/pyscf.init.chk")
+        shutil.copy(chk_source, chk_target)
+
+    runname = os.path.join(iconddir, "QM/runQM.sh")
+    with open(runname, 'w') as runscript:
+        runscript.write(f"""cd QM
+$SHARC/{Interfaces[INFOS['interface']]['script']} QM.in >> QM.log 2>> QM.err
+err=$?
+
+exit $err""")
+
+    os.chmod(runname, os.stat(runname).st_mode | stat.S_IXUSR)
+    
+    return
 
 # ======================================================================================================================
 # ======================================================================================================================
