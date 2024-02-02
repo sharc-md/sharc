@@ -222,7 +222,6 @@ Interfaces = {
                       'dyson': ['wfoverlap'],
                       'nacdr': [],
                       'dipolegrad': [],
-                      'phases':  [],
                       'ktdc':    [],
                       'phases': [], },
          'pysharc': False
@@ -233,7 +232,7 @@ Interfaces = {
          'get_routine': 'get_PYSCF',
          'prepare_routine': 'prepare_PYSCF',
          'features': {'ktdc': [],
-                      'overlap': [],
+                      'nacdr': [],
          },
          'pysharc': False
          },
@@ -1362,7 +1361,7 @@ from the initconds.excited files as provided by excite.py.
                     li.append(i)
             print('Please input one of the following: %s!' % li)
     INFOS['coupling'] = num
-    INFOS['needed'].extend(Interfaces[INFOS['interface']]['features'][Couplings[i]['name']])
+    INFOS['needed'].extend(Interfaces[INFOS['interface']]['features'][Couplings[num]['name']])
 
 
     # Phase tracking
