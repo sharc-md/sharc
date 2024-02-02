@@ -4356,6 +4356,68 @@ exit $err''' % (Interfaces[INFOS['interface']]['script'])
 
 # =============================================================================
 
+def checktemplate_PYSCF(filename, INFOS):
+    necessary = ['basis', 'ncas', 'nelecas', 'roots']
+    try:
+        with open(filename) as f:
+            data = f.readlines()
+    
+    except IOError:
+        print(f"Could not open template file {filename}")
+        return False
+    
+    valid = []
+    for i in necessary:
+        for line in data:
+            if i in re.sub('#.*$', '', line):
+                valid.append(True)
+            break
+        
+        else:
+            valid.append(False)
+
+    if not all(valid):
+        print(f"The template {filename} seems to be incomplete! It should contain: {str(necessary)}")
+        return False
+
+    roots_there = False
+    for line in data:
+        line = re.sub('#.*$', '', line).lower().split()
+        if len(line) == 0:
+            continue
+
+        if 'roots' in line[0]:
+            roots_there = True
+
+    if not roots_there:
+        for mult, state in enumerate(INFOS['states']):
+            if state <= 0:
+                continue
+
+            valid = []
+            for line in data:
+                if "spin" in re.sub('#.*$', '', line).lower():
+                    f = line.split()
+                    if int(f[1]) == mult + 1 :
+                        valid.append(True)
+                        break
+
+            else:
+                valid.append(False)
+        
+        if not all(valid):
+            string = f"The template {filename} seems to be incomplete! It should contain the keyword 'spin' for "
+            for mult, state in enumerate(INFOS['states']):
+                if state <= 0:
+                    continue
+                
+                string += f"{IToMult[mult+1]}, "
+            
+            string = string[:-2] + '!'
+            print(string)
+            return False
+    
+    return True
 def get_PYSCF(INFOS):
     """This routine asks for all questions specific to PySCF:
         - scratch directory
@@ -4387,7 +4449,7 @@ The PySCF interface will generate the appropriate PySCF input/script automatical
         if checktemplate_PYSCF("PYSCF.template", INFOS):
             print("Valid file 'PYSCF.template' detected.")
             usethisone = question("Use this template file?", bool, True)
-            if use this one:
+            if usethisone:
                 INFOS['pyscf.template'] = 'PYSCF.template'
 
     if 'pyscf.template' not in INFOS:
@@ -4429,9 +4491,20 @@ The PySCF interface will generate the appropriate PySCF input/script automatical
         time.sleep(2)
         INFOS['pyscf.guess'] = None
 
-    # TODO (MRH): start from line 2836 with MOLCAS resources
+    print(centerstring("PySCF Resource usage", 60, '-'), '\n')
+    print("Please specify the amount of memory available to PySCF (in MB). For calculations including moderately-sized CASSCF calculations and less than 150 basis functions, around 2000 MB should be sufficient.")
+    INFOS['pyscf.mem'] = abs(question('PySCF memory:', int)[0])
+    print("Please specify the number of CPUs to be used by EACH calculation.")
+    INFOS['pyscf.ncpu'] = abs(question('Number of CPUs:', int)[0])
+    
 
+    if 'wfoverlap' in INFOS['needed']:
+        print('\n' + centerstring("Wfoverlap code setup", 60, '-') + '\n')
+        print('PySCF not currently interfaced to wfoverlap...aborting...')
+        quit(1)
 
+    
+    return INFOS
 
 
 # ======================================================================================================================
