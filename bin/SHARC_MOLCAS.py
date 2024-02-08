@@ -3458,8 +3458,6 @@ def generate_joblist(QMin):
         QMin1['keepintegrals'] = []
         QMin1['gradmap'] = []
         QMin1['nacmap'] = []
-        if 'ion' in QMin:
-            QMin1['keepintegrals'] = []
         if QMin['mpi_parallel']:
             QMin1['ncpu'] = QMin['ncpu']
         else:
@@ -3479,7 +3477,6 @@ def generate_joblist(QMin):
             nslots = 1
             cpu_per_run = [QMin['ncpu']] * ntasks
         else:
-            nrounds = 1
             nslots = QMin['ncpu']
             cpu_per_run = [1] * ntasks
         joblist.append({})

@@ -30,6 +30,7 @@ import sys
 import re
 import datetime
 import pprint
+from copy import deepcopy
 
 from socket import gethostname
 
@@ -196,10 +197,10 @@ def print_qmin(qmin):
         output = "Gradients:   "
         for i in range(1, qmin["nmstates"] + 1):
             if i in qmin["grad"]:
-                output += "X "
+                output += "X"
 
             else:
-                output += ". "
+                output += "."
 
         output += "\n"
         print(output)
@@ -209,10 +210,10 @@ def print_qmin(qmin):
         for i in range(1, qmin["nmstates"] + 1):
             for j in range(1, qmin["nmstates"] + 1):
                 if (i, j) in qmin["nacdr"] or (j, i) in qmin["nacrd"]:
-                    output += "X "
+                    output += "X"
 
                 else:
-                    output += ". "
+                    output += "."
             output += "\n"
         print(output)
 
@@ -221,10 +222,10 @@ def print_qmin(qmin):
         for i in range(1, qmin["nmstates"] + 1):
             for j in range(1, qmin["nmstates"] + 1):
                 if (i, j) in qmin["overlap"] or (j, i) in qmin["overlap"]:
-                    output += "X "
+                    output += "X"
 
                 else:
-                    output += ". "
+                    output += "."
             output += "\n"
         print(output)
 
@@ -839,6 +840,37 @@ at least one task"""
     return qmin
 
 
+def generate_joblist(qmin):
+    """Split the full job into subtasks, each with a qmin dict, a WORKDIR
+    structure: joblist = [{WORKDIR: QMin, ..}, {..}, ..]
+    each element of the joblist is a est of jobs, and all jobs from the first
+    set need to be completed before the second set can be processed."""
+    joblist = []
+    if qmin["gradmode"] == 0:
+        # Serial case on 1 cpu
+        qmin_1 = deepcopy(qmin)
+        qmin_1["master"] = []
+        qmin_1["ncpu"] = 1
+        qmin_1["nslots_pool"] = [1]
+        joblist.append({"master": qmin_1})
+
+    elif qmin["gradmode"] == 1:
+        # Analytical gradients for several states on several cpus
+        # do wave function and dm, soc, overlap always first
+        # afterwards do gradients and nacdr asynchronously
+        qmin_1 = deepcopy(qmin)
+        qmin_1["master"] = []
+        qmin_1["gradmap"] = []
+        qmin_1["nacmap"] = []
+        qmin_1["nslots_pool"] = [qmin_1["ncpus"]]
+
+
+    if DEBUG:
+        pprint.pprint(joblist, depth=3)
+
+    return qmin, joblist
+
+
 def main():
     try:
         env_print = os.getenv("SH2CAS_PRINT")
@@ -871,6 +903,7 @@ changelog: {_change_log_}"""
     print_header()
     qmin = readqmin(qmin_filename)
 
+    qmin, joblist = generate_joblist(qmin)
 
     if PRINT or DEBUG:
         print("#================ END ================#")
