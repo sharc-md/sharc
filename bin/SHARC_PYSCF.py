@@ -32,6 +32,7 @@ import datetime
 
 from socket import gethostname
 
+
 _version_ = "3.0"
 _versiondate_ = datetime.date(2024, 2, 2)
 _change_log_ = """"""
@@ -45,6 +46,7 @@ PRINT = True  # Formatted output
 # conversion factors
 AU_TO_ANG = 0.529177211
 rcm_to_Eh = 4.556335e-6
+
 
 def print_header():
     """Prints the formatted header of the log file. Prints version number and version date"""
@@ -79,6 +81,7 @@ def print_header():
     if DEBUG:
         print(_change_log_)
 
+
 def itnmstates(states):
 
     for i in range(len(states)):
@@ -86,8 +89,9 @@ def itnmstates(states):
             continue
         for k in range(i + 1):
             for j in range(states[i]):
-                yield i + 1, j + 1, k - i / 2.
+                yield i + 1, j + 1, k - i / 2.0
     return
+
 
 def get_pairs(lines, i):
     nacpairs = []
@@ -114,14 +118,105 @@ def get_pairs(lines, i):
     return nacpairs, i
 
 
-def readQMin(filename):
+def removequotes(string):
+    if string.startswith("'") and string.endswith("'"):
+        return string[1:-1]
+    elif string.startswith('"') and string.endswith('"'):
+        return string[1:-1]
+    else:
+        return string
+
+
+def getsh2caskey(sh2cas, key):
+    for line in sh2cas:
+        line = re.sub("#.*$", "", line)
+        line = line.split(None, 1)
+        if line == []:
+            continue
+
+        if key.lower() in line[0].lower():
+            return line
+
+    return ["", ""]
+
+
+def get_sh2cas_environ(sh2cas, key, environ=True, crucial=True):
+    line = getsh2caskey(sh2cas, key)
+    if line[0]:
+        line = line[1]
+        line = removequotes(line).strip()
+    else:
+        if environ:
+            line = os.getenv(key.upper())
+            if not line:
+                if crucial:
+                    print(
+                        f"Either set ${key.upper()} or give path to {key.upper()} in PYSCF.resources"
+                    )
+                    sys.exit(1)
+
+                else:
+                    return ""
+
+        else:
+            if crucial:
+                print(f"Give path to {key.upper()} in PYSCF.resources")
+                sys.exit(1)
+
+            else:
+                return ""
+
+    line = os.path.expandvars(line)
+    line = os.path.expanduser(line)
+    if ";" in line:
+        print(
+            f"${key.upper()} contains a semicolon. Do you probably want to execute another command after {key.upper()}? I can't do that for you..."
+        )
+        sys.exit(1)
+    return line
+
+
+def check_directory(dir):
+    """Checks where dir is a file or directory. If a file, quits with exit code 1. If a directory, it passes. If does not exist, then we try and create the directory"""
+
+    if os.path.exists(dir):
+        if not os.path.isdir(dir):
+            print(f"{dir} exists but is not a directory! Quiting...")
+            sys.exit(1)
+
+    else:
+        os.makedirs(dir)
+
+    return True
+
+
+def get_version():
+    from pyscf import __version__ as pyscf_version
+
+    min_version = (2, 4, 0)
+    line = pyscf_version.split(".")
+    line = [int(i) for i in line]
+    for min, actual in zip(min_version, line):
+        if actual < min:
+            print(f"PySCF version {pyscf_version} not supported!")
+            sys.exit(1)
+
+        if actual > min:
+            break
+
+    if DEBUG:
+        print(f"PySCF version {pyscf_version}")
+
+    return pyscf_version
+
+def readqmin(filename):
     with open(filename, "r") as f:
         lines = f.readlines()
 
     qmin = {}
     try:
         natom = int(lines[0])
-    
+
     except ValueError as e:
         print("First line must contain the number of atoms!")
         raise e
@@ -184,10 +279,10 @@ at least one task"""
             qmin[key] = args
 
     if "unit" in qmin:
-        if qmin['unit'][0] == 'angstrom':
-            factor = 1.0/AU_TO_ANG
-        
-        elif qmin['unit'][0] == 'bohr':
+        if qmin["unit"][0] == "angstrom":
+            factor = 1.0 / AU_TO_ANG
+
+        elif qmin["unit"][0] == "bohr":
             factor = 1.0
 
         else:
@@ -195,23 +290,23 @@ at least one task"""
             sys.exit(1)
 
     else:
-        factor = 1.0/AU_TO_ANG
-   
-    for atom in qmin['geo']:
-        atom[1:] = [xyz*factor for xyz in atom[1:]]
+        factor = 1.0 / AU_TO_ANG
+
+    for atom in qmin["geo"]:
+        atom[1:] = [xyz * factor for xyz in atom[1:]]
 
     if "states" not in qmin:
         print("Keyword 'states' not given!")
         sys.exit(1)
 
     qmin["states"] = [int(state) for state in qmin["states"]]
-    
+
     reduc = 0
-    for i in reversed(qmin['states']):
+    for i in reversed(qmin["states"]):
         if i == 0:
             reduc += 1
 
-        else: 
+        else:
             break
 
     if reduc > 0:
@@ -222,28 +317,38 @@ at least one task"""
     for index, state in enumerate(qmin["states"]):
         nstates += state
         nmstates += state * (index + 1)
-    
-    qmin['nstates'] = nstates
-    qmin['nmstates'] = nmstates
 
-    possible_tasks = ["h", "soc", "dm", "grad", "overlap", "dmdr", "socdr", "ion", "phases"]
+    qmin["nstates"] = nstates
+    qmin["nmstates"] = nmstates
+
+    possible_tasks = [
+        "h",
+        "soc",
+        "dm",
+        "grad",
+        "overlap",
+        "dmdr",
+        "socdr",
+        "ion",
+        "phases",
+    ]
     if not any([i in qmin for i in possible_tasks]):
         print(f"No tasks found! Tasks are {possible_tasks}")
         sys.exit(1)
 
-    if 'samestep' in qmin and 'init' in qmin:
+    if "samestep" in qmin and "init" in qmin:
         print("'init' and 'samestep' cannot both be present in inputfile")
         sys.exit(1)
 
-    if 'phases'in qmin:
+    if "phases" in qmin:
         qmin["overlap"] = []
 
     if "overlap" in qmin and "init" in qmin:
         print("'overlap' and 'phases' cannot both be calculated in the first timestep")
         sys.exit(1)
 
-    if 'init' not in qmin and 'samestep' not in qmin:
-        qmin['newstep'] = []
+    if "init" not in qmin and "samestep" not in qmin:
+        qmin["newstep"] = []
 
     if not any([i in qmin for i in ["h", "soc", "dm", "grad"]]) and "overlap" in qmin:
         qmin["h"] = []
@@ -258,72 +363,81 @@ at least one task"""
             print(f"Within the SHARC-PySCF interface, '{task}' is not supported")
             sys.exit(1)
 
-
     if "h" in qmin and "soc" in qmin:
         del qmin["h"]
 
     if "molden" in qmin and "samestep" in qmin:
         print("HINT: not producing Molden files in 'samestep' mode!")
-        del qmin['molden']
+        del qmin["molden"]
 
-    if 'grad' in qmin:
-        if len(qmin['grad']) == 0 or qmin['grad'][0] == "all":
-            qmin['grad'] = [i+1 for i in range(nmstates)]
-        
+    if "grad" in qmin:
+        if len(qmin["grad"]) == 0 or qmin["grad"][0] == "all":
+            qmin["grad"] = [i + 1 for i in range(nmstates)]
+
         else:
-            for i in range(len(qmin['grad'])):
+            for i in range(len(qmin["grad"])):
                 try:
-                    qmin['grad'][i] = int(qmin['grad'][i])
-                
+                    qmin["grad"][i] = int(qmin["grad"][i])
+
                 except ValueError:
-                    print("Arguments to keyword 'grad' must be 'all' or a list of integers")
+                    print(
+                        "Arguments to keyword 'grad' must be 'all' or a list of integers"
+                    )
                     sys.exit(1)
 
-                if qmin['grad'][i] > nmstates:
-                    print("State for requested gradient does not correspond to any state in QM input file state list!")
+                if qmin["grad"][i] > nmstates:
+                    print(
+                        "State for requested gradient does not correspond to any state in QM input file state list!"
+                    )
                     sys.exit(1)
 
-    if 'overlap' in qmin:
-        if len(qmin['overlap']) >= 1:
-            overlap_pairs = qmin['overlap']
+    if "overlap" in qmin:
+        if len(qmin["overlap"]) >= 1:
+            overlap_pairs = qmin["overlap"]
             for pair in overlap_pairs:
                 if pair[0] > nmstates or pair[1] > nmstates:
-                    print("State for requested overlap does not correspond to any state in QM input file state list!")
+                    print(
+                        "State for requested overlap does not correspond to any state in QM input file state list!"
+                    )
                     sys.exit(1)
 
         else:
-            qmin['overlap'] = [[j+i, i+1] for i in range(nmstates) for j in range(i+1)]
+            qmin["overlap"] = [
+                [j + i, i + 1] for i in range(nmstates) for j in range(i + 1)
+            ]
 
-    if 'nacdr' in qmin:
-        if len(qmin['nacdr']) >= 1:
-            nac_pairs = qmin['nacdr']
+    if "nacdr" in qmin:
+        if len(qmin["nacdr"]) >= 1:
+            nac_pairs = qmin["nacdr"]
             for pair in nac_pairs:
                 if pair[0] > nmstates or pair[1] > nmstates:
-                    print("State for requested nacdr does not correspond to any state in QM input file state list!")
+                    print(
+                        "State for requested nacdr does not correspond to any state in QM input file state list!"
+                    )
 
         else:
-            qmin['nacdr'] = [[j+1, i+1] for i in range(nmstates) for j in range(i)]
+            qmin["nacdr"] = [[j + 1, i + 1] for i in range(nmstates) for j in range(i)]
 
     # obtain the statemap
     statemap = {}
     i = 1
-    for imult, istate, ims in itnmstates(qmin['states']):
+    for imult, istate, ims in itnmstates(qmin["states"]):
         statemap[i] = [imult, istate, ims]
         i += 1
-    
-    qmin['statemap'] = statemap
+
+    qmin["statemap"] = statemap
 
     gradmap = set()
-    if 'grad' in qmin:
-        for state in qmin['grad']:
+    if "grad" in qmin:
+        for state in qmin["grad"]:
             gradmap.add(tuple(statemap[state][0:2]))
 
     gradmap = sorted(gradmap)
     qmin["gradmap"] = gradmap
 
     nacmap = set()
-    if 'nacdr' in qmin:
-        for pair in qmin['nacdr']:
+    if "nacdr" in qmin:
+        for pair in qmin["nacdr"]:
             s1 = statemap[pair[0]][:-1]
             s2 = statemap[pair[1]][:-1]
             if s1[0] != s2[0] or s1 == s2:
@@ -332,9 +446,232 @@ at least one task"""
 
     nacmap = list(nacmap)
     nacmap.sort()
-    qmin['nacmap'] = nacmap
+    qmin["nacmap"] = nacmap
 
     # TODO from 2222 of SHARC_MOLCAS, the MOLCAS.resources file loading stuff...
+
+    pyscf_resource_filename = "PYSCF.resources"
+    with open(pyscf_resource_filename, "r") as f:
+        sh2cas = f.readlines()
+
+    qmin["pwd"] = os.getcwd()
+
+    line = get_sh2cas_environ(sh2cas, "scratchdir", environ=False, crucial=False)
+    if line is None:
+        line = os.path.join(qmin["pwd"], "SCRATCHDIR")
+
+    line = os.path.expandvars(line)
+    line = os.path.expanduser(line)
+    line = os.path.abspath(line)
+    qmin["scratchdir"] = line
+
+    # Set up savedir
+    if "savedir" in qmin:
+        line = qmin["savedir"][0]
+
+    else:
+        line = get_sh2cas_environ(sh2cas, "savedir", environ=False, crucial=False)
+        if line is None or line == "":
+            line = os.path.join(qmin["pwd"], "SAVEDIR")
+
+    line = os.path.expandvars(line)
+    line = os.path.expanduser(line)
+    line = os.path.abspath(line)
+
+    if "init" in qmin:
+        check_directory(line)
+
+    qmin["savedir"] = line
+
+    line = getsh2caskey(sh2cas, "debug")
+    if line[0]:
+        if len(line) <= 1 or "true" in line[1].lower():
+            global DEBUG
+            DEBUG = True
+
+    line = getsh2caskey(sh2cas, "no_print")
+    if line[0]:
+        if len(line) <= 1 or "true" in line[1].lower():
+            global PRINT
+            PRINT = False
+
+    qmin["memory"] = 4000
+    line = getsh2caskey(sh2cas, "memory")
+    if line[0]:
+        try:
+            qmin["memory"] = int(line[1])
+
+        except:
+            print("PYSCF memory does not evaluate to integer value!")
+            sys.exit(1)
+
+    else:
+        print(
+            "WARNING: Please set memory for PySCF in PYSCF.resources (in MB)! Using 4000 MB default value!"
+        )
+
+    os.environ["PYSCF_MAX_MEMORY"] = str(qmin["memory"])
+
+    qmin["ncpu"] = 1
+    line = getsh2caskey(sh2cas, "ncpu")
+    if line[0]:
+        try:
+            qmin["ncpu"] = int(line[1])
+
+        except ValueError:
+            print("Number of CPUs does not evaluate to integer value!")
+            sys.exit(1)
+
+    qmin["delay"] = 0.0
+    line = getsh2caskey(sh2cas, "delay")
+    if line[0]:
+        try:
+            qmin["delay"] = float(line[1])
+
+        except ValueError:
+            print("Submit delay does not evaluate to numerical value!")
+            sys.exit(1)
+
+    line = getsh2caskey(sh2cas, "always_orb_init")
+    if line[0]:
+        qmin["always_orb_init"] = []
+
+    line = getsh2caskey(sh2cas, "always_guess")
+    if line[0]:
+        qmin["always_guess"] = []
+
+    if "always_orb_init" in qmin and "always_guess" in qmin:
+        print("Keywords 'always_orb_init' and 'always_guess' cannot be used together!")
+        sys.exit(1)
+
+    # open template
+    with open("PYSCF.template", "r") as f:
+        template = f.readlines()
+
+    template_dict = {}
+    INTEGERS_KEYS = ["ncas", "nelecas", "roots"]
+    STRING_KEYS = ["basis", "method", "pdft-functional"]
+    FLOAT_KEYS = []
+    BOOL_KEYS = []
+
+    template_dict["roots"] = [0 for i in range(8)]
+
+    template_dict["method"] = "casscf"
+    template_dict["pdft-functional"] = "tpbe"
+
+    for line in template:
+        orig = re.sub('#.*$', '', line).split(None, 1)
+        line = re.sub('#.*$', '', line).lower().split()
+
+        if len(line) == 0:
+            continue
+        
+        key = line[0]
+        line = line[1:]
+
+        if "spin" in key:
+            template_dict["roots"][int(line[0]) - 1] = int(line[2])
+
+        elif "roots" in key:
+            for i, n in enumerate(line):
+                template_dict["roots"][i] = int(n)
+
+        elif key in INTEGERS_KEYS:
+            template_dict[key] = int(line[0])
+        
+        elif key in STRING_KEYS:
+            template_dict[key] = line[0]
+        
+        elif key in FLOAT_KEYS:
+            template_dict[key] = float(line[0])
+
+        elif key in BOOL_KEYS:
+            template_dict[key] = True
+
+    # Roots must be larger or equal to states
+    for i, n in enumerate(template_dict["roots"]):
+        if i == len(qmin["states"]):
+            break
+
+        if not n >= qmin["states"][i]:
+            print(f"Too few states in state-averaging in multiplicity {i+1}! {qmin['states'][i]} requested, but only {n} given.")
+            sys.exit(1)
+
+    # condense roots list
+    for i in range(len(template_dict["roots"]) -1 ,0 ,-1):
+        if template_dict["roots"][i] == 9:
+            template_dict["roots"].pop(i)
+
+        else:
+            break
+
+    NECESSARY_KEYS = ["basis", "nelecas", "ncas"]
+    for key in NECESSARY_KEYS:
+        if key not in template_dict:
+            print(f"Key {key} missing in template file!")
+            sys.exit(1)
+
+
+    ALLOWED_METHODS = ["casscf", "l-pdft"]
+    for index, method in enumerate(ALLOWED_METHODS):
+        if template_dict["method"] == method:
+            qmin["method"] = index
+            break
+
+    else:
+        print(f"Unknown method {template_dict['method']}")
+        sys.exit(1)
+
+    # find functional if pdft
+    if qmin["method"] == 2:
+        ALLOWED_FUNCTIONALS = ["tpbe"]
+        for index, func in enumerate(ALLOWED_FUNCTIONALS):
+            if template_dict["pdft-functional"] == func:
+                qmin["pdft-functional"] == index
+                break
+        
+        else:
+            print(f"Warning! No analytical gradients for L-PDFT with {template_dict['pdft-functional']} given!")
+            print(f"Allowed functionals are: {', '.join(ALLOWED_FUNCTIONALS)}")
+            sys.exit(1)
+    
+    qmin["template"] = template_dict
+
+    # decide which type of gradients to do..
+    # 0 = analytical CASSCF gradients in 1 thread/pyscf object (serially)
+    # 1 = analytical CASSCF gradients in separate threads/pyscf objects. Possibly distributed over several CPUs (parallel)
+    if "grad" in qmin or "nacdr" in qmin:
+        if qmin["ncpu"] > 1 :
+            qmin["gradmode"] = 1
+
+        else:
+            qmin["gradmode"] = 0
+
+    else:
+        qmin["gradmode"] = 0
+
+    qmin["ncpu"] = max(1, qmin['ncpu'])
+
+    # check the save directory
+    if "samestep" in qmin:
+        if not os.path.isfile(os.path.join(qmin["savedir"], "pyscf.chk")):
+            print("File 'pyscf.chk' missing in SAVEDIR!")
+            sys.exit(1)
+
+        if "overlap" in qmin:
+            if not os.path.isfile(os.path.join(qmin["savedir"], "pyscf.old.chk")):
+                print("File 'pyscf.old.chk' missing in SAVEDIR!")
+                sys.exit(1)
+
+    elif "overlap" in qmin:
+        if not os.path.isfile(os.path.join(qmin["savedir"], "pyscf.chk")):
+            print("File 'pyscf.chk' missing in SAVEDIR")
+            sys.exit(1)
+
+    qmin["version"] = get_version()
+
+    # if PRINT:
+        # print_qmin(qmin)
 
     return qmin
 
@@ -359,7 +696,7 @@ def main():
     if len(sys.argv) != 2:
         print(
             f"""Usage:
-./SHARC_PYSCF.py <QMin>
+./SHARC_PYSCF.py <qmin>
 version: {_version_}
 date: {_versiondate_}
 changelog: {_change_log_}"""
@@ -369,7 +706,7 @@ changelog: {_change_log_}"""
     qmin_filename = sys.argv[1]
 
     print_header()
-    qmin = readQMin(qmin_filename)
+    qmin = readqmin(qmin_filename)
     import json
 
     print(json.dumps(qmin, indent=2, sort_keys=False))

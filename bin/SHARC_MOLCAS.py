@@ -2342,20 +2342,6 @@ def readQMin(QMinfilename):
         QMin['mpi_parallel'] = True
 
 
-    QMin['schedule_scaling'] = 0.6
-    line = getsh2caskey(sh2cas, 'schedule_scaling')
-    if line[0]:
-        try:
-            x = float(line[1])
-            if 0 < x <= 2.:
-                QMin['schedule_scaling'] = x
-        except ValueError:
-            print('Schedule scaling does not evaluate to numerical value!')
-            sys.exit(56)
-
-    QMin['Project'] = 'MOLCAS'
-    os.environ['Project'] = QMin['Project']
-
     QMin['delay'] = 0.0
     line = getsh2caskey(sh2cas, 'delay')
     if line[0]:
@@ -3490,8 +3476,6 @@ def generate_joblist(QMin):
         QMin2['samestep'] = []
         ntasks = len(QMin['gradmap']) + len(QMin['nacmap'])
         if QMin['mpi_parallel']:
-            # nrounds,nslots,cpu_per_run=divide_slots(QMin['ncpu'],ntasks,QMin['schedule_scaling'])
-            nrounds = ntasks
             nslots = 1
             cpu_per_run = [QMin['ncpu']] * ntasks
         else:
@@ -3555,8 +3539,6 @@ def generate_joblist(QMin):
         QMin2['gradmap'] = []
         ntasks = 6 * QMin['natom']
         if QMin['mpi_parallel']:
-            # nrounds,nslots,cpu_per_run=divide_slots(QMin['ncpu'],ntasks,QMin['schedule_scaling'])
-            nrounds = ntasks
             nslots = 1
             cpu_per_run = [QMin['ncpu']] * ntasks
         else:
