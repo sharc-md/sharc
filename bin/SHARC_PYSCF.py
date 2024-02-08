@@ -29,6 +29,7 @@ import os
 import sys
 import re
 import datetime
+import pprint
 
 from socket import gethostname
 
@@ -40,8 +41,27 @@ _change_log_ = """"""
 START_TIME = datetime.datetime.now()
 
 # Global Variables for printing.
-DEBUG = False  # Raw output
+DEBUG = True  # Raw output
 PRINT = True  # Formatted output
+
+IToMult = {
+    1: "Singlet",
+    2: "Doublet",
+    3: "Triplet",
+    4: "Quartet",
+    5: "Quintet",
+    6: "Sextet",
+    7: "Septet",
+    8: "Octet",
+    "Singlet": 1,
+    "Doublet": 2,
+    "Triplet": 3,
+    "Quartet": 4,
+    "Quintet": 5,
+    "Sextet": 6,
+    "Septet": 7,
+    "Octet": 8,
+}
 
 # conversion factors
 AU_TO_ANG = 0.529177211
@@ -80,6 +100,145 @@ def print_header():
     print(string)
     if DEBUG:
         print(_change_log_)
+
+
+def print_qmin(qmin):
+    if DEBUG:
+        pprint.pprint(qmin)
+
+    if not PRINT:
+        return
+
+    print(f"==> QMin Job description for:\n{qmin['comment']}")
+    TASK_TO_STRING = {
+        "h": "H",
+        "soc": "SOC",
+        "dm": "DM",
+        "grad": "Grad",
+        "nacdr": "Nac(ddr)",
+        "nacdt": "Nac(ddt)",
+        "overlap": "Overlaps",
+        "angular": "Angular",
+        "ion": "Dyson norms",
+        "dmdr": "DM-Grad",
+        "socdr": "SOC-Grad",
+        "phases": "Phases",
+    }
+    output = "Tasks: "
+    for key, string in TASK_TO_STRING.items():
+        if key in qmin:
+            output += f"\t{string}"
+
+    print(output)
+
+    output = "States: "
+    for i in itmult(qmin["states"]):
+        output += f"\t{qmin['states'][i-1]} {IToMult[i]}"
+
+    print(output)
+
+    output = "Method: \t"
+    tmp = "|".join([str(r) for r in qmin["template"]["roots"]])
+    if qmin["template"]["method"].upper() == "L-PDFT":
+        output += f"L({tmp})-PDFT"
+
+    else:
+        output += f"SA({tmp})-{qmin['template']['method'].upper()}"
+
+    output += f"({qmin['template']['nelecas']}, {qmin['template']['ncas']})/{qmin['template']['basis']}"
+    print(output)
+
+    oddmults = False
+    for i in qmin["statemap"].values():
+        if (qmin["template"]["nelecas"] + i[0]) % 2 == 0:
+            oddmults = True
+
+    if oddmults:
+        output = "\t\t" + ["Even ", "Odd "][qmin["template"]["nelecas"]] % 2 == 0
+        output += f"numbers of electrons are treated wiht CAS({qmin['template']['nelecas']}, {qmin['template']['ncas']})"
+        print(output)
+
+    output = "Found Geo"
+    if "veloc" in qmin:
+        output += " and Veloc! "
+
+    else:
+        output += "! "
+
+    output += f"NAtom is {qmin['natom']}.\n"
+    print(output)
+
+    output = "\nGeometry in Bohrs:\n"
+    for atom in qmin["geo"]:
+        element = atom[0]
+        coords = atom[1:]
+        output += f"{element} "
+        for x in coords:
+            output += f"{x:7.4f} "
+
+        output += "\n"
+
+    print(output)
+
+    if "veloc" in qmin:
+        output = ""
+        for index, veloc in enumerate(qmin["veloc"]):
+            element = qmin["geo"][index][0]
+            output += f"{element} "
+            for v in veloc:
+                output += f"{v:7.4f} "
+
+            output += "\n"
+
+        print(output)
+
+    if "grad" in qmin:
+        output = "Gradients:   "
+        for i in range(1, qmin["nmstates"] + 1):
+            if i in qmin["grad"]:
+                output += "X "
+
+            else:
+                output += ". "
+
+        output += "\n"
+        print(output)
+
+    if "nacdr" in qmin:
+        output = "Nonadiabatic couplings:\n"
+        for i in range(1, qmin["nmstates"] + 1):
+            for j in range(1, qmin["nmstates"] + 1):
+                if (i, j) in qmin["nacdr"] or (j, i) in qmin["nacrd"]:
+                    output += "X "
+
+                else:
+                    output += ". "
+            output += "\n"
+        print(output)
+
+    if "overlap" in qmin:
+        output = "Overlaps:\n"
+        for i in range(1, qmin["nmstates"] + 1):
+            for j in range(1, qmin["nmstates"] + 1):
+                if (i, j) in qmin["overlap"] or (j, i) in qmin["overlap"]:
+                    output += "X "
+
+                else:
+                    output += ". "
+            output += "\n"
+        print(output)
+
+    print("\n")
+    sys.stdout.flush()
+
+
+def itmult(states):
+
+    for i in range(len(states)):
+        if states[i] < 1:
+            continue
+        yield i + 1
+    return
 
 
 def itnmstates(states):
@@ -208,6 +367,7 @@ def get_version():
         print(f"PySCF version {pyscf_version}")
 
     return pyscf_version
+
 
 def readqmin(filename):
     with open(filename, "r") as f:
@@ -560,12 +720,12 @@ at least one task"""
     template_dict["pdft-functional"] = "tpbe"
 
     for line in template:
-        orig = re.sub('#.*$', '', line).split(None, 1)
-        line = re.sub('#.*$', '', line).lower().split()
+        orig = re.sub("#.*$", "", line).split(None, 1)
+        line = re.sub("#.*$", "", line).lower().split()
 
         if len(line) == 0:
             continue
-        
+
         key = line[0]
         line = line[1:]
 
@@ -578,10 +738,10 @@ at least one task"""
 
         elif key in INTEGERS_KEYS:
             template_dict[key] = int(line[0])
-        
+
         elif key in STRING_KEYS:
             template_dict[key] = line[0]
-        
+
         elif key in FLOAT_KEYS:
             template_dict[key] = float(line[0])
 
@@ -594,12 +754,14 @@ at least one task"""
             break
 
         if not n >= qmin["states"][i]:
-            print(f"Too few states in state-averaging in multiplicity {i+1}! {qmin['states'][i]} requested, but only {n} given.")
+            print(
+                f"Too few states in state-averaging in multiplicity {i+1}! {qmin['states'][i]} requested, but only {n} given."
+            )
             sys.exit(1)
 
     # condense roots list
-    for i in range(len(template_dict["roots"]) -1 ,0 ,-1):
-        if template_dict["roots"][i] == 9:
+    for i in range(len(template_dict["roots"]) - 1, 0, -1):
+        if template_dict["roots"][i] == 0:
             template_dict["roots"].pop(i)
 
         else:
@@ -610,7 +772,6 @@ at least one task"""
         if key not in template_dict:
             print(f"Key {key} missing in template file!")
             sys.exit(1)
-
 
     ALLOWED_METHODS = ["casscf", "l-pdft"]
     for index, method in enumerate(ALLOWED_METHODS):
@@ -629,19 +790,21 @@ at least one task"""
             if template_dict["pdft-functional"] == func:
                 qmin["pdft-functional"] == index
                 break
-        
+
         else:
-            print(f"Warning! No analytical gradients for L-PDFT with {template_dict['pdft-functional']} given!")
+            print(
+                f"Warning! No analytical gradients for L-PDFT with {template_dict['pdft-functional']} given!"
+            )
             print(f"Allowed functionals are: {', '.join(ALLOWED_FUNCTIONALS)}")
             sys.exit(1)
-    
+
     qmin["template"] = template_dict
 
     # decide which type of gradients to do..
     # 0 = analytical CASSCF gradients in 1 thread/pyscf object (serially)
     # 1 = analytical CASSCF gradients in separate threads/pyscf objects. Possibly distributed over several CPUs (parallel)
     if "grad" in qmin or "nacdr" in qmin:
-        if qmin["ncpu"] > 1 :
+        if qmin["ncpu"] > 1:
             qmin["gradmode"] = 1
 
         else:
@@ -650,7 +813,7 @@ at least one task"""
     else:
         qmin["gradmode"] = 0
 
-    qmin["ncpu"] = max(1, qmin['ncpu'])
+    qmin["ncpu"] = max(1, qmin["ncpu"])
 
     # check the save directory
     if "samestep" in qmin:
@@ -670,8 +833,8 @@ at least one task"""
 
     qmin["version"] = get_version()
 
-    # if PRINT:
-        # print_qmin(qmin)
+    if PRINT:
+        print_qmin(qmin)
 
     return qmin
 
@@ -707,9 +870,10 @@ changelog: {_change_log_}"""
 
     print_header()
     qmin = readqmin(qmin_filename)
-    import json
 
-    print(json.dumps(qmin, indent=2, sort_keys=False))
+
+    if PRINT or DEBUG:
+        print("#================ END ================#")
 
 
 if __name__ == "__main__":
