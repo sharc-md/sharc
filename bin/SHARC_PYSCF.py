@@ -402,10 +402,11 @@ at least one task"""
     has_veloc = True
     for line in lines[2 : natom + 2]:
         line = line.split()
-        line[1:] = [float(x) for x in line[1:]]
-        qmin["geo"].append(line[:4])
-        if len(line) >= 7:
-            qmin["veloc"].append(line[4:7])
+        element = line[0]
+        coords = [float(x) for x in line[1:]]
+        qmin["geo"].append([element] + coords[:3])
+        if len(coords) >= 6:
+            qmin["veloc"].append(coords[3:6])
 
         else:
             has_veloc = False
@@ -662,7 +663,7 @@ at least one task"""
         try:
             qmin["memory"] = int(line[1])
 
-        except:
+        except ValueError:
             print("PYSCF memory does not evaluate to integer value!")
             sys.exit(1)
 
@@ -715,7 +716,7 @@ at least one task"""
     FLOAT_KEYS = []
     BOOL_KEYS = []
 
-    template_dict["roots"] = [0 for i in range(8)]
+    template_dict["roots"] = [0 for _ in range(8)]
 
     template_dict["method"] = "casscf"
     template_dict["pdft-functional"] = "tpbe"
