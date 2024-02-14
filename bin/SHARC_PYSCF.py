@@ -47,7 +47,7 @@ _change_log_ = """"""
 START_TIME = datetime.datetime.now()
 
 # Global Variables for printing.
-DEBUG = True  # Raw output
+DEBUG = False  # Raw output
 PRINT = True  # Formatted output
 
 IToMult = {
@@ -969,7 +969,6 @@ def generate_joblist(qmin):
             joblist[-1]["nacdr_%i_%i_%i_%i" % nac] = qmin_3
 
         qmin["nslots_pool"].append(nslots)
-        raise NotImplementedError("Untested, tread with caution")
 
     if DEBUG:
         pprint.pprint(joblist, depth=3)
@@ -1043,14 +1042,18 @@ def save_chk_file(qmin):
 
 
 def build_mol(qmin):
+    log_file = f"PySCF_{os.path.basename(qmin['scratchdir'])}.log"
     previous_chk = os.path.join(qmin["scratchdir"], "pyscf.old.chk")
     if os.path.isfile(previous_chk) and "samestep" in qmin:
         if DEBUG:
             print(f"Loading mol from chkfile {previous_chk}")
         mol = lib.chkfile.load_mol(previous_chk)
+        mol.output=log_file
+        mol.verbose=3
+        mol.build()
 
     else:
-        mol = gto.Mole(atom=qmin["geo"], unit="Bohr", basis=qmin["template"]["basis"], output="PySCF.log", verbose=5)
+        mol = gto.Mole(atom=qmin["geo"], unit="Bohr", basis=qmin["template"]["basis"], output=log_file, verbose=3)
         mol.build()
 
     return mol
@@ -1145,6 +1148,27 @@ def get_dipole_elements(solver):
 
     return dip_matrix
 
+def get_grad(solver, qmin):
+    grad = []
+    err = 0
+    zerograd = np.zeros(shape=(qmin["natom"], 3)) 
+    
+    solver_grad = solver.nuc_grad_method()
+    for i in sorted(qmin["statemap"]):
+        mult, state, _ = tuple(qmin["statemap"][i])
+        if (mult, state) in qmin["gradmap"]:
+            state = state-1
+            de = solver_grad.kernel(state=state)
+            if not solver_grad.converged:
+                print(f"Gradient failed to converge: {qmin['statemap'][1]}")
+                err = 1
+
+            grad.append(de)
+        
+        else:
+            grad.append(zerograd)
+    
+    return grad, err 
 
 def run_calc(qmin):
     err = 0
@@ -1157,7 +1181,7 @@ def run_calc(qmin):
 
     if not solver.converged:
         print("Calculator failed to converge!")
-        err = 1
+        err += 1
 
     result = {}
     if "h" in qmin:
@@ -1172,21 +1196,8 @@ def run_calc(qmin):
         molden.from_mcscf(solver, os.path.join(qmin["savedir"], "pyscf.molden"))
 
     if qmin["gradmap"]:
-        result["grad"] = []
-        solver_grad = solver.nuc_grad_method()
-        for i in sorted(qmin["statemap"]):
-            mult, state, _ = tuple(qmin["statemap"][i])
-            if (mult, state) in qmin["gradmap"]:
-                state = state-1
-                de = solver_grad.kernel(state=state)
-                if not solver_grad.converged:
-                    print(f"Gradient failed to converge: {qmin['statemap'][i]}")
-                    err = 1
-
-                result["grad"].append(de)
-            
-            else:
-                result["grad"].append([])
+        result["grad"], e = get_grad(solver, qmin)
+        err += e
 
     if qmin["nacmap"]:
         raise NotImplementedError("Analytical NACs")
@@ -1217,6 +1228,7 @@ def run_jobs(joblist, qmin):
         for job in jobset:
             qmin_1 = jobset[job]
 
+            qmin_1["scratchdir"] = os.path.join(qmin_1["scratchdir"], job)
             outputs[job] = pool.apply_async(run_calc, [qmin_1])
 
             time.sleep(qmin["delay"])
@@ -1261,23 +1273,10 @@ def combine_result(qmin, result):
         output["dipole"] = result["master"]["dipole"]
 
     if "grad" in qmin:
-        output["grad"] = []
-        zerograd = np.zeros(shape=(qmin["natom"], 3)) 
-        for i in sorted(qmin["statemap"]):
-            mult, state, _ = tuple(qmin["statemap"][i])
-            if (mult, state) in qmin["gradmap"]:
-                if qmin["gradmode"] == 0:
-                    output["grad"].append(result["master"]["grad"][i-1])
-
-                elif qmin["gradmode"] == 1:
-                    raise NotImplementedError("Not implemented gradmode 1")
-
-                else:
-                    raise ValueError(f"Invalid gradmode: {qmin['gradmode']}")
-
-            else:
-                output["grad"].append(zerograd)
-            
+        output["grad"] = np.zeros(shape=(qmin["nmstates"], qmin["natom"], 3)) 
+        for job in result:
+            if "grad" in result[job]:
+                output["grad"] += result[job]["grad"]
     
     return output
 
@@ -1415,8 +1414,6 @@ changelog: {_change_log_}"""
 
     runtime = measure_time()
     result["runtime"] = runtime
-
-    pprint.pprint(result)
 
     write_qmout(qmin, result, qmin_filename)
 
