@@ -73,8 +73,9 @@ IToMult = {
 AU_TO_ANG = 0.529177211
 rcm_to_Eh = 4.556335e-6
 
+
 def eformat(f, prec, exp_digits):
-    '''Formats a float f into scientific notation with prec number of decimals and exp_digits number of exponent digits.
+    """Formats a float f into scientific notation with prec number of decimals and exp_digits number of exponent digits.
 
     String looks like:
     [ -][0-9]\\.[0-9]*E[+-][0-9]*
@@ -85,14 +86,15 @@ def eformat(f, prec, exp_digits):
     3 integer: Number of exponent digits
 
     Returns:
-    1 string: formatted number'''
+    1 string: formatted number"""
 
     s = "% .*e" % (prec, f)
-    mantissa, exp = s.split('e')
+    mantissa, exp = s.split("e")
     return "%sE%+0*d" % (mantissa, exp_digits + 1, int(exp))
 
+
 def measure_time():
-    '''Calculates the time difference between global variable starttime and the time of the call of measuretime.
+    """Calculates the time difference between global variable starttime and the time of the call of measuretime.
 
     Prints the Runtime, if PRINT or DEBUG are enabled.
 
@@ -100,7 +102,7 @@ def measure_time():
     none
 
     Returns:
-    1 float: runtime in seconds'''
+    1 float: runtime in seconds"""
 
     endtime = datetime.datetime.now()
     runtime = endtime - START_TIME
@@ -108,9 +110,15 @@ def measure_time():
         hours = runtime.seconds // 3600
         minutes = runtime.seconds // 60 - hours * 60
         seconds = runtime.seconds % 60
-        print('==> Runtime:\n%i Days\t%i Hours\t%i Minutes\t%i Seconds\n\n' % (runtime.days, hours, minutes, seconds))
-    total_seconds = runtime.days * 24 * 3600 + runtime.seconds + runtime.microseconds // 1.e6
+        print(
+            "==> Runtime:\n%i Days\t%i Hours\t%i Minutes\t%i Seconds\n\n"
+            % (runtime.days, hours, minutes, seconds)
+        )
+    total_seconds = (
+        runtime.days * 24 * 3600 + runtime.seconds + runtime.microseconds // 1.0e6
+    )
     return total_seconds
+
 
 def print_header():
     """Prints the formatted header of the log file. Prints version number and version date"""
@@ -1033,14 +1041,18 @@ def save_chk_file(qmin):
             print(f"Copying\t{source_chk}\t==>\t{target_chk}")
         shutil.copy(source_chk, target_chk)
 
+
 def build_mol(qmin):
     previous_chk = os.path.join(qmin["scratchdir"], "pyscf.old.chk")
     if os.path.isfile(previous_chk) and "samestep" in qmin:
+        if DEBUG:
+            print(f"Loading mol from chkfile {previous_chk}")
         mol = lib.chkfile.load_mol(previous_chk)
 
     else:
         mol = gto.Mole()
         mol.atom = qmin["geo"]
+        mol.unit = "Bohr"
         mol.basis = qmin["template"]["basis"]
         mol.output = "PySCF.log"
         mol.verbose = 3
@@ -1133,7 +1145,6 @@ def get_dipole_elements(solver):
 def run_calc(qmin):
     err = 0
     result = {}
-    pprint.pprint(qmin)
 
     setup_workdir(qmin)
     mol = build_mol(qmin)
@@ -1153,21 +1164,26 @@ def run_calc(qmin):
 
     if "molden" in qmin:
         from pyscf.tools import molden
+
         molden.from_mcscf(solver, os.path.join(qmin["savedir"], "pyscf.molden"))
 
     if qmin["gradmap"]:
         result["grad"] = []
         solver_grad = solver.nuc_grad_method()
-        for grad in qmin["gradmap"]:
-            spin = grad[0]
-            state = grad[1] - 1
-            de = solver_grad.kernel(state=state)
-            if not solver_grad.converged:
-                print(f"Gradient failed to converge: {grad}")
-                err = 1
+        for i in sorted(qmin["statemap"]):
+            mult, state, _ = tuple(qmin["statemap"][i])
+            if (mult, state) in qmin["gradmap"]:
+                state = state-1
+                de = solver_grad.kernel(state=state)
+                if not solver_grad.converged:
+                    print(f"Gradient failed to converge: {qmin['statemap'][i]}")
+                    err = 1
 
-            result["grad"].append(de)
-    
+                result["grad"].append(de)
+            
+            else:
+                result["grad"].append([])
+
     if qmin["nacmap"]:
         raise NotImplementedError("Analytical NACs")
 
@@ -1232,12 +1248,34 @@ def run_jobs(joblist, qmin):
 
     return result
 
-def combine_result(result):
-    if len(result.keys()) == 1:
-        return result[list(result.keys())[0]]
+
+def combine_result(qmin, result):
+    output = {}
+    if "h" in qmin:
+        output["energies"] = result["master"]["energies"]
+    if "dm" in qmin:
+        output["dipole"] = result["master"]["dipole"]
+
+    if "grad" in qmin:
+        output["grad"] = []
+        zerograd = np.zeros(shape=(qmin["natom"], 3)) 
+        for i in sorted(qmin["statemap"]):
+            mult, state, _ = tuple(qmin["statemap"][i])
+            if (mult, state) in qmin["gradmap"]:
+                if qmin["gradmode"] == 0:
+                    output["grad"].append(result["master"]["grad"][i-1])
+
+                elif qmin["gradmode"] == 1:
+                    raise NotImplementedError("Not implemented gradmode 1")
+
+                else:
+                    raise ValueError(f"Invalid gradmode: {qmin['gradmode']}")
+
+            else:
+                output["grad"].append(zerograd)
+            
     
-    else:
-        raise NotImplementedError("Need to implement combine the results")
+    return output
 
 def write_ham(qmin, result):
     nmstates = qmin["nmstates"]
@@ -1247,22 +1285,54 @@ def write_ham(qmin, result):
     for i in range(nmstates):
         for j in range(nmstates):
             if i != j:
-               string += f"{eformat(0.0, 9, 3)} {eformat(0.0, 9, 3)} " 
+                string += f"{eformat(0.0, 9, 3)} {eformat(0.0, 9, 3)} "
             else:
-                string += f"{eformat(result['energies'][i].real, 9, 3)} {eformat(result['energies'][i].imag, 9, 3)}"
+                string += f"{eformat(result['energies'][i].real, 9, 3)} {eformat(result['energies'][i].imag, 9, 3)} "
         string += "\n"
     string += "\n"
-   
+
     return string
 
-def write_qmout_time(qmin, result):
-    raise NotImplementedError("not implemented")
+
+def write_dm(qmin, result):
+    nmstates = qmin["nmstates"]
+    string = f"! 2 Dipole Moment Matrices (3x{nmstates}x{nmstates}, complex)\n"
+    for dipole_xyz in result["dipole"]:
+        string += f"{nmstates} {nmstates}\n"
+        for bra in dipole_xyz:
+            for element in bra:
+                string += (
+                    f"{eformat(element.real, 9, 3)} {eformat(element.imag, 9, 3)} "
+                )
+
+            string += "\n"
+
+    return string
+
+
+def write_grad(qmin, result):
+    states = qmin["states"]
+    nmstates = qmin["nmstates"]
+    natom = qmin["natom"]
+    string = f"! 3 Gradient Vectors ({nmstates}x{natom}x3, real)\n"
+    for idx, (imult, istate, ims) in enumerate(itnmstates(states)):
+        string += f"{natom} 3 ! {imult} {istate} {ims}\n"
+        for atom in result["grad"][idx]:
+            for coord in atom:
+                string += f"{eformat(coord, 9, 3)} "
+            string += "\n"
+
+    return string
+
+
+def write_qmout_time(runtime):
+    return f"! 8 Runtime\n{eformat(runtime, 9, 3)}\n"
 
 
 def write_qmout(qmin, result, qmin_filename):
     """Writes the requested quantities to the file which SHARC reads in. The filename is qmin_filename with everything after the first dot replaced by 'out'."""
-    if '.' in qmin_filename:
-        idx = qmin_filename.find('.')
+    if "." in qmin_filename:
+        idx = qmin_filename.find(".")
         outfilename = qmin_filename[:idx] + ".out"
 
     else:
@@ -1276,19 +1346,31 @@ def write_qmout(qmin, result, qmin_filename):
         string += write_ham(qmin, result)
 
     if "dm" in qmin:
-        raise NotImplementedError("writing dm")
+        string += write_dm(qmin, result)
 
     if "grad" in qmin:
-        raise NotImplementedError("writing grad")
+        string += write_grad(qmin, result)
 
     if "nacdr" in qmin:
         raise NotImplementedError("writing nacdr")
 
-    string += write_qmout_time(qmin, result)
-    with open(os.path.join(qmin["pwd"], outfilename), 'w') as f:
+    string += write_qmout_time(result["runtime"])
+    with open(os.path.join(qmin["pwd"], outfilename), "w") as f:
         f.write(string)
 
     return
+
+
+def cleanup_directory(dir):
+    if PRINT:
+        print(f"===> Removing directory {dir}\n")
+
+    try:
+        shutil.rmtree(dir)
+
+    except OSError:
+        print("fCould not remove directory {dir}")
+
 
 def main():
     try:
@@ -1325,14 +1407,18 @@ changelog: {_change_log_}"""
     qmin, joblist = generate_joblist(qmin)
 
     result = run_jobs(joblist, qmin)
-    result = combine_result(result)
-   
+    result = combine_result(qmin, result)
+    
     runtime = measure_time()
     result["runtime"] = runtime
 
-    write_qmout(qmin, result, qmin_filename) 
+    write_qmout(qmin, result, qmin_filename)
 
-    print(result)
+    if not DEBUG:
+        cleanup_directory(qmin["scratchdir"])
+        if "cleanup" in qmin:
+            cleanup_directory(qmin["savedir"])
+
     if PRINT or DEBUG:
         print("#================ END ================#")
 
