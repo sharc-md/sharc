@@ -1050,12 +1050,7 @@ def build_mol(qmin):
         mol = lib.chkfile.load_mol(previous_chk)
 
     else:
-        mol = gto.Mole()
-        mol.atom = qmin["geo"]
-        mol.unit = "Bohr"
-        mol.basis = qmin["template"]["basis"]
-        mol.output = "PySCF.log"
-        mol.verbose = 3
+        mol = gto.Mole(atom=qmin["geo"], unit="Bohr", basis=qmin["template"]["basis"], output="PySCF.log", verbose=5)
         mol.build()
 
     return mol
@@ -1074,7 +1069,7 @@ def gen_solver(mol, qmin):
             try:
                 from mrh.my_pyscf.fci import csf_solver
 
-                solver.fcisolver = csf_solver(smult=1)
+                solver.fcisolver = csf_solver(mol, smult=1)
 
             except ImportError:
                 solver.fix_spin_(ss=0)
@@ -1093,14 +1088,23 @@ def gen_solver(mol, qmin):
     elif qmin["method"] == 1:
         raise NotImplementedError("L-PDFT ")
 
-    if "init" in qmin:
+    solver.conv_tol = 1e-10
+    solver.conv_tol_grad = 1e-6
+    solver.max_cycle_macro = 20000
+
+    if "master" in qmin:
         solver.chkfile = os.path.join(qmin["scratchdir"], "pyscf.chk.master")
 
-    old_chk = os.path.join(qmin["scratchdir"], "pyscf.old.chk")
-    if os.path.isfile(old_chk):
-        solver.update_from_chk(chkfile=old_chk)
 
-    return solver.run()
+    old_chk = os.path.join(qmin["scratchdir"], "pyscf.old.chk")
+    mo = None
+    if os.path.isfile(old_chk):
+        print(f"Updating solver MOs from chk: {old_chk}")
+        mo = lib.chkfile.load(old_chk, "mcscf/mo_coeff")
+        mo = mcscf.project_init_guess(solver, mo)
+
+    solver.kernel(mo)
+    return solver
 
 
 def get_dipole_elements(solver):
@@ -1408,9 +1412,11 @@ changelog: {_change_log_}"""
 
     result = run_jobs(joblist, qmin)
     result = combine_result(qmin, result)
-    
+
     runtime = measure_time()
     result["runtime"] = runtime
+
+    pprint.pprint(result)
 
     write_qmout(qmin, result, qmin_filename)
 
