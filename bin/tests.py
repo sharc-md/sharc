@@ -63,7 +63,7 @@ version = '3.0'
 versiondate = datetime.date(2023, 4, 1)
 
 
-INTERFACES = set(['MOLPRO', 'MOLCAS', 'COLUMBUS', 'Analytical', 'AMS-ADF', 'TURBOMOLE', 'GAUSSIAN', 'LVC', 'scripts', 'BAGEL', 'ORCA'])  # TODO: ???
+INTERFACES = set(['MOLPRO', 'MOLCAS', 'COLUMBUS', 'Analytical', 'AMS-ADF', 'TURBOMOLE', 'GAUSSIAN', 'LVC', 'scripts', 'BAGEL', 'ORCA', 'PYSCF'])  # TODO: ???
 OTHERENVS = set(['THEODORE', 'orca', 'TINKER', 'molcas', 'PYQUANTE'])
 
 INTERFACES = {'MOLPRO': 'MOLPRO',
@@ -76,7 +76,8 @@ INTERFACES = {'MOLPRO': 'MOLPRO',
               'LVC': 'LVC',
               'scripts': 'scripts',
               'BAGEL': 'BAGEL',
-              'ORCA': 'ORCA'
+              'ORCA': 'ORCA',
+              'PYSCF': 'PYSCF'
               }
 
 # ======================================================================================================================
@@ -296,7 +297,7 @@ def get_infos():
     string += '  ' + '=' * 80 + '\n'
     sys.stdout.write(string + '\n')
     for interface in INTERFACES:
-        if interface in INFOS['interfaces'] and interface not in ['Analytical', 'scripts', 'LVC']:
+        if interface in INFOS['interfaces'] and interface not in ['Analytical', 'scripts', 'LVC', 'PYSCF']:
             INFOS[interface] = env_or_question(interface, setenv=True)
     for i in INFOS['otherenvs']:
         INFOS[i] = env_or_question(i, setenv=True)
