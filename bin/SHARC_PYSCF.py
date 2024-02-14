@@ -25,15 +25,20 @@
 #
 # ******************************************
 
+from multiprocessing import Pool
 import os
+import shutil
 import sys
 import re
 import datetime
 import pprint
+import numpy as np
 from copy import deepcopy
 
 from socket import gethostname
+import time
 
+from pyscf import lib, gto, mcscf
 
 _version_ = "3.0"
 _versiondate_ = datetime.date(2024, 2, 2)
@@ -852,7 +857,7 @@ def generate_joblist(qmin):
         qmin_1 = deepcopy(qmin)
         qmin_1["master"] = []
         qmin_1["ncpu"] = 1
-        qmin_1["nslots_pool"] = [1]
+        qmin["nslots_pool"] = [1]
         joblist.append({"master": qmin_1})
 
     elif qmin["gradmode"] == 1:
@@ -863,13 +868,306 @@ def generate_joblist(qmin):
         qmin_1["master"] = []
         qmin_1["gradmap"] = []
         qmin_1["nacmap"] = []
-        qmin_1["nslots_pool"] = [qmin_1["ncpus"]]
+        qmin["nslots_pool"] = [1]
+        joblist.append({"master": qmin_1})
 
+        qmin_2 = deepcopy(qmin)
+        remove = [
+            "h",
+            "soc",
+            "dm",
+            "always_guess",
+            "always_orb_init",
+            "comment",
+            "ncpu",
+            "init",
+            "veloc",
+            "overlap",
+            "ion",
+        ]
+        for r in remove:
+            if r in qmin_2:
+                del qmin_2[r]
+
+        qmin_2["gradmode"] = 0
+        qmin_2["pargrad"] = []
+        qmin_2["samestep"] = []
+        ntasks = len(qmin["gradmap"]) + len(qmin["nacmap"])
+
+        # Determine number of slots (processes) and number of cpus for each slot
+        # right now, we just do this...
+        nslots = qmin["ncpu"]
+        cpu_per_run = [1] * ntasks
+
+        joblist.append({})
+        icount = 0
+        for grad in qmin["gradmap"]:
+            qmin_3 = deepcopy(qmin_2)
+            qmin_3["gradmap"] = [grad]
+            qmin_3["nacmap"] = []
+            qmin_3["ncpu"] = cpu_per_run[icount]
+            icount += 1
+            joblist[-1]["grad_%i_%i" % grad] = qmin_3
+
+        for nac in qmin["nacmap"]:
+            qmin_3 = deepcopy(qmin_2)
+            qmin_3["nacmap"] = [nac]
+            qmin_3["gradmap"] = []
+            qmin_3["overlap"] = [
+                [j + 1, i + 1] for i in range(qmin["nmstates"]) for j in range(i + 1)
+            ]
+            qmin_3["overlap_nacs"] = []
+            qmin_3["ncpu"] = cpu_per_run[icount]
+            icount += 1
+            joblist[-1]["nacdr_%i_%i_%i_%i" % nac] = qmin_3
+
+        qmin["nslots_pool"].append(nslots)
 
     if DEBUG:
         pprint.pprint(joblist, depth=3)
 
     return qmin, joblist
+
+
+def move_chk_file(qmin):
+    """Moves all relevant chk files in the savedir to old-chk files"""
+    source = os.path.join(qmin["savedir"], "pyscf.chk")
+    target = os.path.join(qmin["savedir"], "pyscf.old.chk")
+    if not os.path.isfile(source):
+        print(f"File {source} not found, cannot move to old!")
+        sys.exit(1)
+
+    if DEBUG:
+        print(f"Copy:\t{source}\t==>\t{target}")
+
+    shutil.copy(source, target)
+
+
+def setup_workdir(qmin):
+    """Make the scratch directory, or clean it if it exists. Copy any necessary files."""
+    work_dir = qmin["scratchdir"]
+    save_dir = qmin["savedir"]
+
+    if os.path.exists(work_dir):
+        if not os.path.isdir(work_dir):
+            print(f"{work_dir} exists and is not a directory!")
+            sys.exit(1)
+
+        else:
+            if DEBUG:
+                print(f"Remake\t{work_dir}")
+            shutil.rmtree(work_dir)
+            os.makedirs(work_dir)
+
+    else:
+        if DEBUG:
+            print(f"Making\t{work_dir}")
+        os.makedirs(work_dir)
+
+    source_chk = os.path.join(save_dir, "pyscf.old.chk")
+    if os.path.isfile(source_chk):
+        target_chk = os.path.join(work_dir, "pyscf.old.chk")
+        if DEBUG:
+            print(f"Copying\t{source_chk}\t==>\t{target_chk}")
+        shutil.copy(source_chk, target_chk)
+
+
+def save_chk_file(qmin):
+    work_dir = qmin["scratchdir"]
+    save_dir = qmin["savedir"]
+
+    source_chk = os.path.join(work_dir, "pyscf.chk.master")
+    if os.path.isfile(source_chk):
+        target_chk = os.path.join(save_dir, "pyscf.chk")
+        if DEBUG:
+            print(f"Copying\t{source_chk}\t==>\t{target_chk}")
+        shutil.copy(source_chk, target_chk)
+
+
+def build_mol(qmin):
+    mol = gto.Mole()
+    mol.atom = qmin["geo"]
+    mol.basis = qmin["template"]["basis"]
+    mol.output = "PySCF.log"
+    mol.verbose = 5
+
+    mol.build
+    return mol
+
+
+def gen_solver(mol, qmin):
+    mf = mol.RHF()
+    mf.max_cycle = 0
+    mf.run()
+
+    # CASSCF
+    if qmin["method"] == 0:
+        solver = mcscf.CASSCF(mf, qmin["template"]["ncas"], qmin["template"]["nelecas"])
+        if len(qmin["states"]) == 1:
+            nroots = qmin["template"]["roots"][0]
+            try:
+                from mrh.my_pyscf.fci import csf_solver
+
+                solver.fcisolver = csf_solver(smult=1)
+
+            except ImportError:
+                solver.fix_spin_(ss=0)
+
+            solver = solver.state_average(
+                [
+                    1.0 / nroots,
+                ]
+                * nroots
+            )
+
+        else:
+            raise NotImplementedError("Not singlet states")
+
+    # L-PDFT
+    elif qmin["method"] == 1:
+        raise NotImplementedError("L-PDFT ")
+
+    if "master" in qmin:
+        solver.chkfile = os.path.join(qmin["scratchdir"], "pyscf.chk.master")
+        old_chk = os.path.join(qmin["scratchdir"], "pyscf.old.chk")
+        if os.path.isfile(old_chk):
+            solver.update_from_chk(chkfile=old_chk)
+
+    else:
+        raise NotImplementedError("Non-master solvers thingy")
+
+    return solver.run()
+
+def get_dipole_elements(solver):
+    mol = solver.mol
+    mo_core = solver.mo_coeff[:,:solver.ncore]
+    mo_cas = solver.mo_coeff[:,solver.ncore:solver.ncore+solver.ncas]
+
+    nroots = solver.fcisolver.nroots
+
+    dip_matrix = np.ones(shape=(3, nroots,nroots))
+
+    # TODO: decide on gauge???? Use same as OpenMolcas
+    charge_center = (np.einsum('z,zx->x', mol.atom_charges(), mol.atom_coords())/mol.atom_charges().sum())
+    with mol.with_common_origin(charge_center):
+        dipole_ints = mol.intor("int1e_r")
+
+    dm_core = 2*mo_core @ mo_core.conj().T
+    
+    for state in range(nroots):
+        casdm1 = solver.fcisolver._base_class.make_rdm1(solver.fcisolver, solver.ci[state], solver.ncas, solver.nelecas)
+        dm1 = dm_core + mo_cas @ casdm1 @ mo_cas.conj().T
+        dip_matrix[:, state,state] = np.einsum('xij,ji->x', dipole_ints, dm1)
+
+    for bra in range(nroots):
+        for ket in range(bra+1, nroots):
+            t_dm = solver.fcisolver.trans_rdm1(solver.ci[bra], solver.ci[ket], solver.ncas, solver.nelecas)
+            t_dm = mo_cas @ t_dm @ mo_cas.conj().T
+            t_dip = np.einsum('xij, ji->x', dipole_ints, t_dm)
+            dip_matrix[:, bra, ket] = t_dip
+            dip_matrix[:, ket, bra] = t_dip
+
+    return dip_matrix
+
+def run_calc(qmin):
+    err = 0
+    result = {}
+    pprint.pprint(qmin)
+    if "master" in qmin:
+        setup_workdir(qmin)
+        mol = build_mol(qmin)
+
+    else:
+        raise NotImplementedError("non-master jobs")
+        # mol = lib.chkfile.load_mol("todo...")
+
+    solver = gen_solver(mol, qmin)
+
+    if not solver.converged:
+        print("Calculator failed to converge!")
+        err = 1
+
+    result = {}
+    if "h" in qmin:
+        result["energies"] = solver.e_states
+
+    if "dm" in qmin:
+        result["dipole"] = get_dipole_elements(solver)
+
+    if qmin["gradmap"]:
+        result["grad"] = []
+        solver_grad = solver.nuc_grad_method()
+        for grad in qmin["gradmap"]:
+            spin = grad[0]
+            state = grad[1]-1
+            de = solver_grad.kernel(state=state)
+            if not solver_grad.converged:
+                print(f"Gradient failed to converge: {grad}")
+                err = 1
+
+            result["grad"].append(de)
+            
+
+    if "master" in qmin:
+        save_chk_file(qmin)
+
+    return err, result
+
+
+def run_jobs(joblist, qmin):
+    """Runs all of the jobs specified in joblist"""
+    if "newstep" in qmin:
+        move_chk_file(qmin)
+
+    lib.param.TMPDIR = qmin["scratchdir"]
+    lib.param.MAX_MEMORY = qmin["memory"]
+
+    print(">>>>>>>>>>>>> Starting the job execution")
+
+    error_codes = {}
+    result = {}
+    outputs = {}
+    for idx, jobset in enumerate(joblist):
+        if not jobset:
+            continue
+
+        pool = Pool(processes=qmin["nslots_pool"][idx])
+        for job in jobset:
+            qmin_1 = jobset[job]
+
+            outputs[job] = pool.apply_async(run_calc, [qmin_1])
+            
+            time.sleep(qmin["delay"])
+
+        pool.close()
+        pool.join()
+
+        print("")
+
+    for i in outputs:
+        error_codes[i], result[i] = outputs[i].get()
+
+    if PRINT:
+        string = "  " + "=" * 40 + "\n"
+        string += "||" + " " * 40 + "||\n"
+        string += "||" + " " * 10 + "All Tasks completed!" + " " * 10 + "||\n"
+        string += "||" + " " * 40 + "||\n"
+        string += "  " + "=" * 40 + "\n"
+        print(string)
+        j = 0
+        string = "Error Codes:\n\n"
+        for i in error_codes:
+            string += "\t%s\t%i" % (i + " " * (10 - len(i)), error_codes[i])
+            j += 1
+            if j == 4:
+                j = 0
+                string += "\n"
+        print(string)
+
+    if any((i != 0 for i in error_codes.values())):
+        print("Some subprocesses did not finish successfully!")
+
+    return result, error_codes
 
 
 def main():
@@ -906,6 +1204,8 @@ changelog: {_change_log_}"""
 
     qmin, joblist = generate_joblist(qmin)
 
+    result, error_codes = run_jobs(joblist, qmin)
+    print(result)
     if PRINT or DEBUG:
         print("#================ END ================#")
 
