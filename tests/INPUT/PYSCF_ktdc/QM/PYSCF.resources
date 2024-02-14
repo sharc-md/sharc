@@ -1,0 +1,4 @@
+scratchdir ~/Desktop/Singlet_1/TRAJ_00001/
+savedir /Users/mhennefarth/Developer/tmp/Singlet_1/TRAJ_00001/restart
+memory 2000
+ncpu 1
