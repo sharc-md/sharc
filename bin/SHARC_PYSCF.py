@@ -73,6 +73,44 @@ IToMult = {
 AU_TO_ANG = 0.529177211
 rcm_to_Eh = 4.556335e-6
 
+def eformat(f, prec, exp_digits):
+    '''Formats a float f into scientific notation with prec number of decimals and exp_digits number of exponent digits.
+
+    String looks like:
+    [ -][0-9]\\.[0-9]*E[+-][0-9]*
+
+    Arguments:
+    1 float: Number to format
+    2 integer: Number of decimals
+    3 integer: Number of exponent digits
+
+    Returns:
+    1 string: formatted number'''
+
+    s = "% .*e" % (prec, f)
+    mantissa, exp = s.split('e')
+    return "%sE%+0*d" % (mantissa, exp_digits + 1, int(exp))
+
+def measure_time():
+    '''Calculates the time difference between global variable starttime and the time of the call of measuretime.
+
+    Prints the Runtime, if PRINT or DEBUG are enabled.
+
+    Arguments:
+    none
+
+    Returns:
+    1 float: runtime in seconds'''
+
+    endtime = datetime.datetime.now()
+    runtime = endtime - START_TIME
+    if PRINT or DEBUG:
+        hours = runtime.seconds // 3600
+        minutes = runtime.seconds // 60 - hours * 60
+        seconds = runtime.seconds % 60
+        print('==> Runtime:\n%i Days\t%i Hours\t%i Minutes\t%i Seconds\n\n' % (runtime.days, hours, minutes, seconds))
+    total_seconds = runtime.days * 24 * 3600 + runtime.seconds + runtime.microseconds // 1.e6
+    return total_seconds
 
 def print_header():
     """Prints the formatted header of the log file. Prints version number and version date"""
@@ -884,6 +922,7 @@ def generate_joblist(qmin):
             "veloc",
             "overlap",
             "ion",
+            "molden",
         ]
         for r in remove:
             if r in qmin_2:
@@ -922,6 +961,7 @@ def generate_joblist(qmin):
             joblist[-1]["nacdr_%i_%i_%i_%i" % nac] = qmin_3
 
         qmin["nslots_pool"].append(nslots)
+        raise NotImplementedError("Untested, tread with caution")
 
     if DEBUG:
         pprint.pprint(joblist, depth=3)
@@ -964,8 +1004,18 @@ def setup_workdir(qmin):
             print(f"Making\t{work_dir}")
         os.makedirs(work_dir)
 
-    source_chk = os.path.join(save_dir, "pyscf.old.chk")
-    if os.path.isfile(source_chk):
+    source_chk = None
+    if "always_guess" not in qmin:
+        if "init" in qmin or "always_orb_init" in qmin:
+            source_chk = os.path.join(qmin["pwd"], "pyscf.init.chk")
+
+        elif "samestep" in qmin:
+            source_chk = os.path.join(save_dir, "pyscf.chk")
+
+        else:
+            source_chk = os.path.join(save_dir, "pyscf.old.chk")
+
+    if source_chk is not None and os.path.isfile(source_chk):
         target_chk = os.path.join(work_dir, "pyscf.old.chk")
         if DEBUG:
             print(f"Copying\t{source_chk}\t==>\t{target_chk}")
@@ -983,15 +1033,19 @@ def save_chk_file(qmin):
             print(f"Copying\t{source_chk}\t==>\t{target_chk}")
         shutil.copy(source_chk, target_chk)
 
-
 def build_mol(qmin):
-    mol = gto.Mole()
-    mol.atom = qmin["geo"]
-    mol.basis = qmin["template"]["basis"]
-    mol.output = "PySCF.log"
-    mol.verbose = 5
+    previous_chk = os.path.join(qmin["scratchdir"], "pyscf.old.chk")
+    if os.path.isfile(previous_chk) and "samestep" in qmin:
+        mol = lib.chkfile.load_mol(previous_chk)
 
-    mol.build
+    else:
+        mol = gto.Mole()
+        mol.atom = qmin["geo"]
+        mol.basis = qmin["template"]["basis"]
+        mol.output = "PySCF.log"
+        mol.verbose = 3
+        mol.build()
+
     return mol
 
 
@@ -1027,59 +1081,62 @@ def gen_solver(mol, qmin):
     elif qmin["method"] == 1:
         raise NotImplementedError("L-PDFT ")
 
-    if "master" in qmin:
+    if "init" in qmin:
         solver.chkfile = os.path.join(qmin["scratchdir"], "pyscf.chk.master")
-        old_chk = os.path.join(qmin["scratchdir"], "pyscf.old.chk")
-        if os.path.isfile(old_chk):
-            solver.update_from_chk(chkfile=old_chk)
 
-    else:
-        raise NotImplementedError("Non-master solvers thingy")
+    old_chk = os.path.join(qmin["scratchdir"], "pyscf.old.chk")
+    if os.path.isfile(old_chk):
+        solver.update_from_chk(chkfile=old_chk)
 
     return solver.run()
 
+
 def get_dipole_elements(solver):
     mol = solver.mol
-    mo_core = solver.mo_coeff[:,:solver.ncore]
-    mo_cas = solver.mo_coeff[:,solver.ncore:solver.ncore+solver.ncas]
+    mo_core = solver.mo_coeff[:, : solver.ncore]
+    mo_cas = solver.mo_coeff[:, solver.ncore : solver.ncore + solver.ncas]
 
     nroots = solver.fcisolver.nroots
 
-    dip_matrix = np.ones(shape=(3, nroots,nroots))
+    dip_matrix = np.ones(shape=(3, nroots, nroots))
 
     # TODO: decide on gauge???? Use same as OpenMolcas
-    charge_center = (np.einsum('z,zx->x', mol.atom_charges(), mol.atom_coords())/mol.atom_charges().sum())
+    charge_center = (
+        np.einsum("z,zx->x", mol.atom_charges(), mol.atom_coords())
+        / mol.atom_charges().sum()
+    )
     with mol.with_common_origin(charge_center):
         dipole_ints = mol.intor("int1e_r")
 
-    dm_core = 2*mo_core @ mo_core.conj().T
-    
+    dm_core = 2 * mo_core @ mo_core.conj().T
+
     for state in range(nroots):
-        casdm1 = solver.fcisolver._base_class.make_rdm1(solver.fcisolver, solver.ci[state], solver.ncas, solver.nelecas)
+        casdm1 = solver.fcisolver._base_class.make_rdm1(
+            solver.fcisolver, solver.ci[state], solver.ncas, solver.nelecas
+        )
         dm1 = dm_core + mo_cas @ casdm1 @ mo_cas.conj().T
-        dip_matrix[:, state,state] = np.einsum('xij,ji->x', dipole_ints, dm1)
+        dip_matrix[:, state, state] = np.einsum("xij,ji->x", dipole_ints, dm1)
 
     for bra in range(nroots):
-        for ket in range(bra+1, nroots):
-            t_dm = solver.fcisolver.trans_rdm1(solver.ci[bra], solver.ci[ket], solver.ncas, solver.nelecas)
+        for ket in range(bra + 1, nroots):
+            t_dm = solver.fcisolver.trans_rdm1(
+                solver.ci[bra], solver.ci[ket], solver.ncas, solver.nelecas
+            )
             t_dm = mo_cas @ t_dm @ mo_cas.conj().T
-            t_dip = np.einsum('xij, ji->x', dipole_ints, t_dm)
+            t_dip = np.einsum("xij, ji->x", dipole_ints, t_dm)
             dip_matrix[:, bra, ket] = t_dip
             dip_matrix[:, ket, bra] = t_dip
 
     return dip_matrix
 
+
 def run_calc(qmin):
     err = 0
     result = {}
     pprint.pprint(qmin)
-    if "master" in qmin:
-        setup_workdir(qmin)
-        mol = build_mol(qmin)
 
-    else:
-        raise NotImplementedError("non-master jobs")
-        # mol = lib.chkfile.load_mol("todo...")
+    setup_workdir(qmin)
+    mol = build_mol(qmin)
 
     solver = gen_solver(mol, qmin)
 
@@ -1094,22 +1151,27 @@ def run_calc(qmin):
     if "dm" in qmin:
         result["dipole"] = get_dipole_elements(solver)
 
+    if "molden" in qmin:
+        from pyscf.tools import molden
+        molden.from_mcscf(solver, os.path.join(qmin["savedir"], "pyscf.molden"))
+
     if qmin["gradmap"]:
         result["grad"] = []
         solver_grad = solver.nuc_grad_method()
         for grad in qmin["gradmap"]:
             spin = grad[0]
-            state = grad[1]-1
+            state = grad[1] - 1
             de = solver_grad.kernel(state=state)
             if not solver_grad.converged:
                 print(f"Gradient failed to converge: {grad}")
                 err = 1
 
             result["grad"].append(de)
-            
+    
+    if qmin["nacmap"]:
+        raise NotImplementedError("Analytical NACs")
 
-    if "master" in qmin:
-        save_chk_file(qmin)
+    save_chk_file(qmin)
 
     return err, result
 
@@ -1136,7 +1198,7 @@ def run_jobs(joblist, qmin):
             qmin_1 = jobset[job]
 
             outputs[job] = pool.apply_async(run_calc, [qmin_1])
-            
+
             time.sleep(qmin["delay"])
 
         pool.close()
@@ -1166,9 +1228,67 @@ def run_jobs(joblist, qmin):
 
     if any((i != 0 for i in error_codes.values())):
         print("Some subprocesses did not finish successfully!")
+        sys.exit(1)
 
-    return result, error_codes
+    return result
 
+def combine_result(result):
+    if len(result.keys()) == 1:
+        return result[list(result.keys())[0]]
+    
+    else:
+        raise NotImplementedError("Need to implement combine the results")
+
+def write_ham(qmin, result):
+    nmstates = qmin["nmstates"]
+
+    string = f"! 1 Hamiltonian Matrix ({nmstates}x{nmstates}, complex)\n"
+    string += f"{nmstates} {nmstates}\n"
+    for i in range(nmstates):
+        for j in range(nmstates):
+            if i != j:
+               string += f"{eformat(0.0, 9, 3)} {eformat(0.0, 9, 3)} " 
+            else:
+                string += f"{eformat(result['energies'][i].real, 9, 3)} {eformat(result['energies'][i].imag, 9, 3)}"
+        string += "\n"
+    string += "\n"
+   
+    return string
+
+def write_qmout_time(qmin, result):
+    raise NotImplementedError("not implemented")
+
+
+def write_qmout(qmin, result, qmin_filename):
+    """Writes the requested quantities to the file which SHARC reads in. The filename is qmin_filename with everything after the first dot replaced by 'out'."""
+    if '.' in qmin_filename:
+        idx = qmin_filename.find('.')
+        outfilename = qmin_filename[:idx] + ".out"
+
+    else:
+        outfilename = qmin_filename + ".out"
+
+    if PRINT:
+        print(f"===> Writing output to file {outfilename} in SHARC Format\n")
+
+    string = ""
+    if "h" in qmin:
+        string += write_ham(qmin, result)
+
+    if "dm" in qmin:
+        raise NotImplementedError("writing dm")
+
+    if "grad" in qmin:
+        raise NotImplementedError("writing grad")
+
+    if "nacdr" in qmin:
+        raise NotImplementedError("writing nacdr")
+
+    string += write_qmout_time(qmin, result)
+    with open(os.path.join(qmin["pwd"], outfilename), 'w') as f:
+        f.write(string)
+
+    return
 
 def main():
     try:
@@ -1204,7 +1324,14 @@ changelog: {_change_log_}"""
 
     qmin, joblist = generate_joblist(qmin)
 
-    result, error_codes = run_jobs(joblist, qmin)
+    result = run_jobs(joblist, qmin)
+    result = combine_result(result)
+   
+    runtime = measure_time()
+    result["runtime"] = runtime
+
+    write_qmout(qmin, result, qmin_filename) 
+
     print(result)
     if PRINT or DEBUG:
         print("#================ END ================#")
