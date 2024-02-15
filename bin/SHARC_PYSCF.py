@@ -47,7 +47,7 @@ _change_log_ = """"""
 START_TIME = datetime.datetime.now()
 
 # Global Variables for printing.
-DEBUG = False  # Raw output
+DEBUG = True  # Raw output
 PRINT = True  # Formatted output
 
 IToMult = {
@@ -260,7 +260,7 @@ def print_qmin(qmin):
         output = "Nonadiabatic couplings:\n"
         for i in range(1, qmin["nmstates"] + 1):
             for j in range(1, qmin["nmstates"] + 1):
-                if (i, j) in qmin["nacdr"] or (j, i) in qmin["nacrd"]:
+                if [i, j] in qmin["nacdr"] or [j, i] in qmin["nacdr"]:
                     output += "X"
 
                 else:
@@ -1160,7 +1160,7 @@ def get_grad(solver, qmin):
             state = state-1
             de = solver_grad.kernel(state=state)
             if not solver_grad.converged:
-                print(f"Gradient failed to converge: {qmin['statemap'][1]}")
+                print(f"Gradient failed to converge: {qmin['statemap'][i]}")
                 err = 1
 
             grad.append(de)
@@ -1169,6 +1169,37 @@ def get_grad(solver, qmin):
             grad.append(zerograd)
     
     return grad, err 
+
+def get_nac(solver, qmin):
+    nmstates = qmin["nmstates"]
+    nac = np.zeros(shape=(nmstates, nmstates, qmin["natom"], 3))
+    err = 0
+
+    solver_nac = solver.nac_method()
+
+    for i in sorted(qmin["statemap"]):
+        for j in sorted(qmin["statemap"]):
+            m1, s1, ms1 = tuple(qmin["statemap"][i])
+            m2, s2, ms2 = tuple(qmin["statemap"][j])
+            if m1 != m2:
+                continue
+
+            if ms1 != ms2:
+                continue
+
+            if s1 == s2:
+                continue
+
+            if (m1, s1, m2, s2) in qmin["nacmap"]:
+                bra = i-1
+                ket = j-1
+                nacdr = solver_nac.kernel(state=(bra, ket))
+                nac[bra][ket] = nacdr
+                nac[ket][bra] = -nacdr
+                if not solver_nac.converged:
+                    print(f"NACDR failed to converge: {qmin['statemap'][i]}, {qmin['statemap'][j]}")
+                    err = 1
+    return nac, err
 
 def run_calc(qmin):
     err = 0
@@ -1200,7 +1231,8 @@ def run_calc(qmin):
         err += e
 
     if qmin["nacmap"]:
-        raise NotImplementedError("Analytical NACs")
+        result["nacdr"], e = get_nac(solver, qmin)
+        err += e
 
     save_chk_file(qmin)
 
@@ -1267,17 +1299,26 @@ def run_jobs(joblist, qmin):
 
 def combine_result(qmin, result):
     output = {}
+    nmstates = qmin["nmstates"]
+    natom = qmin["natom"]
+
     if "h" in qmin:
         output["energies"] = result["master"]["energies"]
     if "dm" in qmin:
         output["dipole"] = result["master"]["dipole"]
 
     if "grad" in qmin:
-        output["grad"] = np.zeros(shape=(qmin["nmstates"], qmin["natom"], 3)) 
+        output["grad"] = np.zeros(shape=(nmstates, natom, 3)) 
         for job in result:
             if "grad" in result[job]:
                 output["grad"] += result[job]["grad"]
-    
+   
+    if "nacdr" in qmin:
+        output["nacdr"] = np.zeros(shape=(nmstates, nmstates, natom, 3))
+        for job in result:
+            if "nacdr" in result[job]:
+                output["nacdr"] += result[job]["nacdr"]
+
     return output
 
 def write_ham(qmin, result):
@@ -1328,6 +1369,26 @@ def write_grad(qmin, result):
     return string
 
 
+def write_nac(qmin, result):
+    states = qmin["states"]
+    nmstates = qmin["nmstates"]
+    natom = qmin["natom"]
+    string = f"! 5 Nonadiabatic couplings (ddr) ({nmstates}x{nmstates}x{natom}x3)\n"
+    i = 0
+    for imult, istate, ims in itnmstates(states):
+        j = 0
+        for jmult, jstate, jms in itnmstates(states):
+            string += f"{natom} {3} ! {imult} {istate} {ims} {jmult} {jstate} {jms}\n"
+            for atom in result["nacdr"][i][j]:
+                for coord in atom:
+                    string += f"{eformat(coord, 12, 3)} "
+                string += "\n"
+            
+            j += 1
+        i += 1
+
+    return string
+
 def write_qmout_time(runtime):
     return f"! 8 Runtime\n{eformat(runtime, 9, 3)}\n"
 
@@ -1355,7 +1416,7 @@ def write_qmout(qmin, result, qmin_filename):
         string += write_grad(qmin, result)
 
     if "nacdr" in qmin:
-        raise NotImplementedError("writing nacdr")
+        string += write_nac(qmin, result)
 
     string += write_qmout_time(result["runtime"])
     with open(os.path.join(qmin["pwd"], outfilename), "w") as f:
