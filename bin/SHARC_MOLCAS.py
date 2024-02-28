@@ -2239,8 +2239,10 @@ def readQMin(QMinfilename):
         if not os.path.isfile(driver):
             driver = os.path.join(QMin['molcas'], 'bin', 'molcas.exe')
             if not os.path.isfile(driver):
-                print('No driver (pymolcas or molcas.exe) found in $MOLCAS/bin. Please add the path to the driver via the "driver" keyword.')
-                sys.exit(52)
+                driver = os.path.join(QMin['molcas'], "pymolcas")
+                if not os.path.isfile(driver):
+                    print('No driver (pymolcas or molcas.exe) found in $MOLCAS/bin. Please add the path to the driver via the "driver" keyword.')
+                    sys.exit(52)
     QMin['driver'] = driver
 
     QMin['tinker'] = get_sh2cas_environ(sh2cas, 'tinker', crucial=False)

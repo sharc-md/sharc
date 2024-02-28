@@ -47,7 +47,7 @@ _change_log_ = """"""
 START_TIME = datetime.datetime.now()
 
 # Global Variables for printing.
-DEBUG = True  # Raw output
+DEBUG = False  # Raw output
 PRINT = True  # Formatted output
 
 IToMult = {
@@ -285,7 +285,6 @@ def print_qmin(qmin):
 
 
 def itmult(states):
-
     for i in range(len(states)):
         if states[i] < 1:
             continue
@@ -294,7 +293,6 @@ def itmult(states):
 
 
 def itnmstates(states):
-
     for i in range(len(states)):
         if states[i] < 1:
             continue
@@ -404,7 +402,7 @@ def check_directory(dir):
 def get_version():
     from pyscf import __version__ as pyscf_version
 
-    min_version = (2, 4, 0)
+    min_version = (2, 5, 0)
     line = pyscf_version.split(".")
     line = [int(i) for i in line]
     for min, actual in zip(min_version, line):
@@ -1025,7 +1023,7 @@ def setup_workdir(qmin):
     if source_chk is not None and os.path.isfile(source_chk):
         target_chk = os.path.join(work_dir, "pyscf.old.chk")
         if DEBUG:
-            print(f"Copying\t{source_chk}\t==>\t{target_chk}")
+            print(f"Copying\t{source_chk}\t==>\t{target_chk}", flush=True)
         shutil.copy(source_chk, target_chk)
 
 
@@ -1037,7 +1035,7 @@ def save_chk_file(qmin):
     if os.path.isfile(source_chk):
         target_chk = os.path.join(save_dir, "pyscf.chk")
         if DEBUG:
-            print(f"Copying\t{source_chk}\t==>\t{target_chk}")
+            print(f"Copying\t{source_chk}\t==>\t{target_chk}", flush=True)
         shutil.copy(source_chk, target_chk)
 
 
@@ -1046,14 +1044,20 @@ def build_mol(qmin):
     previous_chk = os.path.join(qmin["scratchdir"], "pyscf.old.chk")
     if os.path.isfile(previous_chk) and "samestep" in qmin:
         if DEBUG:
-            print(f"Loading mol from chkfile {previous_chk}")
+            print(f"Loading mol from chkfile {previous_chk}", flush=True)
         mol = lib.chkfile.load_mol(previous_chk)
-        mol.output=log_file
-        mol.verbose=3
+        mol.output = log_file
+        mol.verbose = 3
         mol.build()
 
     else:
-        mol = gto.Mole(atom=qmin["geo"], unit="Bohr", basis=qmin["template"]["basis"], output=log_file, verbose=3)
+        mol = gto.Mole(
+            atom=qmin["geo"],
+            unit="Bohr",
+            basis=qmin["template"]["basis"],
+            output=log_file,
+            verbose=3,
+        )
         mol.build()
 
     return mol
@@ -1098,15 +1102,19 @@ def gen_solver(mol, qmin):
     if "master" in qmin:
         solver.chkfile = os.path.join(qmin["scratchdir"], "pyscf.chk.master")
 
-
     old_chk = os.path.join(qmin["scratchdir"], "pyscf.old.chk")
     mo = None
+    ci = None
     if os.path.isfile(old_chk):
-        print(f"Updating solver MOs from chk: {old_chk}")
+        print(f"Updating solver MOs from chk: {old_chk}", flush=True)
         mo = lib.chkfile.load(old_chk, "mcscf/mo_coeff")
         mo = mcscf.project_init_guess(solver, mo)
+    
+        print(f"Updating solver CI from chk: {old_chk}", flush=True)
+        ci = lib.chkfile.load(old_chk, "mcscf/ci")
 
-    solver.kernel(mo)
+
+    solver.kernel(mo_coeff=mo, ci0=ci)
     return solver
 
 
@@ -1124,17 +1132,21 @@ def get_dipole_elements(solver):
         np.einsum("z,zx->x", mol.atom_charges(), mol.atom_coords())
         / mol.atom_charges().sum()
     )
-    with mol.with_common_origin(charge_center):
-        dipole_ints = mol.intor("int1e_r")
 
     dm_core = 2 * mo_core @ mo_core.conj().T
+
+    with mol.with_common_origin(charge_center):
+        dipole_ints = mol.intor("int1e_r")
+        nucl_dip = np.einsum("i,ix->x", mol.atom_charges(), mol.atom_coords())
 
     for state in range(nroots):
         casdm1 = solver.fcisolver._base_class.make_rdm1(
             solver.fcisolver, solver.ci[state], solver.ncas, solver.nelecas
         )
         dm1 = dm_core + mo_cas @ casdm1 @ mo_cas.conj().T
-        dip_matrix[:, state, state] = np.einsum("xij,ji->x", dipole_ints, dm1)
+        dip_matrix[:, state, state] = nucl_dip - np.einsum(
+            "xij,ji->x", dipole_ints, dm1
+        )
 
     for bra in range(nroots):
         for ket in range(bra + 1, nroots):
@@ -1148,27 +1160,29 @@ def get_dipole_elements(solver):
 
     return dip_matrix
 
+
 def get_grad(solver, qmin):
     grad = []
     err = 0
-    zerograd = np.zeros(shape=(qmin["natom"], 3)) 
-    
+    zerograd = np.zeros(shape=(qmin["natom"], 3))
+
     solver_grad = solver.nuc_grad_method()
     for i in sorted(qmin["statemap"]):
         mult, state, _ = tuple(qmin["statemap"][i])
         if (mult, state) in qmin["gradmap"]:
-            state = state-1
+            state = state - 1
             de = solver_grad.kernel(state=state)
             if not solver_grad.converged:
-                print(f"Gradient failed to converge: {qmin['statemap'][i]}")
+                print(f"Gradient failed to converge: {qmin['statemap'][i]}", flush=True)
                 err = 1
 
             grad.append(de)
-        
+
         else:
             grad.append(zerograd)
-    
-    return grad, err 
+
+    return grad, err
+
 
 def get_nac(solver, qmin):
     nmstates = qmin["nmstates"]
@@ -1191,15 +1205,18 @@ def get_nac(solver, qmin):
                 continue
 
             if (m1, s1, m2, s2) in qmin["nacmap"]:
-                bra = i-1
-                ket = j-1
+                bra = i - 1
+                ket = j - 1
                 nacdr = solver_nac.kernel(state=(bra, ket))
                 nac[bra][ket] = nacdr
                 nac[ket][bra] = -nacdr
                 if not solver_nac.converged:
-                    print(f"NACDR failed to converge: {qmin['statemap'][i]}, {qmin['statemap'][j]}")
+                    print(
+                        f"NACDR failed to converge: {qmin['statemap'][i]}, {qmin['statemap'][j]}"
+                    )
                     err = 1
     return nac, err
+
 
 def run_calc(qmin):
     err = 0
@@ -1308,11 +1325,11 @@ def combine_result(qmin, result):
         output["dipole"] = result["master"]["dipole"]
 
     if "grad" in qmin:
-        output["grad"] = np.zeros(shape=(nmstates, natom, 3)) 
+        output["grad"] = np.zeros(shape=(nmstates, natom, 3))
         for job in result:
             if "grad" in result[job]:
                 output["grad"] += result[job]["grad"]
-   
+
     if "nacdr" in qmin:
         output["nacdr"] = np.zeros(shape=(nmstates, nmstates, natom, 3))
         for job in result:
@@ -1320,6 +1337,7 @@ def combine_result(qmin, result):
                 output["nacdr"] += result[job]["nacdr"]
 
     return output
+
 
 def write_ham(qmin, result):
     nmstates = qmin["nmstates"]
@@ -1383,11 +1401,12 @@ def write_nac(qmin, result):
                 for coord in atom:
                     string += f"{eformat(coord, 12, 3)} "
                 string += "\n"
-            
+
             j += 1
         i += 1
 
     return string
+
 
 def write_qmout_time(runtime):
     return f"! 8 Runtime\n{eformat(runtime, 9, 3)}\n"
