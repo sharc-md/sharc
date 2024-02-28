@@ -1128,23 +1128,30 @@ def get_dipole_elements(solver):
     dip_matrix = np.ones(shape=(3, nroots, nroots))
 
     # TODO: decide on gauge???? Use same as OpenMolcas
-    charge_center = (
-        np.einsum("z,zx->x", mol.atom_charges(), mol.atom_coords())
-        / mol.atom_charges().sum()
-    )
+    # charge_center = (
+        # np.einsum("z,zx->x", mol.atom_charges(), mol.atom_coords())
+        # / mol.atom_charges().sum()
+    # )
+
+    # OpenMolcas I think uses this gauge center...
+    gauge_center = (0,0,0)
 
     dm_core = 2 * mo_core @ mo_core.conj().T
 
-    with mol.with_common_origin(charge_center):
+    charges = mol.atom_charges()
+    coords = mol.atom_coords()
+    coords -= gauge_center
+    nucl_term = charges.dot(coords)
+
+    with mol.with_common_origin(gauge_center):
         dipole_ints = mol.intor("int1e_r")
-        nucl_dip = np.einsum("i,ix->x", mol.atom_charges(), mol.atom_coords())
 
     for state in range(nroots):
         casdm1 = solver.fcisolver._base_class.make_rdm1(
             solver.fcisolver, solver.ci[state], solver.ncas, solver.nelecas
         )
         dm1 = dm_core + mo_cas @ casdm1 @ mo_cas.conj().T
-        dip_matrix[:, state, state] = nucl_dip - np.einsum(
+        dip_matrix[:, state, state] = nucl_term -np.einsum(
             "xij,ji->x", dipole_ints, dm1
         )
 
@@ -1154,7 +1161,7 @@ def get_dipole_elements(solver):
                 solver.ci[bra], solver.ci[ket], solver.ncas, solver.nelecas
             )
             t_dm = mo_cas @ t_dm @ mo_cas.conj().T
-            t_dip = np.einsum("xij, ji->x", dipole_ints, t_dm)
+            t_dip = -np.einsum("xij, ji->x", dipole_ints, t_dm)
             dip_matrix[:, bra, ket] = t_dip
             dip_matrix[:, ket, bra] = t_dip
 
