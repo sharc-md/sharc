@@ -760,7 +760,7 @@ at least one task"""
         template = f.readlines()
 
     template_dict = {}
-    INTEGERS_KEYS = ["ncas", "nelecas", "roots"]
+    INTEGERS_KEYS = ["ncas", "nelecas", "roots", "grids-level"]
     STRING_KEYS = ["basis", "method", "pdft-functional"]
     FLOAT_KEYS = []
     BOOL_KEYS = []
@@ -836,7 +836,7 @@ at least one task"""
 
     # find functional if pdft
     if qmin["method"] == 2:
-        ALLOWED_FUNCTIONALS = ["tpbe"]
+        ALLOWED_FUNCTIONALS = ["tpbe", "ftpbe"]
         for index, func in enumerate(ALLOWED_FUNCTIONALS):
             if template_dict["pdft-functional"] == func:
                 qmin["pdft-functional"] == index
@@ -847,6 +847,13 @@ at least one task"""
                 f"Warning! No analytical gradients for L-PDFT with {template_dict['pdft-functional']} given!"
             )
             print(f"Allowed functionals are: {', '.join(ALLOWED_FUNCTIONALS)}")
+            sys.exit(1)
+
+        if "grids-level" not in template_dict:
+            template_dict["grids-level"] = 3 # my default value I guess???
+
+        if "nacdr" in qmin:
+            print("NACdr not allowed with L-PDFT!")
             sys.exit(1)
 
     qmin["template"] = template_dict
@@ -1056,7 +1063,8 @@ def build_mol(qmin):
             unit="Bohr",
             basis=qmin["template"]["basis"],
             output=log_file,
-            verbose=3,
+            verbose=5,
+            symmetry=False
         )
         mol.build()
 
@@ -1068,9 +1076,11 @@ def gen_solver(mol, qmin):
     mf.max_cycle = 0
     mf.run()
 
+    ncas = qmin["template"]["ncas"]
+    nelecas = qmin["template"]["nelecas"]
     # CASSCF
     if qmin["method"] == 0:
-        solver = mcscf.CASSCF(mf, qmin["template"]["ncas"], qmin["template"]["nelecas"])
+        solver = mcscf.CASSCF(mf, ncas, nelecas)
         if len(qmin["states"]) == 1:
             nroots = qmin["template"]["roots"][0]
             try:
@@ -1093,7 +1103,26 @@ def gen_solver(mol, qmin):
 
     # L-PDFT
     elif qmin["method"] == 1:
-        raise NotImplementedError("L-PDFT ")
+        from pyscf import mcpdft
+        
+        functional = qmin["template"]["pdft-functional"]
+        grids_level = qmin["template"]["grids-level"]
+        
+        solver = mcpdft.CASSCF(mf, functional, ncas, nelecas, grids_level=grids_level)
+        
+        if len(qmin["states"]) == 1:
+            nroots = qmin["template"]["roots"][0]
+            try:
+                from mrh.my_pyscf.fci import csf_solver
+                solver.fcisolver = csf_solver(mol, smult=1)
+            
+            except ImportError:
+                solver.fix_spin_(ss=0)
+
+            solver = solver.multi_state([1.0/nroots,]*nroots, method="lin")
+
+        else:
+            raise NotImplementedError("Not singlet states")
 
     solver.conv_tol = 1e-10
     solver.conv_tol_grad = 1e-6
