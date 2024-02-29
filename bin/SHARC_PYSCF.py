@@ -194,6 +194,9 @@ def print_qmin(qmin):
     if qmin["template"]["method"].upper() == "L-PDFT":
         output += f"L({tmp})-PDFT"
 
+    elif qmin["template"]["method"].upper() == "MC-PDFT":
+        output += f"SA({tmp})-PDFT"
+
     else:
         output += f"SA({tmp})-{qmin['template']['method'].upper()}"
 
@@ -769,6 +772,7 @@ at least one task"""
 
     template_dict["method"] = "casscf"
     template_dict["pdft-functional"] = "tpbe"
+    template_dict["grids-level"] = 4
 
     for line in template:
         orig = re.sub("#.*$", "", line).split(None, 1)
@@ -824,7 +828,7 @@ at least one task"""
             print(f"Key {key} missing in template file!")
             sys.exit(1)
 
-    ALLOWED_METHODS = ["casscf", "l-pdft"]
+    ALLOWED_METHODS = ["casscf", "l-pdft", "mc-pdft"]
     for index, method in enumerate(ALLOWED_METHODS):
         if template_dict["method"] == method:
             qmin["method"] = index
@@ -835,7 +839,7 @@ at least one task"""
         sys.exit(1)
 
     # find functional if pdft
-    if qmin["method"] == 2:
+    if qmin["method"] == 2 or qmin["method"] == 3:
         ALLOWED_FUNCTIONALS = ["tpbe", "ftpbe"]
         for index, func in enumerate(ALLOWED_FUNCTIONALS):
             if template_dict["pdft-functional"] == func:
@@ -848,9 +852,6 @@ at least one task"""
             )
             print(f"Allowed functionals are: {', '.join(ALLOWED_FUNCTIONALS)}")
             sys.exit(1)
-
-        if "grids-level" not in template_dict:
-            template_dict["grids-level"] = 3 # my default value I guess???
 
         if "nacdr" in qmin:
             print("NACdr not allowed with L-PDFT!")
@@ -1078,55 +1079,39 @@ def gen_solver(mol, qmin):
 
     ncas = qmin["template"]["ncas"]
     nelecas = qmin["template"]["nelecas"]
-    # CASSCF
-    if qmin["method"] == 0:
-        solver = mcscf.CASSCF(mf, ncas, nelecas)
-        if len(qmin["states"]) == 1:
-            nroots = qmin["template"]["roots"][0]
-            try:
-                from mrh.my_pyscf.fci import csf_solver
 
-                solver.fcisolver = csf_solver(mol, smult=1)
+    if len(qmin["states"]) != 1:
+        raise NotImplementedError("Not implemented for states other than singlets!")
 
-            except ImportError:
-                solver.fix_spin_(ss=0)
+    else:
+        nroots = qmin["template"]["roots"][0]
+        weights = [1.0/nroots,]*nroots
 
-            solver = solver.state_average(
-                [
-                    1.0 / nroots,
-                ]
-                * nroots
-            )
+        if qmin["method"] == 0:
+            solver = mcscf.CASSCF(mf, ncas, nelecas)
 
         else:
-            raise NotImplementedError("Not singlet states")
+            functional = qmin["template"]["pdft-functional"]
+            grids_level = qmin["template"]["grids-level"]
+            from pyscf import mcpdft
+            solver = mcpdft.CASSCF(mf, functional, ncas, nelecas, grids_level=grids_level)
 
-    # L-PDFT
-    elif qmin["method"] == 1:
-        from pyscf import mcpdft
+        try:
+            from mrh.my_pyscf.fci import csf_solver
+            solver.fcisolver = csf_solver(mol, smult=1)
         
-        functional = qmin["template"]["pdft-functional"]
-        grids_level = qmin["template"]["grids-level"]
-        
-        solver = mcpdft.CASSCF(mf, functional, ncas, nelecas, grids_level=grids_level)
-        
-        if len(qmin["states"]) == 1:
-            nroots = qmin["template"]["roots"][0]
-            try:
-                from mrh.my_pyscf.fci import csf_solver
-                solver.fcisolver = csf_solver(mol, smult=1)
-            
-            except ImportError:
-                solver.fix_spin_(ss=0)
-
-            solver = solver.multi_state([1.0/nroots,]*nroots, method="lin")
+        except ImportError:
+            solver.fix_spin_(ss=0)
+    
+        if qmin["method"] == 1:
+            solver = solver.multi_state(weights, method="lin")
 
         else:
-            raise NotImplementedError("Not singlet states")
+            solver = solver.state_average(weights)
 
-    solver.conv_tol = 1e-10
-    solver.conv_tol_grad = 1e-6
-    solver.max_cycle_macro = 20000
+        solver.conv_tol = 1e-10
+        solver.conv_tol_grad = 1e-6
+        solver.max_cycle_macro = 20000
 
     if "master" in qmin:
         solver.chkfile = os.path.join(qmin["scratchdir"], "pyscf.chk.master")
