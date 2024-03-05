@@ -760,15 +760,18 @@ at least one task"""
         template = f.readlines()
 
     template_dict = {}
-    INTEGERS_KEYS = ["ncas", "nelecas", "roots", "grids-level"]
+    INTEGERS_KEYS = ["ncas", "nelecas", "roots", "grids-level", "verbose"]
     STRING_KEYS = ["basis", "method", "pdft-functional"]
-    FLOAT_KEYS = []
+    FLOAT_KEYS = ["conv-tol", "conv-tol-grad"]
     BOOL_KEYS = []
 
     template_dict["roots"] = [0 for _ in range(8)]
 
     template_dict["method"] = "casscf"
     template_dict["pdft-functional"] = "tpbe"
+    template_dict["conv-tol"] = 1e-7
+    template_dict["conv-tol-grad"] = 1e-4
+    template_dict["verbose"] = 3
 
     for line in template:
         orig = re.sub("#.*$", "", line).split(None, 1)
@@ -1049,12 +1052,14 @@ def save_chk_file(qmin):
 def build_mol(qmin):
     log_file = f"PySCF_{os.path.basename(qmin['scratchdir'])}.log"
     previous_chk = os.path.join(qmin["scratchdir"], "pyscf.old.chk")
+    verbose = qmin["template"]["verbose"]
+
     if os.path.isfile(previous_chk) and "samestep" in qmin:
         if DEBUG:
             print(f"Loading mol from chkfile {previous_chk}", flush=True)
         mol = lib.chkfile.load_mol(previous_chk)
         mol.output = log_file
-        mol.verbose = 3
+        mol.verbose = verbose 
         mol.build()
 
     else:
@@ -1063,7 +1068,7 @@ def build_mol(qmin):
             unit="Bohr",
             basis=qmin["template"]["basis"],
             output=log_file,
-            verbose=5,
+            verbose=verbose,
             symmetry=False
         )
         mol.build()
@@ -1124,8 +1129,8 @@ def gen_solver(mol, qmin):
         else:
             raise NotImplementedError("Not singlet states")
 
-    solver.conv_tol = 1e-10
-    solver.conv_tol_grad = 1e-6
+    solver.conv_tol = qmin["template"]["conv-tol"]
+    solver.conv_tol_grad = qmin["template"]["conv-tol-grad"]
     solver.max_cycle_macro = 20000
 
     if "master" in qmin:
