@@ -184,12 +184,12 @@ CONTAINS
       STOP 1
     END IF
     ! semi-elegant: read the first determinant string to get the number of electrons
-    WRITE(formatspec,'( "(A",I,")" )') nMO
+    WRITE(formatspec,'( "(A",I0,")" )') nMO
     READ(detflio,formatspec,IOSTAT=iost)detstring
     IF(debug)THEN
       WRITE(6,*) '"'//trim(detstring)//'"'
     ENDIF
-    WRITE(formatspec,'( "(A",I,",A)" )') nMO
+    WRITE(formatspec,'( "(A",I0,",A)" )') nMO
 
     na=0
     nb=0
