@@ -2513,21 +2513,31 @@ module qm
     ! 3. perform a NAC projection, project out rotational and translational motions from NAC
     ! ===============================
  
-    if (ctrl%nac_projection==1) then
-      if (printlevel>3) then
-        write(u_log,*) '============================================================='
-        write(u_log,*) '               [3].Performing NAC projection'
-        write(u_log,*) '============================================================='
-      endif
-
-      ! Compute projection operator.
+    ! Compute projection operator. 
+    if (allocated(traj%trans_rot_P)) then 
       traj%trans_rot_P=0.d0
       ctrans_rot_P=dcmplx(0.d0,0.d0)
       call compute_projection(traj%geom_ad, ctrl%natom, traj%trans_rot_P)
       if (printlevel>5) then
         call matwrite(3*ctrl%natom,traj%trans_rot_P,u_log,'Translational and Rotational Project Operator','F14.9')
       endif
-      ctrans_rot_P=traj%trans_rot_P 
+      ctrans_rot_P=traj%trans_rot_P
+    endif 
+
+    ! projected NAC is only required when:
+    ! 1. in SCP, use projected nonadiabatic force direction; 
+    ! 2. in TSH, use projected hopping direction or velocity reflection vector. 
+    if ((ctrl%method==1 .and. ctrl%nac_projection==1) .or. &
+      &(ctrl%method==0 .and. (ctrl%ekincorrect==2 .or. ctrl%ekincorrect==5 .or. ctrl%ekincorrect==6 .or. ctrl%ekincorrect==8)) .or. &
+      &(ctrl%method==0 .and. (ctrl%reflect_frustrated==2 .or. ctrl%reflect_frustrated==5 .or. ctrl%reflect_frustrated==6 .or. &
+      &ctrl%reflect_frustrated==8 .or. ctrl%reflect_frustrated==92 .or. ctrl%reflect_frustrated==95 .or. &
+      &ctrl%reflect_frustrated==96 .or. ctrl%reflect_frustrated==98))) then
+
+      if (printlevel>3) then
+        write(u_log,*) '============================================================='
+        write(u_log,*) '               [3].Performing NAC projection'
+        write(u_log,*) '============================================================='
+      endif
 
       ! initialize
       traj%pNACdR_MCH_ssad=0.d0
@@ -3207,4 +3217,3 @@ module qm
   endsubroutine
 
 endmodule
-
