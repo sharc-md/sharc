@@ -32,10 +32,10 @@
 USE_PYSHARC := false
 
 #intel, gnu
-USE_COMPILER := gnu
+USE_COMPILER := intel
 
 #mkl,gnu
-USE_LIBS := gnu
+USE_LIBS := mkl
 
 #Static libraries
 COMP_STATIC := false
@@ -53,7 +53,7 @@ ANACONDA := ${CONDA_PREFIX}
 SHARC_SOURCE := $(shell pwd)
 SHARCDIR := $(shell cd ..; pwd)
 #MKLROOT := ${ANACONDA}/lib
-FFTW3_ROOT :=/opt/homebrew
+#FFTW3_ROOT :=/opt/homebrew
 
 # -------------------------------------- conditionals ---------------------------------------
 

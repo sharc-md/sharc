@@ -194,6 +194,9 @@ def print_qmin(qmin):
     if qmin["template"]["method"].upper() == "L-PDFT":
         output += f"L({tmp})-PDFT"
 
+    elif qmin["template"]["method"].upper() == "MC-PDFT":
+        output += f"SA({tmp})-PDFT"
+
     else:
         output += f"SA({tmp})-{qmin['template']['method'].upper()}"
 
@@ -760,18 +763,37 @@ at least one task"""
         template = f.readlines()
 
     template_dict = {}
-    INTEGERS_KEYS = ["ncas", "nelecas", "roots", "grids-level", "verbose"]
+    INTEGERS_KEYS = ["ncas", "nelecas", "roots", "grids-level", "verbose", "max-cycle-macro", "max-cycle-micro", "ah-max-cycle", "ah-start-cycle", "grad-max-cycle"]
     STRING_KEYS = ["basis", "method", "pdft-functional"]
-    FLOAT_KEYS = ["conv-tol", "conv-tol-grad"]
+    FLOAT_KEYS = ["conv-tol", "conv-tol-grad", "max-stepsize", "ah-start-tol", "ah-level-shift", "ah-conv-tol", "ah-lindep"]
     BOOL_KEYS = []
 
     template_dict["roots"] = [0 for _ in range(8)]
 
     template_dict["method"] = "casscf"
+    template_dict["verbose"] = 3
+    
     template_dict["pdft-functional"] = "tpbe"
+    template_dict["grids-level"] = 4
+    
+    # CASSCF solver defaults
     template_dict["conv-tol"] = 1e-7
     template_dict["conv-tol-grad"] = 1e-4
-    template_dict["verbose"] = 3
+
+    template_dict["max-stepsize"] = 0.02
+    template_dict["max-cycle-macro"] = 50
+    template_dict["max-cycle-micro"] = 4
+
+    template_dict["ah-level-shift"] = 1e-8
+    template_dict["ah-conv-tol"] = 1e-12
+    template_dict["ah-max-cycle"] = 30
+    template_dict["ah-lindep"] = 1e-14
+    template_dict["ah-start-tol"] = 2.5
+    template_dict["ah-start-cycle"] = 3
+    
+
+    # gradient solver defaults
+    template_dict["grad-max-cycle"] = 50
 
     for line in template:
         orig = re.sub("#.*$", "", line).split(None, 1)
@@ -827,7 +849,7 @@ at least one task"""
             print(f"Key {key} missing in template file!")
             sys.exit(1)
 
-    ALLOWED_METHODS = ["casscf", "l-pdft"]
+    ALLOWED_METHODS = ["casscf", "l-pdft", "mc-pdft"]
     for index, method in enumerate(ALLOWED_METHODS):
         if template_dict["method"] == method:
             qmin["method"] = index
@@ -838,7 +860,7 @@ at least one task"""
         sys.exit(1)
 
     # find functional if pdft
-    if qmin["method"] == 2:
+    if qmin["method"] == 2 or qmin["method"] == 3:
         ALLOWED_FUNCTIONALS = ["tpbe", "ftpbe"]
         for index, func in enumerate(ALLOWED_FUNCTIONALS):
             if template_dict["pdft-functional"] == func:
@@ -851,9 +873,6 @@ at least one task"""
             )
             print(f"Allowed functionals are: {', '.join(ALLOWED_FUNCTIONALS)}")
             sys.exit(1)
-
-        if "grids-level" not in template_dict:
-            template_dict["grids-level"] = 3 # my default value I guess???
 
         if "nacdr" in qmin:
             print("NACdr not allowed with L-PDFT!")
@@ -1083,55 +1102,49 @@ def gen_solver(mol, qmin):
 
     ncas = qmin["template"]["ncas"]
     nelecas = qmin["template"]["nelecas"]
-    # CASSCF
-    if qmin["method"] == 0:
-        solver = mcscf.CASSCF(mf, ncas, nelecas)
-        if len(qmin["states"]) == 1:
-            nroots = qmin["template"]["roots"][0]
-            try:
-                from mrh.my_pyscf.fci import csf_solver
 
-                solver.fcisolver = csf_solver(mol, smult=1)
+    if len(qmin["states"]) != 1:
+        raise NotImplementedError("Not implemented for states other than singlets!")
 
-            except ImportError:
-                solver.fix_spin_(ss=0)
+    else:
+        nroots = qmin["template"]["roots"][0]
+        weights = [1.0/nroots,]*nroots
 
-            solver = solver.state_average(
-                [
-                    1.0 / nroots,
-                ]
-                * nroots
-            )
+        if qmin["method"] == 0:
+            solver = mcscf.CASSCF(mf, ncas, nelecas)
 
         else:
-            raise NotImplementedError("Not singlet states")
+            functional = qmin["template"]["pdft-functional"]
+            grids_level = qmin["template"]["grids-level"]
+            from pyscf import mcpdft
+            solver = mcpdft.CASSCF(mf, functional, ncas, nelecas, grids_level=grids_level)
 
-    # L-PDFT
-    elif qmin["method"] == 1:
-        from pyscf import mcpdft
+        try:
+            from mrh.my_pyscf.fci import csf_solver
+            solver.fcisolver = csf_solver(mol, smult=1)
         
-        functional = qmin["template"]["pdft-functional"]
-        grids_level = qmin["template"]["grids-level"]
-        
-        solver = mcpdft.CASSCF(mf, functional, ncas, nelecas, grids_level=grids_level)
-        
-        if len(qmin["states"]) == 1:
-            nroots = qmin["template"]["roots"][0]
-            try:
-                from mrh.my_pyscf.fci import csf_solver
-                solver.fcisolver = csf_solver(mol, smult=1)
-            
-            except ImportError:
-                solver.fix_spin_(ss=0)
-
-            solver = solver.multi_state([1.0/nroots,]*nroots, method="lin")
+        except ImportError:
+            solver.fix_spin_(ss=0)
+    
+        if qmin["method"] == 1:
+            solver = solver.multi_state(weights, method="lin")
 
         else:
-            raise NotImplementedError("Not singlet states")
+            solver = solver.state_average(weights)
 
-    solver.conv_tol = qmin["template"]["conv-tol"]
-    solver.conv_tol_grad = qmin["template"]["conv-tol-grad"]
-    solver.max_cycle_macro = 20000
+        solver.conv_tol = qmin["template"]["conv-tol"]
+        solver.conv_tol_grad = qmin["template"]["conv-tol-grad"]
+        
+        solver.max_stepsize = qmin["template"]["max-stepsize"]
+        solver.max_cycle_macro = qmin["template"]["max-cycle-macro"]
+        solver.max_cycle_micro = qmin["template"]["max-cycle-micro"]
+
+        solver.ah_level_shift = qmin["template"]["ah-level-shift"]
+        solver.ah_conv_tol = qmin["template"]["ah-conv-tol"]
+        solver.ah_max_cycle = qmin["template"]["ah-max-cycle"]
+        solver.ah_lindep = qmin["template"]["ah-lindep"]
+        solver.ah_start_tol = qmin["template"]["ah-start-tol"]
+        solver.ah_start_cycle = qmin["template"]["ah-start-cycle"]
 
     if "master" in qmin:
         solver.chkfile = os.path.join(qmin["scratchdir"], "pyscf.chk.master")
@@ -1208,6 +1221,9 @@ def get_grad(solver, qmin):
     zerograd = np.zeros(shape=(qmin["natom"], 3))
 
     solver_grad = solver.nuc_grad_method()
+
+    solver_grad.max_cycle = qmin["template"]["grad-max-cycle"]
+
     for i in sorted(qmin["statemap"]):
         mult, state, _ = tuple(qmin["statemap"][i])
         if (mult, state) in qmin["gradmap"]:
