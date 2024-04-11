@@ -3934,6 +3934,14 @@ def get_smat_from_gbw(file1, file2=''):
             NAO = int(line.split()[0]) + 1
             break
 
+    # find start of matrix
+    iline = -1
+    while True:
+        iline += 1
+        line = out[iline]
+        if 'FRAGMENT-FRAGMENT OVERLAP MATRIX' in line:
+            break
+
     # read matrix
     nblock = 6
     ao_ovl = [[0. for i in range(NAO)] for j in range(NAO)]
@@ -3941,7 +3949,7 @@ def get_smat_from_gbw(file1, file2=''):
         for y in range(NAO):
             block = x // nblock
             xoffset = x % nblock + 1
-            yoffset = block * (NAO + 1) + y + 10
+            yoffset = block * (NAO + 1) + y + 3 + iline
             ao_ovl[x][y] = float(out[yoffset].split()[xoffset])
 
     return NAO, ao_ovl
