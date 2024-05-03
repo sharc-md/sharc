@@ -3759,12 +3759,15 @@ no
 '''
     string += '''b
 all %s
-*
+''' % (QMin['template']['basis'])
+    if not ricc2:
+        string += 'c\nall 0.\n'
+    string += '''*
 eht
 y
 %i
 y
-''' % (QMin['template']['basis'],
+''' % (
        QMin['template']['charge']
        )
 
