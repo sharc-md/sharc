@@ -1542,6 +1542,11 @@ def getQMout(out, QMin):
             for jstate, j in enumerate(QMin['statemap']):
                 mult1, state1, ms1 = tuple(QMin['statemap'][i])
                 mult2, state2, ms2 = tuple(QMin['statemap'][j])
+                if 'overlap_nacs' in QMin:
+                    if mult1 not in [i[0] for i in QMin['nacmap']]:
+                        continue
+                    if mult2 not in [i[0] for i in QMin['nacmap']]:
+                        continue
                 if mult1 == mult2 and ms1 == ms2:
                     nac[istate][jstate] = complex(getsmate(out, mult1, state1, state2, states))
                 else:
@@ -2893,6 +2898,8 @@ def gettasks(QMin):
         # RASSI for overlaps
         if 'overlap' in QMin:
             if 'overlap_nacs' in QMin:
+                if imult+1 not in [ i[0] for i in QMin['nacmap']]:
+                    continue
                 tasks.append(['link', 'MOLCAS.%i.JobIph' % (imult + 1), 'JOB001'])
                 tasks.append(['link', 'MOLCAS.JobIph', 'JOB002'])
             else:
@@ -2900,7 +2907,7 @@ def gettasks(QMin):
                     tasks.append(['link', os.path.join(QMin['savedir'], 'MOLCAS.%i.JobIph.master' % (imult + 1)), 'JOB001'])
                 else:
                     tasks.append(['link', os.path.join(QMin['savedir'], 'MOLCAS.%i.JobIph.old' % (imult + 1)), 'JOB001'])
-            tasks.append(['link', 'MOLCAS.%i.JobIph' % (imult + 1), 'JOB002'])
+                tasks.append(['link', 'MOLCAS.%i.JobIph' % (imult + 1), 'JOB002'])
             tasks.append(['rassi', 'overlap', [nstates, nstates]])
 
         # RASSI for Dipole moments only if overlap-RASSI is not needed
@@ -3505,12 +3512,18 @@ def generate_joblist(QMin):
             QMin3['gradmap'] = [grad]
             QMin3['nacmap'] = []
             QMin3['ncpu'] = cpu_per_run[icount]
+            #for i in range(len(QMin3['states'])):
+            #    if not i+1 == grad[0]:
+            #        QMin3['states'][i] = 0
             icount += 1
             joblist[-1]['grad_%i_%i' % grad] = QMin3
         for nac in QMin['nacmap']:
             QMin3 = deepcopy(QMin2)
             QMin3['nacmap'] = [nac]
             QMin3['gradmap'] = []
+            #for i in range(len(QMin3['states'])):
+            #    if not i+1 == nac[0]:
+            #        QMin3['states'][i] = 0
             QMin3['overlap'] = [[j + 1, i + 1] for i in range(QMin['nmstates']) for j in range(i + 1)]
             QMin3['overlap_nacs'] = []
             QMin3['ncpu'] = cpu_per_run[icount]
