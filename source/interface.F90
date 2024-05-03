@@ -464,6 +464,7 @@ subroutine get_nacdr(string, ICALL)
     use iso_c_binding
     use memory_module, only: traj, ctrl
     implicit none
+    ! __C_OUT_STRING_XL_ :: string
     __C_OUT_STRING_L_ :: string
     __INT__, intent(in) :: ICALL
     integer :: i,j
@@ -480,6 +481,7 @@ subroutine get_nacdr(string, ICALL)
             do i=1,ctrl%nstates
               do j=1,ctrl%nstates
                 if (traj%selt_ss(j,i)) write(string,'(A,1X,I3,1X,I3)') trim(string) // C_NEW_LINE , i,j
+                ! if (traj%selt_ss(j,i)) write(string,'(A,1X,I3,1X,I3)') trim(string) , i,j
               enddo
             enddo
             write(string,'(A)') trim(string) // C_NEW_LINE // 'END'
@@ -1250,7 +1252,7 @@ subroutine Verlet_finalize(IExit, iskip)
     use memory_module, only: traj, ctrl
     use misc
     use definitions
-    use qm, only: Update_old, Mix_gradients
+    use qm, only: Update_old, Mix_gradients, NAC_processing
     use electronic, only: kill_after_relaxation
     use output, only: allflush, write_dat, write_list_line, write_geom
    use restart, only: write_restart_traj
@@ -1259,7 +1261,10 @@ subroutine Verlet_finalize(IExit, iskip)
     __INT__, intent(out) :: IExit ! if IExit = 0 end loop, else continue
     __INT__, intent(in)  :: iskip ! if IExit = 0 end loop, else continue
 
-    if (traj%kind_of_jump/=0) call Mix_gradients(traj, ctrl)
+    if (traj%kind_of_jump/=0) then
+        call NAC_processing(traj, ctrl)
+        call Mix_gradients(traj, ctrl)
+    endif
     ! Finalization: Variable update, Output, Restart File, Consistency Checks
     call Update_old(traj,ctrl)
     call set_time(traj)
