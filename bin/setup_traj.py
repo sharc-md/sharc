@@ -278,7 +278,7 @@ GradCorrect={
       'description': 'mixed gradients are calculated as linear combination of MCH gradients only',
       'required':   []
       },
-  2: {'name':        'ngh',
+  2: {'name':        'ngt',
       'description': 'mixed gradients are calculated by correction of MCH gradients with non-adiabatic coupling vector',
       'required':   ['nacdr']
      },
