@@ -541,7 +541,8 @@ integer, parameter :: u_qm_QMout=42          !< here SHARC retrieves the results
 ! =========================================================== !
 
     subroutine allocate_traj(traj,ctrl)
-      !< Allocates all arrays in traj
+      !< Allocates almost all arrays in traj
+      !< Memory-heavy allocations are done in additional_allocate_traj
       !< Does not allocate arrays in ctrl (laser-related, actstates_s,
       !  nstates_m, lpzpe_ah, lpzpe_bc, lpzpe_ke_zpe_ah, lpzpe_ke_zpe_bc)
       !< Reads natom and nstates from ctrl
@@ -856,34 +857,6 @@ integer, parameter :: u_qm_QMout=42          !< here SHARC retrieves the results
       if (status/=0) stop 'Could not allocate NACdR_diag_ssad'
       traj%NACdR_diag_ssad=-123.d0
 
-      allocate(traj%trans_rot_P(3*natom,3*natom),stat=status)
-      if (status/=0) stop 'Could not allocate trans_rot_P'
-      traj%trans_rot_P=-123.d0
-
-      allocate(traj%pNACdR_MCH_ssad(nstates,nstates,natom,3),stat=status)
-      if (status/=0) stop 'Could not allocate pNACdR_MCH_ssad'
-      traj%pNACdR_MCH_ssad=-123.d0
-
-      allocate(traj%pNACdR_diag_ssad(nstates,nstates,natom,3),stat=status)
-      if (status/=0) stop 'Could not allocate pNACdR_diag_ssad'
-      traj%pNACdR_diag_ssad=-123.d0
-
-      allocate(traj%NACGV_MCH_ssad(nstates,nstates,natom,3),stat=status)
-      if (status/=0) stop 'Could not allocate NACGV_MCH_ssad'
-      traj%NACGV_MCH_ssad=-123.d0
-
-      allocate(traj%NACGV_diag_ssad(nstates,nstates,natom,3),stat=status)
-      if (status/=0) stop 'Could not allocate NACGV_diag_ssad'
-      traj%NACGV_diag_ssad=-123.d0
-
-      allocate(traj%pNACGV_MCH_ssad(nstates,nstates,natom,3),stat=status)
-      if (status/=0) stop 'Could not allocate pNACGV_MCH_ssad'
-      traj%pNACGV_MCH_ssad=-123.d0
-
-      allocate(traj%pNACGV_diag_ssad(nstates,nstates,natom,3),stat=status)
-      if (status/=0) stop 'Could not allocate pNACGV_diag_ssad'
-      traj%pNACGV_diag_ssad=-123.d0
-
       allocate(traj%dendt_MCH_ss(nstates,nstates),stat=status)
       if (status/=0) stop 'Could not allocate dendt_MCH_ss'
       traj%dendt_MCH_ss=-123.d0
@@ -977,6 +950,105 @@ integer, parameter :: u_qm_QMout=42          !< here SHARC retrieves the results
       traj%lpzpe_ke_bc=-123.d0
 
     endsubroutine
+
+
+! ===========================================================
+! used to manage memory-heavy allocations
+! perform conditional allocation 
+    subroutine additional_allocate_traj(traj,ctrl)
+      implicit none
+      type(ctrl_type), intent(inout) :: ctrl
+      type(trajectory_type), intent(inout) :: traj
+      integer :: status
+      integer :: natom,nstates
+
+      ! GB denotes a general basis, meaning it can be either MCH or diag
+      integer :: allocate_trans_rot_P
+      integer :: allocate_pNACdR_GB_ssad
+      integer :: allocate_NACGV_GB_ssad
+      integer :: allocate_pNACGV_GB_ssad
+
+      natom=ctrl%natom
+      nstates=ctrl%nstates
+
+      if (printlevel>0) then
+        write(u_log,*) '============================================================='
+        write(u_log,*) '                  Memory-heavy Allocations'
+        write(u_log,*) '============================================================='
+      endif
+
+      ! projection operator trans_rot_P is only computed when:
+      ! 1. in SCP, use projected nonadiabatic force direction; 
+      ! 2. in TSH, use projected hopping direction or velocity reflection vector. 
+      allocate_trans_rot_P=0
+      if (ctrl%method==1 .and. ctrl%nac_projection==1) then
+        allocate_trans_rot_P=1
+      else if (ctrl%method==0 .and. &
+        &(ctrl%ekincorrect==2 .or. ctrl%ekincorrect==5 .or. ctrl%ekincorrect==6 .or. ctrl%ekincorrect==8)) then 
+        allocate_trans_rot_P=1
+      else if (ctrl%method==0 .and. &
+        &(ctrl%reflect_frustrated==2 .or. ctrl%reflect_frustrated==5 .or. ctrl%reflect_frustrated==6 .or. ctrl%reflect_frustrated==8 .or. &
+        &ctrl%reflect_frustrated==92 .or. ctrl%reflect_frustrated==95 .or. ctrl%reflect_frustrated==96 .or. ctrl%reflect_frustrated==98)) then 
+        allocate_trans_rot_P=1
+      endif 
+
+      if (allocate_trans_rot_P==1) then
+        write(u_log,*) "allocating trans_rot_P"
+        allocate(traj%trans_rot_P(3*natom,3*natom),stat=status)
+        if (status/=0) stop 'Could not allocate trans_rot_P'
+        traj%trans_rot_P=-123.d0
+      endif
+
+      ! projected NAC is only used in SCP for nonadiabatic force direction 
+      ! in TSH, if one is using projected NAC, the vector is given in
+      ! traj%hopping_direction_ssad and traj%frustrated_hop_vec_ssad
+      allocate_pNACdR_GB_ssad=0
+      if (ctrl%method==1 .and. ctrl%nac_projection==1) then
+        allocate_pNACdR_GB_ssad=1
+      endif
+
+      if (allocate_pNACdR_GB_ssad==1) then 
+        write(u_log,*) "allocating projected NAC"
+        allocate(traj%pNACdR_MCH_ssad(nstates,nstates,natom,3),stat=status)
+        if (status/=0) stop 'Could not allocate pNACdR_MCH_ssad'
+        traj%pNACdR_MCH_ssad=-123.d0
+        allocate(traj%pNACdR_diag_ssad(nstates,nstates,natom,3),stat=status)
+        if (status/=0) stop 'Could not allocate pNACdR_diag_ssad'
+        traj%pNACdR_diag_ssad=-123.d0
+      endif
+
+      ! effective NAC is only used when calc_effectivenac is set to 1
+      allocate_NACGV_GB_ssad=0
+      if (ctrl%calc_effectivenac==1) then
+        allocate_NACGV_GB_ssad=1
+      endif
+      if (allocate_NACGV_GB_ssad==1) then
+        write(u_log,*) "allocating effective NAC"
+        allocate(traj%NACGV_MCH_ssad(nstates,nstates,natom,3),stat=status)
+        if (status/=0) stop 'Could not allocate NACGV_MCH_ssad'
+        traj%NACGV_MCH_ssad=-123.d0
+        allocate(traj%NACGV_diag_ssad(nstates,nstates,natom,3),stat=status)
+        if (status/=0) stop 'Could not allocate NACGV_diag_ssad'
+        traj%NACGV_diag_ssad=-123.d0
+      endif
+        
+      ! projected effective NAC is only used when calc_effectivenac is set to 1 
+      allocate_pNACGV_GB_ssad=0
+      if (ctrl%calc_effectivenac==1 .and. ctrl%nac_projection==1) then
+        allocate_pNACGV_GB_ssad=1
+      endif
+      if (allocate_pNACGV_GB_ssad==1) then 
+        write(u_log,*) "allocating projected effective NAC"
+        allocate(traj%pNACGV_MCH_ssad(nstates,nstates,natom,3),stat=status)
+        if (status/=0) stop 'Could not allocate pNACGV_MCH_ssad'
+        traj%pNACGV_MCH_ssad=-123.d0
+        allocate(traj%pNACGV_diag_ssad(nstates,nstates,natom,3),stat=status)
+        if (status/=0) stop 'Could not allocate pNACGV_diag_ssad'
+        traj%pNACGV_diag_ssad=-123.d0
+      endif 
+
+    endsubroutine
+
 
     subroutine deallocate_ctrl(ctrl)
       implicit none
