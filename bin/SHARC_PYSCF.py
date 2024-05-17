@@ -849,7 +849,7 @@ at least one task"""
             print(f"Key {key} missing in template file!")
             sys.exit(1)
 
-    ALLOWED_METHODS = ["casscf", "l-pdft", "mc-pdft"]
+    ALLOWED_METHODS = ["casscf", "l-pdft", "mc-pdft", "cms-pdft"]
     for index, method in enumerate(ALLOWED_METHODS):
         if template_dict["method"] == method:
             qmin["method"] = index
@@ -860,11 +860,11 @@ at least one task"""
         sys.exit(1)
 
     # find functional if pdft
-    if qmin["method"] == 2 or qmin["method"] == 3:
+    if qmin["method"] == 2 or qmin["method"] == 3 or qmin["method"] == 4:
         ALLOWED_FUNCTIONALS = ["tpbe", "ftpbe"]
         for index, func in enumerate(ALLOWED_FUNCTIONALS):
             if template_dict["pdft-functional"] == func:
-                qmin["pdft-functional"] == index
+                qmin["pdft-functional"] = index
                 break
 
         else:
@@ -1129,7 +1129,10 @@ def gen_solver(mol, qmin):
         if qmin["method"] == 1:
             solver = solver.multi_state(weights, method="lin")
 
-        else:
+        elif qmin["method"] == 3:
+            solver = solver.multi_state(weights, method="cms")
+
+        elif qmin["method"] == 2:
             solver = solver.state_average(weights)
 
         solver.conv_tol = qmin["template"]["conv-tol"]
