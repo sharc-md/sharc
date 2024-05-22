@@ -40,7 +40,6 @@ from optparse import OptionParser
 import readline
 import time
 
-
 # some constants
 DEBUG = False
 CM_TO_HARTREE = 1./219474.6     #4.556335252e-6 # conversion factor from cm-1 to Hartree
@@ -98,7 +97,7 @@ def centerstring(string,n,pad=' '):
   if l>=n:
     return string
   else:
-    return  pad*((n-l+1)/2)+string+pad*((n-l)/2)
+    return  pad*((n-l+1)//2)+string+pad*((n-l)//2)
 
 def displaywelcome():
   string='\n'
