@@ -3173,6 +3173,8 @@ def writeMOLCASinput(tasks, QMin):
 
         elif task[0] == 'alaska':
             string += '&ALASKA\n'
+            if QMin['version'] >= 24.0:
+                string+='pold\n'
             if len(task)==2:
                 string+='root=%i\n' % (task[1])
             elif len(task)==3:
