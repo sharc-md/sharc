@@ -2756,6 +2756,8 @@ def gettasks(QMin):
                 if not 'init' in QMin:
                     tasks.append(['rm', 'JOBOLD'])
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            if QMin['method']==5 and QMin['pdft-functional'] > -1:
+                tasks.append(['copy','Do_Rotate.txt',os.path.join(QMin['savedir'],'Do_Rotate.%i.txt' % (imult+1))])
             if 'ion' in QMin:
                 tasks.append(['copy', 'MOLCAS.RasOrb', 'MOLCAS.%i.RasOrb' % (imult + 1)])
             if 'molden' in QMin:
