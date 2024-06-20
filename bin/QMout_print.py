@@ -285,6 +285,7 @@ excitation energies and oscillator strengths.
     parser.add_option('-D', dest='D', action='store_true', help="Diagonalize")
     parser.add_option('-S', dest='S', type=int, nargs=1, default=1, help="Initial state (Lowest=1)")
     parser.add_option('-t', dest='t', type=int, nargs=1, default=0, help="0 (default): for QM.out containing h,dm; 1: for QM.out containing only h")
+    parser.add_option('-L', dest='L', action='store_true', help="Format in a single line")
 
     #parser.add_option('-n', dest='n', type=int, nargs=1, default=3, help="Number of geometries to be generated (integer, default=3)")
     #parser.add_option('-r', dest='r', type=int, nargs=1, default=16661, help="Seed for the random number generator (integer, default=16661)")
@@ -331,11 +332,13 @@ excitation energies and oscillator strengths.
     else:
         print("Target not defined.")
         exit()
-    sys.stderr.write('%s  %i  %i  %s\n' % (qmoutfile, QMin['nmstates'], QMin['natom'], target_list))
+    if not options.L:
+        sys.stderr.write('%s  %i  %i  %s\n' % (qmoutfile, QMin['nmstates'], QMin['natom'], target_list))
     QMout = read_QMout(qmoutfile, QMin['nmstates'], QMin['natom'], target_list)
 
-    sys.stderr.write('Number of states: %s\n' % (states))
-    sys.stderr.write('%5s  %11s %16s %12s %12s   %6s\n' % ('State', 'Label', 'E (E_h)', 'dE (eV)', 'f_osc', 'Spin'))
+    if not options.L:
+        sys.stderr.write('Number of states: %s\n' % (states))
+        sys.stderr.write('%5s  %11s %16s %12s %12s   %6s\n' % ('State', 'Label', 'E (E_h)', 'dE (eV)', 'f_osc', 'Spin'))
 
     if options.D:
         h, dm, U = transform(QMout['h'][0], QMout['dm'], None)
@@ -379,7 +382,8 @@ excitation energies and oscillator strengths.
             else:
                 de = (e - energies[0]) * HARTREE_TO_EV
             string = '%5i %10s%02i %16.10f %12.8f %12.8f   %6.4f' % (istate + 1, IToMult[ist[0]][0], ist[1] - (ist[0] <= 2), e, de, fosc[-1], spin)
-            print(string)
+            if not options.L:
+                print(string)
     else:
         for istate in range(QMin['nmstates']):
             e = QMout['h'][0][istate][istate].real
@@ -405,8 +409,27 @@ excitation energies and oscillator strengths.
             string = '%5i %10s%02i %16.10f %12.8f %12.8f   %6.4f' % (istate + 1, IToMult[m][0], s - (m <= 2), e, de, fosc[-1], m)
             if istate == initial:
                 string += ' #initial state'
-            print(string)
+            if not options.L:
+                print(string)
 
+    if options.L:
+        cwd=os.getcwd().split('/')[-1].split('_')[-1]
+
+        string = '%s ' % (cwd)
+        for i,e in enumerate(energies):
+            if not options.D:
+                m, s, ms = QMin['statemap'][i + 1]
+                if -2 * ms + 1 != m:
+                    continue
+            string += '%16.10f ' % e
+        for i,f in enumerate(fosc):
+            if not options.D:
+                m, s, ms = QMin['statemap'][i + 1]
+                if -2 * ms + 1 != m:
+                    continue
+            string += '%12.8f ' % f
+        #string += '\n'
+        print(string)
 
 
 
