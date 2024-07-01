@@ -1383,7 +1383,7 @@ from the initconds.excited files as provided by excite.py.
                 print('Please input one of the following: %s!' % ([i for i in cando]))
         INFOS['gradcorrect'] = gct
         possible = ('nacdr' in Interfaces[INFOS['interface']]['features'])
-        if GradCorrect[gct]['name'] == 'ngh' and not possible:
+        if GradCorrect[gct]['name'] == 'ngt' and not possible:
             print('... but interface cannot provide non-adiabatic coupling vectors, turning option off.')
             INFOS['gradcorrect'] = 1
     else:

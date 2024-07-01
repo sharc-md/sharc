@@ -2756,6 +2756,8 @@ def gettasks(QMin):
                 if not 'init' in QMin:
                     tasks.append(['rm', 'JOBOLD'])
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            if QMin['method']==5 and QMin['pdft-functional'] > -1:
+                tasks.append(['copy','Do_Rotate.txt',os.path.join(QMin['savedir'],'Do_Rotate.%i.txt' % (imult+1))])
             if 'ion' in QMin:
                 tasks.append(['copy', 'MOLCAS.RasOrb', 'MOLCAS.%i.RasOrb' % (imult + 1)])
             if 'molden' in QMin:
@@ -3173,6 +3175,8 @@ def writeMOLCASinput(tasks, QMin):
 
         elif task[0] == 'alaska':
             string += '&ALASKA\n'
+            if QMin['version'] >= 24.0:
+                string+='pold\n'
             if len(task)==2:
                 string+='root=%i\n' % (task[1])
             elif len(task)==3:
