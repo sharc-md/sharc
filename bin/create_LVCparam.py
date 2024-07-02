@@ -286,22 +286,32 @@ def LVC_complex_mat(header, mat, deldiag=False, oformat=' % .7e'):
 # ======================================================================= #
 
 
-def loewdin_orthonormalization(A):
+def loewdin_orthonormalization(A, debug=False):
     '''
     returns loewdin orthonormalized matrix
     '''
 
     # S = A^T * A
     S = np.dot(A.T, A)
+    if debug:
+        print(S)
 
     # S^d = U^T * S * U
     S_diag_only, U = np.linalg.eigh(S)
+    if debug:
+        print('test')
+        print(U)
+        print(U.shape)
+        print(U[0].shape)
 
     # calculate the inverse sqrt of the diagonal matrix
     S_diag_only_inverse_sqrt = [1. / (float(d) ** 0.5) for d in S_diag_only]
     S_diag_inverse_sqrt = np.diag(S_diag_only_inverse_sqrt)
 
     # calculate inverse sqrt of S
+    if debug:
+        printmatrix(S_diag_inverse_sqrt)
+        printmatrix(U.T,'bla')
     S_inverse_sqrt = np.dot(np.dot(U, S_diag_inverse_sqrt), U.T)
 
     # calculate loewdin orthonormalized matrix
@@ -312,6 +322,8 @@ def loewdin_orthonormalization(A):
     length = len(A_lo)
     A_lon = np.zeros((length, length), dtype=complex)
 
+    if debug:
+        printmatrix(A_lo,'A_lo before normalization')
     for i in range(length):
         norm_of_col = np.linalg.norm(A_lo[i])
         A_lon[i] = [e / (norm_of_col ** 0.5) for e in A_lo[i]][0]
@@ -364,7 +376,7 @@ def partition_matrix(matrix, multiplicity, states):
 
 # ======================================================================= #
 
-def phase_correction(matrix):
+def phase_correction(matrix, debug=False):
     U = np.array(matrix).real
     #print(U)
     det = np.linalg.det(U)
@@ -439,7 +451,7 @@ def check_overlap_diagonal(matrix, states, normal_mode, displacement, ignore_pro
 # ======================================================================= #
 
 
-def calculate_W_dQi(H, S, e_ref, normal_mode, displ):
+def calculate_W_dQi(H, S, e_ref, normal_mode, displ, debug=False):
     '''
     Calculates the displacement matrix
     '''
@@ -449,11 +461,22 @@ def calculate_W_dQi(H, S, e_ref, normal_mode, displ):
 
     # do phase correction if necessary
     # if any([x for x in np.diag(S) if x < 0]):
+    if debug:
+        print(normal_mode, displ)
+        printmatrix(S,'before phase 1')
     S = phase_correction(S)
+    if debug:
+        printmatrix(S,'after phase 1')
 
     # do loewdin orthonorm. on overlap matrix
-    U = loewdin_orthonormalization(np.matrix(S))
+    if debug:
+        printmatrix(S,'before Loewdin')
+    U = loewdin_orthonormalization(np.matrix(S), debug=debug)
+    if debug:
+        printmatrix(U,'after Loewdin')
     U = np.array(phase_correction(U))
+    if debug:
+        printmatrix(U,'after phase 2')
 
     return np.dot(np.dot(U, H), U.T)   # TODO: or transposed the other way around?
     # return np.dot(np.dot(U.T, H), U)
@@ -463,7 +486,9 @@ def calculate_W_dQi(H, S, e_ref, normal_mode, displ):
 def printmatrix(M,title=''):
     s='%s\n' % title
     for i in M:
+      print(i)
       for j in i:
+        print(j)
         s+='%6.3f ' % j.real
       s+='\n'
     print(s)
@@ -617,7 +642,7 @@ def write_LVC_template(INFOS):
             INFOS['problematic_mults'] = check_overlap_diagonal(pos_S, INFOS['states'], normal_mode, 'p', INFOS['ignore_problematic_states'])
 
             # calculate displacement matrix
-            pos_W_dQi = calculate_W_dQi(pos_H, pos_S, e_ref, normal_mode, 'p')
+            pos_W_dQi = calculate_W_dQi(pos_H, pos_S, e_ref, normal_mode, 'p', debug=INFOS['debug'])
             print('Mode %s positive' % normal_mode)
             # printmatrix(pos_H, 'Hpos')
             # printmatrix(pos_S, 'Spos')
@@ -641,7 +666,7 @@ def write_LVC_template(INFOS):
                 INFOS['problematic_mults'].update(check_overlap_diagonal(neg_S, INFOS['states'], normal_mode, 'n', INFOS['ignore_problematic_states']))
 
                 # calculate displacement matrix
-                neg_W_dQi = calculate_W_dQi(neg_H, neg_S, e_ref, normal_mode, 'n')
+                neg_W_dQi = calculate_W_dQi(neg_H, neg_S, e_ref, normal_mode, 'n', debug=INFOS['debug'])
                 print('Mode %s negative' % normal_mode)
                 # printmatrix(neg_H, 'Hneg')
                 # printmatrix(neg_S, 'Sneg')
@@ -735,6 +760,10 @@ def main():
     usage = '''python %s''' % (script_name)
 
     parser = OptionParser(usage=usage, description='')
+    parser.add_option("-d", "--debug",
+                  action="store_true", dest="debug", default=False,
+                  help="Print all involved matrices and quantities for debugging")
+    (options, args) = parser.parse_args()
 
     displaywelcome()
 
@@ -750,6 +779,7 @@ def main():
 
     # set manually for old calcs
     # INFOS['ignore_problematic_states'] = True
+    INFOS['debug'] = options.debug
 
     # write LVC.template
     write_LVC_template(INFOS)
