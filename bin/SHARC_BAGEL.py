@@ -1599,20 +1599,20 @@ def readQMin(QMinfilename):
                 sys.exit(44)
 
         # PyQuante
-        QMin['pyquante'] = get_sh2BAGEL_environ(sh2BAGEL, 'pyquante', False, False)
-        if QMin['pyquante'] is None or not os.path.isdir(QMin['pyquante']):
-            print('Give path to the PyQuante installation directory in BAGEL.resources!')
-            sys.exit(45)
-        if 'PYTHONPATH' in os.environ:
-            # os.environ['PYTHONPATH']=os.path.join(QMin['pyquante']) + os.pathsep + os.environ['PYTHONPATH']
+        # QMin['pyquante'] = get_sh2BAGEL_environ(sh2BAGEL, 'pyquante', False, False)
+        # if QMin['pyquante'] is None or not os.path.isdir(QMin['pyquante']):
+        #     print('Give path to the PyQuante installation directory in BAGEL.resources!')
+        #     sys.exit(45)
+        # if 'PYTHONPATH' in os.environ:
+        #     # os.environ['PYTHONPATH']=os.path.join(QMin['pyquante']) + os.pathsep + os.environ['PYTHONPATH']
 
-            # os.pathsep + QMin['pyquante']
-            #    print("already pypath")
-            #    print(os.environ['PYTHONPATH'])
-            # else:
-            #    os.environ['PYTHONPATH']=QMin['pyquante']
-            #    print("no pypath")
-            sys.path.append(QMin['pyquante'])
+        #     # os.pathsep + QMin['pyquante']
+        #     #    print("already pypath")
+        #     #    print(os.environ['PYTHONPATH'])
+        #     # else:
+        #     #    os.environ['PYTHONPATH']=QMin['pyquante']
+        #     #    print("no pypath")
+        #     sys.path.append(QMin['pyquante'])
 
     # memory cannot set memory! #TODO
     QMin['memory'] = 100
@@ -2715,60 +2715,60 @@ def make_mos_from_Molden(moldenfile, QMin):
             line = data[jline]
             MO_A[imo][iao] = float(line.split()[1])
 
-    if any([1 == mode[i] for i in aos]):
-        print('  .. transforming to cartesian AO basis')
+    #if any([1 == mode[i] for i in aos]):
+    #    print('  .. transforming to cartesian AO basis')
 
 
-    d34 = math.sqrt(3. / 4.)
-    f65 = math.sqrt(6. / 5.)
-    f38 = math.sqrt(3. / 8.)
-    f58 = math.sqrt(5. / 8.)
-    f98 = math.sqrt(9. / 8.)
-    f920 = math.sqrt(9. / 20.)
-    f340 = math.sqrt(3. / 40.)
-    transform = {
-        'd': [[(0, -0.5), (3, d34)],
-              [(0, -0.5), (3, -d34)],
-              [(0, 1.0)],
-              [(4, 1.0)],
-              [(1, 1.0)],
-              [(2, 1.0)]],
-        'f': [[(1, -f38), (5, f58)],
-              [(2, -f38), (6, -f58)],
-              [(0, 1.0)],
-              [(1, -f340), (5, -f98)],
-              [(2, -f340), (6, f98)],
-              [(0, -f920), (3, d34)],
-              [(1, f65)],
-              [(2, f65)],
-              [(0, -f920), (3, -d34)],
-              [(4, 1.0)]],
-        'g': None                         # TODO: add and check for bagel
-    }
+    #d34 = math.sqrt(3. / 4.)
+    #f65 = math.sqrt(6. / 5.)
+    #f38 = math.sqrt(3. / 8.)
+    #f58 = math.sqrt(5. / 8.)
+    #f98 = math.sqrt(9. / 8.)
+    #f920 = math.sqrt(9. / 20.)
+    #f340 = math.sqrt(3. / 40.)
+    #transform = {
+    #    'd': [[(0, -0.5), (3, d34)],
+    #          [(0, -0.5), (3, -d34)],
+    #          [(0, 1.0)],
+    #          [(4, 1.0)],
+    #          [(1, 1.0)],
+    #          [(2, 1.0)]],
+    #    'f': [[(1, -f38), (5, f58)],
+    #          [(2, -f38), (6, -f58)],
+    #          [(0, 1.0)],
+    #          [(1, -f340), (5, -f98)],
+    #          [(2, -f340), (6, f98)],
+    #          [(0, -f920), (3, d34)],
+    #          [(1, f65)],
+    #          [(2, f65)],
+    #          [(0, -f920), (3, -d34)],
+    #          [(4, 1.0)]],
+    #    'g': None                         # TODO: add and check for bagel
+    #}
 
-    tMO_A = []
-    for imo in range(NMO_A):
-        newmo = []
-        iao = 0
-        for shell in aos:
-            n_cart = shells[shell][0]
-            if mode[shell] == 0:
-                for i in range(n_cart):
-                    newmo.append(MO_A[imo][iao])
-                    iao += 1
-            else:
-                n_sph = shells[shell][1]
-                new = [0. for i in range(n_cart)]
-                for i in range(n_cart):
-                    for j, c in transform[shell][i]:
-                        new[i] += c * MO_A[imo][iao + j]
-                newmo.extend(new)
-                iao += n_sph
-        tMO_A.append(newmo)
+    #tMO_A = []
+    #for imo in range(NMO_A):
+    #    newmo = []
+    #    iao = 0
+    #    for shell in aos:
+    #        n_cart = shells[shell][0]
+    #        if mode[shell] == 0:
+    #            for i in range(n_cart):
+    #                newmo.append(MO_A[imo][iao])
+    #                iao += 1
+    #        else:
+    #            n_sph = shells[shell][1]
+    #            new = [0. for i in range(n_cart)]
+    #            for i in range(n_cart):
+    #                for j, c in transform[shell][i]:
+    #                    new[i] += c * MO_A[imo][iao + j]
+    #            newmo.extend(new)
+    #            iao += n_sph
+    #    tMO_A.append(newmo)
 
 
-    MO_A = tMO_A
-    NAO = NAOs[0]
+    #MO_A = tMO_A
+    #NAO = NAOs[0]
 
 
     # handle frozen core
@@ -3603,7 +3603,7 @@ def getenergy(corefile, ijob, QMin):
                         i = int(line.split()[5])
                         energies[(imult, i + (gsmult == imult))] = float(line.split()[6])
 
-                else:
+                elif not mscaspt2 and not caspt2:
                     if '* ci vector' in line and ' 0,' in line:
                         for i in range(nstates):
                             if i == 0:
@@ -3934,7 +3934,7 @@ def main():
 
     # Remove Scratchfiles from SCRATCHDIR
     if not DEBUG:
-        cleandir(QMin['scratchdir'])
+        #cleandir(QMin['scratchdir'])
         if 'cleanup' in QMin:
             cleandir(QMin['savedir'])
 
