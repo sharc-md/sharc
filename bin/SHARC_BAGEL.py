@@ -2334,6 +2334,7 @@ def writeBAGELinput(QMin):
     # molecule
     string += '  { \n    "title" : "molecule",\n'
     string += '    "%s" : "%s",\n' % ('dkh', QMin['template']['dkh'])
+    string += '    "cartesian": "true",\n'
 
     # basis
     if not os.path.isabs(QMin['template']['basis']):
@@ -2369,6 +2370,32 @@ def writeBAGELinput(QMin):
     casscfkeys = ['nact', 'nclosed', 'maxiter']
     caspt2keys = ['ms', 'xms', 'sssr', 'shift', 'shift_imag', 'orthogonal_basis', 'maxiter']
 
+    # we must do a force-less calculation first, otherwise we get garbage Molden files
+    string += '  {\n    "title" : "casscf",\n'
+    for key in casscfkeys:
+        string += '    "%s" : %s,\n' % (key, QMin['template'][key])
+    string += '    "nspin" : %i,\n' % (gsmult - 1)
+    string += '    "print_thresh" : 1e-10,\n'
+    string += '    "charge" : %i,\n' % (charge)
+    string += '    "nstate" : %i,\n' % (QMin['template']['nstate'][gsmult - 1])
+    string = string[:-2] + '\n  },\n\n'
+    if QMin['template']['method'] == 'caspt2':
+        string += '  { \n  '
+        string += '  "title" : "smith",\n'
+        string += '    "method" : "caspt2",\n'
+        for key in caspt2keys:
+            string += '    "%s" : "%s",\n' % (key, QMin['template'][key])
+        string = string[:-2] + '\n   },\n\n'
+
+    # save_ref
+    string += '  { \n    "title" : "save_ref",\n'
+    string += '    "file" : "%s"\n  },\n\n' % (os.path.join('./archive'))
+
+    # write molden file
+    string += '  { \n    "title" : "print",\n'
+    string += '    "file" : "%s",\n' % (os.path.join('./orbitals.molden.%i' % QMin['IJOB']))
+    string += '    "orbitals" : "true"\n  },\n\n'
+
     # forces
     if dograd or donac:
         string += '  { \n    "title" : "forces",\n'
@@ -2397,32 +2424,24 @@ def writeBAGELinput(QMin):
         string += '    "nstate" : %i,\n' % (QMin['template']['nstate'][gsmult - 1])
         string += '    "dipole" : "%s",\n' % (QMin['template']['dipole'])
         string = string[:-2] + '\n    } ]\n  },\n\n'
-    else:
-        string += '  {\n    "title" : "casscf",\n'
-        for key in casscfkeys:
-            string += '    "%s" : %s,\n' % (key, QMin['template'][key])
-        string += '    "nspin" : %i,\n' % (gsmult - 1)
-        string += '    "print_thresh" : 1e-10,\n'
-        string += '    "charge" : %i,\n' % (charge)
-        string += '    "nstate" : %i,\n' % (QMin['template']['nstate'][gsmult - 1])
-        string = string[:-2] + '\n  },\n\n'
-        if QMin['template']['method'] == 'caspt2':
-            string += '  { \n  '
-            string += '  "title" : "smith",\n'
-            string += '    "method" : "caspt2",\n'
-            for key in caspt2keys:
-                string += '    "%s" : "%s",\n' % (key, QMin['template'][key])
-            string = string[:-2] + '\n   },\n\n'
+    #else:
+    #    string += '  {\n    "title" : "casscf",\n'
+    #    for key in casscfkeys:
+    #        string += '    "%s" : %s,\n' % (key, QMin['template'][key])
+    #    string += '    "nspin" : %i,\n' % (gsmult - 1)
+    #    string += '    "print_thresh" : 1e-10,\n'
+    #    string += '    "charge" : %i,\n' % (charge)
+    #    string += '    "nstate" : %i,\n' % (QMin['template']['nstate'][gsmult - 1])
+    #    string = string[:-2] + '\n  },\n\n'
+    #    if QMin['template']['method'] == 'caspt2':
+    #        string += '  { \n  '
+    #        string += '  "title" : "smith",\n'
+    #        string += '    "method" : "caspt2",\n'
+    #        for key in caspt2keys:
+    #            string += '    "%s" : "%s",\n' % (key, QMin['template'][key])
+    #        string = string[:-2] + '\n   },\n\n'
 
 
-    # save_ref
-    string += '  { \n    "title" : "save_ref",\n'
-    string += '    "file" : "%s"\n  },\n\n' % (os.path.join('./archive'))
-
-    # write molden file
-    string += '  { \n    "title" : "print",\n'
-    string += '    "file" : "%s",\n' % (os.path.join('./orbitals.molden.%i' % QMin['IJOB']))
-    string += '    "orbitals" : "true"\n  },\n\n'
 
     string = string[:-3] + '\n\n'
     string += ']}'
@@ -2697,6 +2716,8 @@ def make_mos_from_Molden(moldenfile, QMin):
             NAOs[1] += shells[s[0]][mode[s[0]]]
             aos.append(s[0])
 
+    #print(NAOs)
+    #print(aos)
 
     for iline, line in enumerate(data):
         if '[mo]' in line.lower():
@@ -2715,8 +2736,39 @@ def make_mos_from_Molden(moldenfile, QMin):
             line = data[jline]
             MO_A[imo][iao] = float(line.split()[1])
 
-    #if any([1 == mode[i] for i in aos]):
-    #    print('  .. transforming to cartesian AO basis')
+    if any([1 == mode[i] for i in aos]):
+        print('no support for spherical basis sets in overlaps')
+        sys.exit(1)
+
+    # reorder AOs from Molden order to pyscf order
+    # https://www.theochem.ru.nl/molden/molden_format.html
+    # https://pyscf.org/user/gto.html#ordering-of-basis-function
+    reorders = {
+    's': {0:0},
+    'p': {0:0, 1:1, 2:2},
+    'd': {0:0, 1:3, 2:5, 3:1, 4:2, 5:4},
+    'f': {0:0, 1:6, 2:9, 3:3, 4:1, 5:2, 6:4, 7:8, 8:7, 9:4}
+    }
+    factors = {
+    #'d': {1: math.sqrt(3.), 2: math.sqrt(3.), 4: math.sqrt(3.)},
+    }
+    MO_A_reorder = []
+    for imo in range(NMO_A):
+        mo = [0. for i in range(NAO)]
+        ishift=0
+        for ishell,s in enumerate(aos):
+            for i in range(shells[s][mode[s[0]]]):
+                iao_old = ishift + i
+                iao_new = ishift + reorders[s][i]
+                #print(ishell,s,i,iao_old,'->',iao_new)i
+                if s in factors and i in factors[s]:
+                    fact=factors[s][i]
+                else:
+                    fact=1.
+                mo[iao_new] = MO_A[imo][iao_old]*math.sqrt(fact)
+            ishift += shells[s][mode[s[0]]]
+        MO_A_reorder.append(mo)
+    MO_A = MO_A_reorder
 
 
     #d34 = math.sqrt(3. / 4.)
@@ -3259,9 +3311,15 @@ def get_smat_from_Molden(file1, file2=''):
         mol2, mo_energy, mo_coeff, mo_occ, irrep_labels, spins = load(file2)
         mol = mole.conc_mol(mol, mol2)
 
-    S = mol.intor('int1e_ovlp').tolist()
+    S = mol.intor('int1e_ovlp') #.tolist()
+    
+    # normalize with sqrt(diag)
+    for i in range(len(S)):
+       n=math.sqrt(S[i,i])
+       S[i,:] /= n
+       S[:,i] /= n
 
-    return len(S), S
+    return len(S), S.tolist()
 
 
 # ======================================================================= #
