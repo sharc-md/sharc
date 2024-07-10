@@ -1042,7 +1042,8 @@ def getcidm(out, mult, state1, state2, pol, version):
     stop2string = 'Special properties section'
     statesstring = 'Nr of states:'
     #matrixstring=' PROPERTY: MLTPL  1   COMPONENT:   %i' % (pol+1)
-    matrixstring = 'PROPERTY: MLTPL  1   COMPONENT:*   %i' % (pol + 1)
+    #matrixstring = 'PROPERTY: MLTPL  1   COMPONENT:*   %i' % (pol + 1)
+    matrixstring = 'PROPERTY: MLTPL  1   COMPONENT:' 
 
     # first, find the correct RASSI output section for the given multiplicity
     module = False
@@ -1077,7 +1078,7 @@ def getcidm(out, mult, state1, state2, pol, version):
                 stateshift = nstates // 2
             else:
                 stateshift = 0
-        if matrixstring in line:
+        if matrixstring in line and int(line.split()[-1]) == pol+1:
             block = (stateshift + state2 - 1) // 4
             rowshift = 3 + stateshift + state1 + (6 + nstates) * block
             colshift = 1 + (stateshift + state2 - 1) % 4
