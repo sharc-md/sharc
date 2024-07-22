@@ -2155,7 +2155,6 @@ def readQMin(QMinfilename):
         else:
             os.environ['PYTHONPATH'] = os.path.join(QMin['theodir'], 'lib') + os.pathsep + QMin['theodir']
 
-
     # neglected gradients
     QMin['neglected_gradient'] = 'zero'
     if 'grad' in QMin:
@@ -4190,7 +4189,23 @@ def setupWORKDIR_TH(WORKDIR, QMin):
     # mkdir the WORKDIR, or clean it if it exists, then copy all necessary files from pwd and savedir
 
     # write dens_ana.in
-    inputstring = '''rtype='cclib'
+    if os.path.isfile(os.path.join(THEODIR,'bin','theodore')):
+        inputstring = '''rtype='orca'
+rfile='ORCA.log'
+mo_file='ORCA.molden.input'
+read_binary=True
+jmol_orbitals=False
+molden_orbitals=False
+Om_formula=2
+eh_pop=1
+comp_ntos=True
+print_OmFrag=True
+output_file='tden_summ.txt'
+prop_list=%s
+at_lists=%s
+''' % (str(QMin['template']['theodore_prop']), str(QMin['template']['theodore_fragment']))
+    else:
+        inputstring = '''rtype='cclib'
 rfile='ORCA.log'
 read_binary=True
 jmol_orbitals=False
@@ -4223,7 +4238,10 @@ at_lists=%s
 def runTHEODORE(WORKDIR, THEODIR):
     prevdir = os.getcwd()
     os.chdir(WORKDIR)
-    string = os.path.join(THEODIR, 'bin', 'analyze_tden.py')
+    if os.path.isfile(os.path.join(THEODIR,'bin','theodore')):
+        string = os.path.join(THEODIR, 'bin', 'theodore analyze_tden')
+    else:
+        string = os.path.join(THEODIR, 'bin', 'analyze_tden.py')
     stdoutfile = open(os.path.join(WORKDIR, 'theodore.out'), 'w')
     stderrfile = open(os.path.join(WORKDIR, 'theodore.err'), 'w')
     if PRINT or DEBUG:
@@ -4242,6 +4260,8 @@ def runTHEODORE(WORKDIR, THEODIR):
         sys.stdout.write('FINISH:\t%s\t%s\tRuntime: %s\tError Code: %i\n' % (shorten_DIR(WORKDIR), endtime, endtime - starttime, runerror))
         sys.stdout.flush()
     os.chdir(prevdir)
+    if runerror >0 and os.path.isfile(os.path.join(THEODIR,'bin','theodore')): 
+        sys.stdout.write('Error code is not 0 for TheoDORE 3.x. Please make sure to use at least TheoDORE 3.2 with SHARC_ORCA.py. ' 
     return runerror
 
 # =============================================================================================== #
