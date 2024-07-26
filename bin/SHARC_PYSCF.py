@@ -1157,6 +1157,7 @@ def gen_solver(mol, qmin):
     if os.path.isfile(old_chk):
         print(f"Updating solver from chk: {old_chk}", flush=True)
         solver.update(old_chk)
+        solver.mo_coeff = mcscf.project_init_guess(solver, solver.mo_coeff)
 
     return solver
 
