@@ -405,7 +405,7 @@ def check_directory(dir):
 def get_version():
     from pyscf import __version__ as pyscf_version
 
-    min_version = (2, 5, 0)
+    min_version = (2, 6, 0)
     line = pyscf_version.split(".")
     line = [int(i) for i in line]
     for min, actual in zip(min_version, line):
@@ -1132,7 +1132,7 @@ def gen_solver(mol, qmin):
         elif qmin["method"] == 3:
             solver = solver.multi_state(weights, method="cms")
 
-        elif qmin["method"] == 2:
+        elif qmin["method"] == 2 or qmin["method"] == 0:
             solver = solver.state_average(weights)
 
         solver.conv_tol = qmin["template"]["conv-tol"]
@@ -1151,20 +1151,13 @@ def gen_solver(mol, qmin):
 
     if "master" in qmin:
         solver.chkfile = os.path.join(qmin["scratchdir"], "pyscf.chk.master")
+        solver.chk_ci = True
 
     old_chk = os.path.join(qmin["scratchdir"], "pyscf.old.chk")
-    mo = None
-    ci = None
     if os.path.isfile(old_chk):
-        print(f"Updating solver MOs from chk: {old_chk}", flush=True)
-        mo = lib.chkfile.load(old_chk, "mcscf/mo_coeff")
-        mo = mcscf.project_init_guess(solver, mo)
-    
-        print(f"Updating solver CI from chk: {old_chk}", flush=True)
-        ci = lib.chkfile.load(old_chk, "mcscf/ci")
+        print(f"Updating solver from chk: {old_chk}", flush=True)
+        solver.update(old_chk)
 
-
-    solver.kernel(mo_coeff=mo, ci0=ci)
     return solver
 
 
@@ -1287,12 +1280,13 @@ def run_calc(qmin):
 
     solver = gen_solver(mol, qmin)
 
-    if not solver.converged:
-        print("Calculator failed to converge!")
-        err += 1
-
     result = {}
     if "h" in qmin:
+        solver.kernel(solver.mo_coeff, solver.ci)
+        if not solver.converged:
+            print("Calculator failed to converge!")
+            err += 1
+
         result["energies"] = solver.e_states
 
     if "dm" in qmin:
