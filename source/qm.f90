@@ -2513,21 +2513,31 @@ module qm
     ! 3. perform a NAC projection, project out rotational and translational motions from NAC
     ! ===============================
  
-    if (ctrl%nac_projection==1) then
-      if (printlevel>3) then
-        write(u_log,*) '============================================================='
-        write(u_log,*) '               [3].Performing NAC projection'
-        write(u_log,*) '============================================================='
-      endif
-
-      ! Compute projection operator.
+    ! Compute projection operator. 
+    if (allocated(traj%trans_rot_P)) then 
       traj%trans_rot_P=0.d0
       ctrans_rot_P=dcmplx(0.d0,0.d0)
       call compute_projection(traj%geom_ad, ctrl%natom, traj%trans_rot_P)
       if (printlevel>5) then
         call matwrite(3*ctrl%natom,traj%trans_rot_P,u_log,'Translational and Rotational Project Operator','F14.9')
       endif
-      ctrans_rot_P=traj%trans_rot_P 
+      ctrans_rot_P=traj%trans_rot_P
+    endif 
+
+    ! projected NAC is only required when:
+    ! 1. in SCP, use projected nonadiabatic force direction; 
+    ! 2. in TSH, use projected hopping direction or velocity reflection vector. 
+    if ((ctrl%method==1 .and. ctrl%nac_projection==1) .or. &
+      &(ctrl%method==0 .and. (ctrl%ekincorrect==2 .or. ctrl%ekincorrect==5 .or. ctrl%ekincorrect==6 .or. ctrl%ekincorrect==8)) .or. &
+      &(ctrl%method==0 .and. (ctrl%reflect_frustrated==2 .or. ctrl%reflect_frustrated==5 .or. ctrl%reflect_frustrated==6 .or. &
+      &ctrl%reflect_frustrated==8 .or. ctrl%reflect_frustrated==92 .or. ctrl%reflect_frustrated==95 .or. &
+      &ctrl%reflect_frustrated==96 .or. ctrl%reflect_frustrated==98))) then
+
+      if (printlevel>3) then
+        write(u_log,*) '============================================================='
+        write(u_log,*) '               [3].Performing NAC projection'
+        write(u_log,*) '============================================================='
+      endif
 
       ! initialize
       traj%pNACdR_MCH_ssad=0.d0
@@ -3106,88 +3116,88 @@ module qm
 ! Invert the moment of inertia matrix
 ! check moment of inertia with zeros
   prodmomi=abs(momi(1,1)*momi(2,2)*momi(3,3))
-  if (prodmomi .gt. 1.d-8) goto 10
-  if(abs(momi(1,1)) .gt. 1.d-8) goto 1
-! else, X=0
-  if(abs(momi(2,2)) .gt. 1.d-8) goto 2
-! else, X,Y=0
-  if(abs(momi(3,3)) .gt. 1.d-8) goto 3  
-  write(u_log, *) ' Warning: all digaonal elements of moment of inertia equals zero!'
-  write(u_log, '(3(F20.10))')  momi(1,1), momi(2,2), momi(3,3)
-  return
-!* 1. X,Y=0 BUT Z.NE.0                                                  
-   3 momi(3,3)=1.d0/momi(3,3)   
-     goto 11
-! Y.NE.0                                                                
-   2 if(abs(momi(3,3)) .gt. 1.d-8) goto 5
-!* 2. X,Z=0 BUT Y.NE.0                                                  
-     momi(2,2)=1.d0/momi(2,2)   
-     goto 11
-! X.NE.0                                                                
-   1 if(abs(momi(2,2)) .gt. 1.d-8) goto 6
-      if(abs(momi(3,3)) .gt. 1.d-8) goto 7
-!* 3. Y,Z=0 BUT X.NE.0                                                  
-      momi(1,1)=1.d0/momi(1,1)   
-      goto 11
-!* 4. X,Y.NE.0 BUT Z=0                                                  
-   6 det=momi(1,1)*momi(2,2)-momi(1,2)*momi(2,1)
-     tmp=momi(1,1)
-     momi(1,1)=momi(2,2)/det
-     momi(2,2)=tmp/det
-     momi(1,2)=-momi(1,2)/det
-     momi(2,1)=-momi(2,1)/det
-     goto 11
-!* 5. X,Z.NE.0 BUT Y=0                                                  
-   7 det=momi(1,1)*momi(3,3)-momi(1,3)*momi(3,1)
-     tmp=momi(1,1)
-     momi(1,1)=momi(3,3)/det
-     momi(3,3)=tmp/det
-     momi(1,3)=-momi(1,3)/det
-     momi(3,1)=-momi(3,1)/det
-     goto 11
-!* 6. Y,Z.NE.0 BUT X=0                                                  
-   5 det=momi(3,3)*momi(2,2)-momi(3,2)*momi(2,3)
-     tmp=momi(3,3)
-     momi(3,3)=momi(2,2)/det
-     momi(2,2)=tmp/det
-     momi(3,2)=-momi(3,2)/det
-     momi(2,3)=-momi(2,3)/det
-     goto 11
-10 continue
+  if (prodmomi .le. 1.d-8) then
+    ! if X=0, Y=0, Z=0
+    if (abs(momi(1,1)) .le. 1.d-8 .and. abs(momi(2,2)) .le. 1.d-8 .and. abs(momi(3,3)) .le. 1.d-8) then 
+      write(u_log, *) ' Warning: all digaonal elements of moment of inertia equals zero!'
+      write(u_log, '(3(F20.10))')  momi(1,1), momi(2,2), momi(3,3)
+      stop 1
+    ! if X=0, Y.NE.0, Z.NE.0
+    else if (abs(momi(1,1)) .le. 1.d-8 .and. abs(momi(2,2)) .gt. 1.d-8 .and. abs(momi(3,3)) .gt. 1.d-8) then
+      det=momi(3,3)*momi(2,2)-momi(3,2)*momi(2,3)
+      tmp=momi(3,3)
+      momi(3,3)=momi(2,2)/det
+      momi(2,2)=tmp/det
+      momi(3,2)=-momi(3,2)/det
+      momi(2,3)=-momi(2,3)/det
+    ! if X.NE.0, Y=0, Z.NE.0
+    else if (abs(momi(1,1)) .gt. 1.d-8 .and. abs(momi(2,2)) .le. 1.d-8 .and. abs(momi(3,3)) .gt. 1.d-8) then
+      det=momi(1,1)*momi(3,3)-momi(1,3)*momi(3,1)
+      tmp=momi(1,1)
+      momi(1,1)=momi(3,3)/det
+      momi(3,3)=tmp/det
+      momi(1,3)=-momi(1,3)/det
+      momi(3,1)=-momi(3,1)/det
+    ! if X.NE.0, Y.NE.0, Z=0
+    else if (abs(momi(1,1)) .gt. 1.d-8 .and. abs(momi(2,2)) .gt. 1.d-8 .and. abs(momi(3,3)) .le. 1.d-8) then
+      det=momi(1,1)*momi(2,2)-momi(1,2)*momi(2,1)
+      tmp=momi(1,1)
+      momi(1,1)=momi(2,2)/det
+      momi(2,2)=tmp/det
+      momi(1,2)=-momi(1,2)/det
+      momi(2,1)=-momi(2,1)/det
+    ! if X=0, Y=0, Z.NE.0
+    else if (abs(momi(1,1)) .le. 1.d-8 .and. abs(momi(2,2)) .le. 1.d-8 .and. abs(momi(3,3)) .gt. 1.d-8) then
+      momi(3,3)=1.d0/momi(3,3)
+    ! if X=0, Y.NE.0, Z=0 
+    else if (abs(momi(1,1)) .le. 1.d-8 .and. abs(momi(2,2)) .gt. 1.d-8 .and. abs(momi(3,3)) .le. 1.d-8) then
+      momi(2,2)=1.d0/momi(2,2)
+    ! if X.NE.0, Y=0, Z=0 
+    else if (abs(momi(1,1)) .gt. 1.d-8 .and. abs(momi(2,2)) .le. 1.d-8 .and. abs(momi(3,3)) .le. 1.d-8) then
+      momi(1,1)=1.d0/momi(1,1)
+    endif
+    invmomi=0.d0
+    invmomi=momi
+  else !if (prodmomi .le. 1.d-8) then
+    invmomi=0.d0
+    call mat3invert(momi, invmomi)
+  endif
 
- invmomi=0.d0
- call mat3invert(momi, invmomi)
-11 continue
-! Done with inverting of moment of inertia
 
 ! now compute P matrix
-!    ----------------                                                   
-      do 100 iatom=1,n
-       i=3*(iatom-1)
-       do 100 jatom=1,iatom
-         j=3*(jatom-1)
-         do 70 ic=1,3
-           jend=3
-           if(jatom.eq.iatom) jend=ic
-           do 70 jc=1,jend
-             sumall=0.d0
-             do 50 ia=1,3
-               do 50 ib=1,3
-                 if(sym(ia,ib,ic).eq.0) goto 50
-                 do 30 ja=1,3
-                   do 30 jb=1,3
-                     if(sym(ja,jb,jc).eq.0) goto 30
-                     sumall=sumall+sym(ia,ib,ic)*sym(ja,jb,jc)*invmomi(ia,ja)* &
-                     mgeom(iatom,ib)*mgeom(jatom,jb)
-   30            continue
-   50       continue
+!    ---------------- 
+  do iatom=1,n
+    do jatom=1,iatom
+      i=3*(iatom-1)
+      j=3*(jatom-1)
+      do ic=1,3
+        jend=3
+        if (jatom.eq.iatom) jend=ic
+        do jc=1,jend
+          sumall=0.d0
+          do ia=1,3
+          do ib=1,3
+            if (sym(ia,ib,ic).ne.0) then 
+              do ja=1,3
+              do jb=1,3
+                if (sym(ja,jb,jc).ne.0) then 
+                  sumall=sumall+sym(ia,ib,ic)*sym(ja,jb,jc)*invmomi(ia,ja)* &
+                    mgeom(iatom,ib)*mgeom(jatom,jb)
+                endif   
+              enddo    
+              enddo
+            endif
+          enddo
+          enddo
           ii=i+ic
           jj=j+jc
           P(ii,jj)=sumall
-          if(ic.eq.jc) P(ii,jj)=P(ii,jj)+1.d0/n
-   70     continue
-  100   continue
-
+          if (ic.eq.jc) P(ii,jj)=P(ii,jj)+1.d0/n
+        enddo
+      enddo
+    enddo
+  enddo
+     
 ! compute I-P
   do i=1,3*n
     do j=1,i

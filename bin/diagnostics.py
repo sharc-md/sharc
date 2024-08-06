@@ -755,6 +755,8 @@ def check_energies(path, trajectories, INFOS, hops):
         f = readfile(f)
         try:
             problem, tana_length = check_consistency(path, trajectories, f, 'energy.out')
+        except KeyboardInterrupt:
+            raise
         except BaseException:
             print('\n    An error occured while trying to check energy.out for consistency.')
             trajectories[path]['error'] = True
@@ -834,6 +836,8 @@ def check_populations(path, trajectories, INFOS):
         problem = ''
         try:
             problem, tana_length = check_consistency(path, trajectories, f, 'coeff_diag.out')
+        except KeyboardInterrupt:
+            raise
         except BaseException:
             print('\n    An error occured while trying to check coeff_diag.out for consistency.')
             trajectories[path]['error'] = True
@@ -901,7 +905,7 @@ def check_intruders(path, trajectories, INFOS, lis, tana, problem_length):
                 tstep = int(line.split()[3])
                 if tstep == 0:
                     prevstep = 0
-                elif tstep - 1 != prevstep:
+                elif tstep - 1 != prevstep and tstep != prevstep:
                     tana = prevstep * trajectories[path]['dtstep']
                     problem = 'Missing steps in output.log'
                     break
@@ -910,14 +914,15 @@ def check_intruders(path, trajectories, INFOS, lis, tana, problem_length):
                     ok = False
                     problem = problem_length
                     break
-            if 'RESTART requested.' in line:
-                prevstep -= 1
-            if 'time step in restart files' in line:
-                prevstep += 1
+#            if 'RESTART requested.' in line:
+#                prevstep -= 1
+#            if 'time step in restart files' in line or "STOP" in line:
+#                prevstep += 1
             if 'State: ' in line:
                 intruder = int(line.split()[1])
                 if not notpossible:
-                    state = lis[tstep][2]
+                    state = int(lis[tstep][2])
+                    # print(intruder, state)
                     if state == intruder:
                         problem = 'Intruder state found'
                         ok = False
@@ -970,6 +975,8 @@ def do_calc(INFOS):
 
             try:
                 trajectories, missing = check_files(path, trajectories, INFOS)
+            except KeyboardInterrupt:
+                raise
             except BaseException:
                 print('\n    An error occured while trying to look for the files.\n')
                 trajectories[path]['error'] = True
@@ -979,6 +986,8 @@ def do_calc(INFOS):
 
             try:
                 trajectories, f = check_runtime(path, trajectories, INFOS)
+            except KeyboardInterrupt:
+                raise
             except BaseException:
                 print('\n    An error occured while trying to extract the runtime.\n \
    Files may be corrupted.\n')
@@ -987,6 +996,8 @@ def do_calc(INFOS):
 
             try:
                 trajectories = check_termination(path, trajectories, INFOS, f)
+            except KeyboardInterrupt:
+                raise
             except BaseException:
                 print('\n    An error occured while trying to extract the status.\n \
    Files may be corrupted.\n')
@@ -1063,6 +1074,8 @@ def do_calc(INFOS):
                 step += 1
             try:
                 problem, tana = check_consistency(path, trajectories, f, 'output.lis')
+            except KeyboardInterrupt:
+               raise
             except BaseException:
                 print('\n    An error occured while trying to check output.lis for consistency.')
                 trajectories[path]['error'] = True
@@ -1070,18 +1083,24 @@ def do_calc(INFOS):
                 problem = check_length(path, trajectories, len(lis), 'output.lis')
             try:
                 trajectories = check_energies(path, trajectories, INFOS, hops)
+            except KeyboardInterrupt:
+                raise
             except BaseException:
                 print('\n    An error occured while trying to extract the energies.\n \
    Files may be corrupted.\n')
                 trajectories[path]['error'] = True
             try:
                 trajectories = check_populations(path, trajectories, INFOS)
+            except KeyboardInterrupt:
+                raise
             except BaseException:
                 print('\n    An error occured while trying to extract the populations.\n \
    Files may be corrupted.\n')
                 trajectories[path]['error'] = True
             try:
                 trajectories = check_intruders(path, trajectories, INFOS, lis, tana, problem)
+            except KeyboardInterrupt:
+                raise
             except BaseException:
                 print('\n    An error occured while trying to extract possible intruder states.\n \
    Files may be corrupted.\n')

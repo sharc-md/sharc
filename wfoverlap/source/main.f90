@@ -191,6 +191,8 @@ PROGRAM main
       WRITE(0,*)"The number of electrons in <bra| and |ket> differs by more than one!"
       STOP 1
     END IF
+  ELSE
+    WRITE(6,*)"Normal overlap calculation!"
   END IF
 
   PRINT*,"-------------------------------------------------------------------------------"

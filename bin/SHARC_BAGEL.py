@@ -1599,20 +1599,20 @@ def readQMin(QMinfilename):
                 sys.exit(44)
 
         # PyQuante
-        QMin['pyquante'] = get_sh2BAGEL_environ(sh2BAGEL, 'pyquante', False, False)
-        if QMin['pyquante'] is None or not os.path.isdir(QMin['pyquante']):
-            print('Give path to the PyQuante installation directory in BAGEL.resources!')
-            sys.exit(45)
-        if 'PYTHONPATH' in os.environ:
-            # os.environ['PYTHONPATH']=os.path.join(QMin['pyquante']) + os.pathsep + os.environ['PYTHONPATH']
+        # QMin['pyquante'] = get_sh2BAGEL_environ(sh2BAGEL, 'pyquante', False, False)
+        # if QMin['pyquante'] is None or not os.path.isdir(QMin['pyquante']):
+        #     print('Give path to the PyQuante installation directory in BAGEL.resources!')
+        #     sys.exit(45)
+        # if 'PYTHONPATH' in os.environ:
+        #     # os.environ['PYTHONPATH']=os.path.join(QMin['pyquante']) + os.pathsep + os.environ['PYTHONPATH']
 
-            # os.pathsep + QMin['pyquante']
-            #    print("already pypath")
-            #    print(os.environ['PYTHONPATH'])
-            # else:
-            #    os.environ['PYTHONPATH']=QMin['pyquante']
-            #    print("no pypath")
-            sys.path.append(QMin['pyquante'])
+        #     # os.pathsep + QMin['pyquante']
+        #     #    print("already pypath")
+        #     #    print(os.environ['PYTHONPATH'])
+        #     # else:
+        #     #    os.environ['PYTHONPATH']=QMin['pyquante']
+        #     #    print("no pypath")
+        #     sys.path.append(QMin['pyquante'])
 
     # memory cannot set memory! #TODO
     QMin['memory'] = 100
@@ -2334,6 +2334,7 @@ def writeBAGELinput(QMin):
     # molecule
     string += '  { \n    "title" : "molecule",\n'
     string += '    "%s" : "%s",\n' % ('dkh', QMin['template']['dkh'])
+    string += '    "cartesian": "true",\n'
 
     # basis
     if not os.path.isabs(QMin['template']['basis']):
@@ -2369,6 +2370,32 @@ def writeBAGELinput(QMin):
     casscfkeys = ['nact', 'nclosed', 'maxiter']
     caspt2keys = ['ms', 'xms', 'sssr', 'shift', 'shift_imag', 'orthogonal_basis', 'maxiter']
 
+    # we must do a force-less calculation first, otherwise we get garbage Molden files
+    string += '  {\n    "title" : "casscf",\n'
+    for key in casscfkeys:
+        string += '    "%s" : %s,\n' % (key, QMin['template'][key])
+    string += '    "nspin" : %i,\n' % (gsmult - 1)
+    string += '    "print_thresh" : 1e-10,\n'
+    string += '    "charge" : %i,\n' % (charge)
+    string += '    "nstate" : %i,\n' % (QMin['template']['nstate'][gsmult - 1])
+    string = string[:-2] + '\n  },\n\n'
+    if QMin['template']['method'] == 'caspt2':
+        string += '  { \n  '
+        string += '  "title" : "smith",\n'
+        string += '    "method" : "caspt2",\n'
+        for key in caspt2keys:
+            string += '    "%s" : "%s",\n' % (key, QMin['template'][key])
+        string = string[:-2] + '\n   },\n\n'
+
+    # save_ref
+    string += '  { \n    "title" : "save_ref",\n'
+    string += '    "file" : "%s"\n  },\n\n' % (os.path.join('./archive'))
+
+    # write molden file
+    string += '  { \n    "title" : "print",\n'
+    string += '    "file" : "%s",\n' % (os.path.join('./orbitals.molden.%i' % QMin['IJOB']))
+    string += '    "orbitals" : "true"\n  },\n\n'
+
     # forces
     if dograd or donac:
         string += '  { \n    "title" : "forces",\n'
@@ -2397,32 +2424,24 @@ def writeBAGELinput(QMin):
         string += '    "nstate" : %i,\n' % (QMin['template']['nstate'][gsmult - 1])
         string += '    "dipole" : "%s",\n' % (QMin['template']['dipole'])
         string = string[:-2] + '\n    } ]\n  },\n\n'
-    else:
-        string += '  {\n    "title" : "casscf",\n'
-        for key in casscfkeys:
-            string += '    "%s" : %s,\n' % (key, QMin['template'][key])
-        string += '    "nspin" : %i,\n' % (gsmult - 1)
-        string += '    "print_thresh" : 1e-10,\n'
-        string += '    "charge" : %i,\n' % (charge)
-        string += '    "nstate" : %i,\n' % (QMin['template']['nstate'][gsmult - 1])
-        string = string[:-2] + '\n  },\n\n'
-        if QMin['template']['method'] == 'caspt2':
-            string += '  { \n  '
-            string += '  "title" : "smith",\n'
-            string += '    "method" : "caspt2",\n'
-            for key in caspt2keys:
-                string += '    "%s" : "%s",\n' % (key, QMin['template'][key])
-            string = string[:-2] + '\n   },\n\n'
+    #else:
+    #    string += '  {\n    "title" : "casscf",\n'
+    #    for key in casscfkeys:
+    #        string += '    "%s" : %s,\n' % (key, QMin['template'][key])
+    #    string += '    "nspin" : %i,\n' % (gsmult - 1)
+    #    string += '    "print_thresh" : 1e-10,\n'
+    #    string += '    "charge" : %i,\n' % (charge)
+    #    string += '    "nstate" : %i,\n' % (QMin['template']['nstate'][gsmult - 1])
+    #    string = string[:-2] + '\n  },\n\n'
+    #    if QMin['template']['method'] == 'caspt2':
+    #        string += '  { \n  '
+    #        string += '  "title" : "smith",\n'
+    #        string += '    "method" : "caspt2",\n'
+    #        for key in caspt2keys:
+    #            string += '    "%s" : "%s",\n' % (key, QMin['template'][key])
+    #        string = string[:-2] + '\n   },\n\n'
 
 
-    # save_ref
-    string += '  { \n    "title" : "save_ref",\n'
-    string += '    "file" : "%s"\n  },\n\n' % (os.path.join('./archive'))
-
-    # write molden file
-    string += '  { \n    "title" : "print",\n'
-    string += '    "file" : "%s",\n' % (os.path.join('./orbitals.molden.%i' % QMin['IJOB']))
-    string += '    "orbitals" : "true"\n  },\n\n'
 
     string = string[:-3] + '\n\n'
     string += ']}'
@@ -2697,6 +2716,8 @@ def make_mos_from_Molden(moldenfile, QMin):
             NAOs[1] += shells[s[0]][mode[s[0]]]
             aos.append(s[0])
 
+    #print(NAOs)
+    #print(aos)
 
     for iline, line in enumerate(data):
         if '[mo]' in line.lower():
@@ -2716,59 +2737,90 @@ def make_mos_from_Molden(moldenfile, QMin):
             MO_A[imo][iao] = float(line.split()[1])
 
     if any([1 == mode[i] for i in aos]):
-        print('  .. transforming to cartesian AO basis')
+        print('no support for spherical basis sets in overlaps')
+        sys.exit(1)
 
-
-    d34 = math.sqrt(3. / 4.)
-    f65 = math.sqrt(6. / 5.)
-    f38 = math.sqrt(3. / 8.)
-    f58 = math.sqrt(5. / 8.)
-    f98 = math.sqrt(9. / 8.)
-    f920 = math.sqrt(9. / 20.)
-    f340 = math.sqrt(3. / 40.)
-    transform = {
-        'd': [[(0, -0.5), (3, d34)],
-              [(0, -0.5), (3, -d34)],
-              [(0, 1.0)],
-              [(4, 1.0)],
-              [(1, 1.0)],
-              [(2, 1.0)]],
-        'f': [[(1, -f38), (5, f58)],
-              [(2, -f38), (6, -f58)],
-              [(0, 1.0)],
-              [(1, -f340), (5, -f98)],
-              [(2, -f340), (6, f98)],
-              [(0, -f920), (3, d34)],
-              [(1, f65)],
-              [(2, f65)],
-              [(0, -f920), (3, -d34)],
-              [(4, 1.0)]],
-        'g': None                         # TODO: add and check for bagel
+    # reorder AOs from Molden order to pyscf order
+    # https://www.theochem.ru.nl/molden/molden_format.html
+    # https://pyscf.org/user/gto.html#ordering-of-basis-function
+    reorders = {
+    's': {0:0},
+    'p': {0:0, 1:1, 2:2},
+    'd': {0:0, 1:3, 2:5, 3:1, 4:2, 5:4},
+    'f': {0:0, 1:6, 2:9, 3:3, 4:1, 5:2, 6:4, 7:8, 8:7, 9:4}
     }
-
-    tMO_A = []
+    factors = {
+    #'d': {1: math.sqrt(3.), 2: math.sqrt(3.), 4: math.sqrt(3.)},
+    }
+    MO_A_reorder = []
     for imo in range(NMO_A):
-        newmo = []
-        iao = 0
-        for shell in aos:
-            n_cart = shells[shell][0]
-            if mode[shell] == 0:
-                for i in range(n_cart):
-                    newmo.append(MO_A[imo][iao])
-                    iao += 1
-            else:
-                n_sph = shells[shell][1]
-                new = [0. for i in range(n_cart)]
-                for i in range(n_cart):
-                    for j, c in transform[shell][i]:
-                        new[i] += c * MO_A[imo][iao + j]
-                newmo.extend(new)
-                iao += n_sph
-        tMO_A.append(newmo)
+        mo = [0. for i in range(NAO)]
+        ishift=0
+        for ishell,s in enumerate(aos):
+            for i in range(shells[s][mode[s[0]]]):
+                iao_old = ishift + i
+                iao_new = ishift + reorders[s][i]
+                #print(ishell,s,i,iao_old,'->',iao_new)i
+                if s in factors and i in factors[s]:
+                    fact=factors[s][i]
+                else:
+                    fact=1.
+                mo[iao_new] = MO_A[imo][iao_old]*math.sqrt(fact)
+            ishift += shells[s][mode[s[0]]]
+        MO_A_reorder.append(mo)
+    MO_A = MO_A_reorder
 
 
-    MO_A = tMO_A
-    NAO = NAOs[0]
+    #d34 = math.sqrt(3. / 4.)
+    #f65 = math.sqrt(6. / 5.)
+    #f38 = math.sqrt(3. / 8.)
+    #f58 = math.sqrt(5. / 8.)
+    #f98 = math.sqrt(9. / 8.)
+    #f920 = math.sqrt(9. / 20.)
+    #f340 = math.sqrt(3. / 40.)
+    #transform = {
+    #    'd': [[(0, -0.5), (3, d34)],
+    #          [(0, -0.5), (3, -d34)],
+    #          [(0, 1.0)],
+    #          [(4, 1.0)],
+    #          [(1, 1.0)],
+    #          [(2, 1.0)]],
+    #    'f': [[(1, -f38), (5, f58)],
+    #          [(2, -f38), (6, -f58)],
+    #          [(0, 1.0)],
+    #          [(1, -f340), (5, -f98)],
+    #          [(2, -f340), (6, f98)],
+    #          [(0, -f920), (3, d34)],
+    #          [(1, f65)],
+    #          [(2, f65)],
+    #          [(0, -f920), (3, -d34)],
+    #          [(4, 1.0)]],
+    #    'g': None                         # TODO: add and check for bagel
+    #}
+
+    #tMO_A = []
+    #for imo in range(NMO_A):
+    #    newmo = []
+    #    iao = 0
+    #    for shell in aos:
+    #        n_cart = shells[shell][0]
+    #        if mode[shell] == 0:
+    #            for i in range(n_cart):
+    #                newmo.append(MO_A[imo][iao])
+    #                iao += 1
+    #        else:
+    #            n_sph = shells[shell][1]
+    #            new = [0. for i in range(n_cart)]
+    #            for i in range(n_cart):
+    #                for j, c in transform[shell][i]:
+    #                    new[i] += c * MO_A[imo][iao + j]
+    #            newmo.extend(new)
+    #            iao += n_sph
+    #    tMO_A.append(newmo)
+
+
+    #MO_A = tMO_A
+    #NAO = NAOs[0]
 
 
     # handle frozen core
@@ -3259,9 +3311,15 @@ def get_smat_from_Molden(file1, file2=''):
         mol2, mo_energy, mo_coeff, mo_occ, irrep_labels, spins = load(file2)
         mol = mole.conc_mol(mol, mol2)
 
-    S = mol.intor('int1e_ovlp').tolist()
+    S = mol.intor('int1e_ovlp') #.tolist()
+    
+    # normalize with sqrt(diag)
+    for i in range(len(S)):
+       n=math.sqrt(S[i,i])
+       S[i,:] /= n
+       S[:,i] /= n
 
-    return len(S), S
+    return len(S), S.tolist()
 
 
 # ======================================================================= #
@@ -3603,7 +3661,7 @@ def getenergy(corefile, ijob, QMin):
                         i = int(line.split()[5])
                         energies[(imult, i + (gsmult == imult))] = float(line.split()[6])
 
-                else:
+                elif not mscaspt2 and not caspt2:
                     if '* ci vector' in line and ' 0,' in line:
                         for i in range(nstates):
                             if i == 0:
@@ -3934,7 +3992,7 @@ def main():
 
     # Remove Scratchfiles from SCRATCHDIR
     if not DEBUG:
-        cleandir(QMin['scratchdir'])
+        #cleandir(QMin['scratchdir'])
         if 'cleanup' in QMin:
             cleandir(QMin['savedir'])
 

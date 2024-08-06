@@ -89,11 +89,12 @@ CONTAINS
         CALL read_dalton_overlap(file,ovl,nl,nr,same_aos)
     END SELECT
     
-    IF (format.ge.0) THEN
-      IF ((debug).AND.(nl.EQ.nr)) THEN    
-       WRITE(6,'("Determinant of AO-overlap matrix:",ES24.14E3)') determinant(ovl, nl)
-      END IF
-    END IF
+!   TODO: In debug mode, the determinant function sometimes gives segfaults
+!     IF (format.ge.0) THEN
+!       IF ((debug).AND.(nl.EQ.nr)) THEN    
+!        WRITE(6,'("Determinant of AO-overlap matrix:",ES24.14E3)') determinant(ovl, nl)
+!       END IF
+!     END IF
 
   END SUBROUTINE read_AO
 
@@ -143,7 +144,7 @@ CONTAINS
     INTEGER:: iost
     INTEGER:: allocstat
 
-    CHARACTER*2000:: detstring
+    CHARACTER*4000:: detstring, coefstring
     INTEGER(KIND=ilong):: i
     INTEGER(KIND=ilong):: j
     INTEGER(KIND=ilong):: k
@@ -151,6 +152,8 @@ CONTAINS
     INTEGER(KIND=ilong):: na
     INTEGER(KIND=ilong):: nb
     INTEGER(KIND=ilong):: ninv
+
+    CHARACTER*32:: formatspec
 
 
     INQUIRE(FILE=trim(adjustl(file)), EXIST=test)
@@ -169,6 +172,9 @@ CONTAINS
     END IF
 
     READ(detflio,*)nstate, nMO, nSD
+    IF(debug)THEN
+      WRITE(6,*) nstate, nMO, nSD
+    ENDIF
     allocstat=myalloc(coefs,nstate,nSD,'+ cicoef')
     IF(allocstat.NE.0)THEN
       WRITE(6,'("Could not allocate cicoefs in read_dets; error ",I5)')allocstat
@@ -178,7 +184,12 @@ CONTAINS
       STOP 1
     END IF
     ! semi-elegant: read the first determinant string to get the number of electrons
-    READ(detflio,*,IOSTAT=iost)detstring,coefs(1:nstate,1)
+    WRITE(formatspec,'( "(A",I0,")" )') nMO
+    READ(detflio,formatspec,IOSTAT=iost)detstring
+    IF(debug)THEN
+      WRITE(6,*) '"'//trim(detstring)//'"'
+    ENDIF
+    WRITE(formatspec,'( "(A",I0,",A)" )') nMO
 
     na=0
     nb=0
@@ -234,7 +245,9 @@ CONTAINS
     READ(detflio,*) ! discard the fist line
 
     DO i=1,nSD
-      READ(detflio,*,IOSTAT=iost)detstring,coefs(1:nstate,i)
+!       READ(detflio,*,IOSTAT=iost)detstring,coefs(1:nstate,i)
+      READ(detflio,formatspec,IOSTAT=iost)detstring, coefstring
+      READ(coefstring,*) coefs(1:nstate,i)
       IF(iost.NE.0)THEN
         WRITE(0,'("error in reading SD: ",I6,", file: ",A200)')i, trim(adjustl(file))
         PRINT*,coefs(nstate,i),detstring

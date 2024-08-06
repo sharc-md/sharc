@@ -952,7 +952,7 @@ module input
     endif
 
     ! default is do projection for system with more than 4 atoms
-    if (ctrl%natom.ge.4) then
+    if (ctrl%method==1 .and. ctrl%natom.ge.4) then
       ctrl%nac_projection=1
     else
       ctrl%nac_projection=0
@@ -3003,6 +3003,13 @@ module input
     if (printlevel>0) then
       write(u_log,*)
     endif
+
+  ! =====================================================
+  ! This part is added to deal with memory-heavy allocations 
+  ! The variables were allocated in subroutine allocate_traj, 
+  ! now moved to subroutine additional_allocate_traj(traj,ctrl)
+   call additional_allocate_traj(traj,ctrl)
+
 
   ! =====================================================
 

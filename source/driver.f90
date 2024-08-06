@@ -300,8 +300,13 @@ do while (traj%step.lt.itotal_step)
     call Decoherence(traj,ctrl)
     ! obtain the correct gradient
     call Calculate_cMCH(traj,ctrl)
-    if (ctrl%calc_grad>=1) call redo_qm_gradients(traj,ctrl)
-    if (traj%kind_of_jump/=0) call Mix_gradients(traj,ctrl)
+    if (ctrl%calc_grad>=1) then
+      call redo_qm_gradients(traj,ctrl)
+      call NAC_processing(traj, ctrl)
+    endif
+    if (traj%kind_of_jump/=0) then
+      call Mix_gradients(traj,ctrl)
+    endif
 
   else if (ctrl%method==1) then !SCP
     ! Propagation coherent coefficients

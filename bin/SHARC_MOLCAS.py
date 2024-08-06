@@ -1042,7 +1042,8 @@ def getcidm(out, mult, state1, state2, pol, version):
     stop2string = 'Special properties section'
     statesstring = 'Nr of states:'
     #matrixstring=' PROPERTY: MLTPL  1   COMPONENT:   %i' % (pol+1)
-    matrixstring = 'PROPERTY: MLTPL  1   COMPONENT:*   %i' % (pol + 1)
+    #matrixstring = 'PROPERTY: MLTPL  1   COMPONENT:*   %i' % (pol + 1)
+    matrixstring = 'PROPERTY: MLTPL  1   COMPONENT:' 
 
     # first, find the correct RASSI output section for the given multiplicity
     module = False
@@ -1077,7 +1078,7 @@ def getcidm(out, mult, state1, state2, pol, version):
                 stateshift = nstates // 2
             else:
                 stateshift = 0
-        if matrixstring in line:
+        if matrixstring in line and int(line.split()[-1]) == pol+1:
             block = (stateshift + state2 - 1) // 4
             rowshift = 3 + stateshift + state1 + (6 + nstates) * block
             colshift = 1 + (stateshift + state2 - 1) % 4
@@ -1542,6 +1543,11 @@ def getQMout(out, QMin):
             for jstate, j in enumerate(QMin['statemap']):
                 mult1, state1, ms1 = tuple(QMin['statemap'][i])
                 mult2, state2, ms2 = tuple(QMin['statemap'][j])
+                if 'overlap_nacs' in QMin:
+                    if mult1 not in [i[0] for i in QMin['nacmap']]:
+                        continue
+                    if mult2 not in [i[0] for i in QMin['nacmap']]:
+                        continue
                 if mult1 == mult2 and ms1 == ms2:
                     nac[istate][jstate] = complex(getsmate(out, mult1, state1, state2, states))
                 else:
@@ -2235,13 +2241,13 @@ def readQMin(QMinfilename):
 
     driver = get_sh2cas_environ(sh2cas, 'driver', crucial=False)
     if driver == '':
-        driver = os.path.join(QMin['molcas'], 'bin', 'pymolcas')
+        driver = os.path.join(QMin['molcas'], 'pymolcas')
         if not os.path.isfile(driver):
-            driver = os.path.join(QMin['molcas'], 'bin', 'molcas.exe')
+            driver = os.path.join(QMin['molcas'],'bin', 'pymolcas')
             if not os.path.isfile(driver):
-                driver = os.path.join(QMin['molcas'], "pymolcas")
+                driver = os.path.join(QMin['molcas'], 'bin', 'molcas.exe')
                 if not os.path.isfile(driver):
-                    print('No driver (pymolcas or molcas.exe) found in $MOLCAS/bin. Please add the path to the driver via the "driver" keyword.')
+                    print('No driver (pymolcas or molcas.exe) found in $MOLCAS or $MOLCAS/bin. Please add the path to the driver via the "driver" keyword.')
                     sys.exit(52)
     QMin['driver'] = driver
 
@@ -2343,6 +2349,20 @@ def readQMin(QMinfilename):
     if line[0]:
         QMin['mpi_parallel'] = True
 
+
+    QMin['schedule_scaling'] = 0.6
+    line = getsh2caskey(sh2cas, 'schedule_scaling')
+    if line[0]:
+        try:
+            x = float(line[1])
+            if 0 < x <= 2.:
+                QMin['schedule_scaling'] = x
+        except ValueError:
+            print('Schedule scaling does not evaluate to numerical value!')
+            sys.exit(56)
+
+    QMin['Project'] = 'MOLCAS'
+    os.environ['Project'] = QMin['Project']
 
     QMin['delay'] = 0.0
     line = getsh2caskey(sh2cas, 'delay')
@@ -2739,6 +2759,8 @@ def gettasks(QMin):
                 if not 'init' in QMin:
                     tasks.append(['rm', 'JOBOLD'])
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            if QMin['method']==5 and QMin['pdft-functional'] > -1:
+                tasks.append(['copy','Do_Rotate.txt',os.path.join(QMin['savedir'],'Do_Rotate.%i.txt' % (imult+1))])
             if 'ion' in QMin:
                 tasks.append(['copy', 'MOLCAS.RasOrb', 'MOLCAS.%i.RasOrb' % (imult + 1)])
             if 'molden' in QMin:
@@ -2881,6 +2903,8 @@ def gettasks(QMin):
         # RASSI for overlaps
         if 'overlap' in QMin:
             if 'overlap_nacs' in QMin:
+                if imult+1 not in [ i[0] for i in QMin['nacmap']]:
+                    continue
                 tasks.append(['link', 'MOLCAS.%i.JobIph' % (imult + 1), 'JOB001'])
                 tasks.append(['link', 'MOLCAS.JobIph', 'JOB002'])
             else:
@@ -2888,7 +2912,7 @@ def gettasks(QMin):
                     tasks.append(['link', os.path.join(QMin['savedir'], 'MOLCAS.%i.JobIph.master' % (imult + 1)), 'JOB001'])
                 else:
                     tasks.append(['link', os.path.join(QMin['savedir'], 'MOLCAS.%i.JobIph.old' % (imult + 1)), 'JOB001'])
-            tasks.append(['link', 'MOLCAS.%i.JobIph' % (imult + 1), 'JOB002'])
+                tasks.append(['link', 'MOLCAS.%i.JobIph' % (imult + 1), 'JOB002'])
             tasks.append(['rassi', 'overlap', [nstates, nstates]])
 
         # RASSI for Dipole moments only if overlap-RASSI is not needed
@@ -3154,6 +3178,8 @@ def writeMOLCASinput(tasks, QMin):
 
         elif task[0] == 'alaska':
             string += '&ALASKA\n'
+            if QMin['version'] >= 24.0:
+                string+='pold\n'
             if len(task)==2:
                 string+='root=%i\n' % (task[1])
             elif len(task)==3:
@@ -3488,12 +3514,18 @@ def generate_joblist(QMin):
             QMin3['gradmap'] = [grad]
             QMin3['nacmap'] = []
             QMin3['ncpu'] = cpu_per_run[icount]
+            #for i in range(len(QMin3['states'])):
+            #    if not i+1 == grad[0]:
+            #        QMin3['states'][i] = 0
             icount += 1
             joblist[-1]['grad_%i_%i' % grad] = QMin3
         for nac in QMin['nacmap']:
             QMin3 = deepcopy(QMin2)
             QMin3['nacmap'] = [nac]
             QMin3['gradmap'] = []
+            #for i in range(len(QMin3['states'])):
+            #    if not i+1 == nac[0]:
+            #        QMin3['states'][i] = 0
             QMin3['overlap'] = [[j + 1, i + 1] for i in range(QMin['nmstates']) for j in range(i + 1)]
             QMin3['overlap_nacs'] = []
             QMin3['ncpu'] = cpu_per_run[icount]
@@ -3538,6 +3570,8 @@ def generate_joblist(QMin):
         QMin2['gradmap'] = []
         ntasks = 6 * QMin['natom']
         if QMin['mpi_parallel']:
+            # nrounds,nslots,cpu_per_run=divide_slots(QMin['ncpu'],ntasks,QMin['schedule_scaling'])
+            nrounds = ntasks
             nslots = 1
             cpu_per_run = [QMin['ncpu']] * ntasks
         else:
