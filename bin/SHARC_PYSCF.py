@@ -1159,6 +1159,7 @@ def gen_solver(mol, qmin):
         solver.update(old_chk)
         solver.mo_coeff = mcscf.project_init_guess(solver, solver.mo_coeff)
 
+    solver.kernel(solver.mo_coeff, solver.ci)
     return solver
 
 
@@ -1283,7 +1284,6 @@ def run_calc(qmin):
 
     result = {}
     if "h" in qmin:
-        solver.kernel(solver.mo_coeff, solver.ci)
         if not solver.converged:
             print("Calculator failed to converge!")
             err += 1
