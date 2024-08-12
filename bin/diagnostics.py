@@ -653,11 +653,15 @@ def check_termination(path, trajectories, INFOS, f):
         countmax = min(10, trajectories[path]['laststep'])
         for line in range(len(f)):
             if 'ntering timestep' in f[line].lower():
-                check_old = f[line + 2].split()
+                if "start" in f[line + 2].lower():
+                    shift = 0
+                elif "start" in f[line + 3].lower():
+                    shift = 1
+                check_old = f[line + 2 + shift].split()
                 if check_old[0] == "Start":
-                    timesteps.append(f[line + 2].strip()[12:])
+                    timesteps.append(f[line + 2 + shift].strip()[12:])
                 else:
-                    timesteps.append(f[line + 2].strip())
+                    timesteps.append(f[line + 2 + shift].strip())
                 count += 1
             if count == countmax:
                 break
@@ -668,12 +672,16 @@ def check_termination(path, trajectories, INFOS, f):
             total += tend - tstart
         for line in range(len(f)):
             if 'ntering timestep' in f[-line].lower():
-                check_old = f[-line + 2].split()
+                if "start" in f[line + 2].lower():
+                    shift = 0
+                elif "start" in f[line + 3].lower():
+                    shift = 1
+                check_old = f[-line + 2 + shift].split()
                 if check_old[0] == "Start":
-                    tstart = datetime.datetime.strptime(f[-line + 2].strip()[12:], '%a %b %d %H:%M:%S %Y')
+                    tstart = datetime.datetime.strptime(f[-line + 2 + shift].strip()[12:], '%a %b %d %H:%M:%S %Y')
                     break
                 else:
-                    tstart = datetime.datetime.strptime(f[-line + 2].strip(), '%a %b %d %H:%M:%S %Y')
+                    tstart = datetime.datetime.strptime(f[-line + 2 + shift].strip(), '%a %b %d %H:%M:%S %Y')
                     break
         tend = datetime.datetime.now()
         tdiff = tend - tstart
