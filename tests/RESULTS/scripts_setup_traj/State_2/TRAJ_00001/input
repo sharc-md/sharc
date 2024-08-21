@@ -8,13 +8,15 @@ nstates 2
 actstates 2 
 state 2 diag
 coeff auto
-rngseed 30569
+rngseed 24999
 
 ezero    -329.5062895400
 tmax 1000.000000
 stepsize 0.500000
 nsubsteps 25
+integrator fvv
 
+method tsh
 surf diagonal
 coupling overlap
 nogradcorrect
@@ -25,6 +27,7 @@ decoherence_param 0.1
 hopping_procedure sharc
 grad_select
 eselect 0.001000
+select_directly
 nospinorbit
 write_overlap
 output_format ascii

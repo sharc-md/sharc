@@ -2634,7 +2634,7 @@ def check_MOLCAS_qmmm(filename):
     data = f.readlines()
     f.close()
     for line in data:
-        if 'qmmm' in line.lower():
+        if 'qmmm' in re.sub('#.*$', '', line).strip().lower():
             return True
     return False
 

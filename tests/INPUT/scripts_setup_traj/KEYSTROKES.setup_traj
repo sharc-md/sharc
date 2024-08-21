@@ -7,12 +7,15 @@
                                          #Number of trajectories: [1] 
 1234                                     #RNG Seed:  [!] 
 3                                        #Interface number: 
+                                         #Method: [1]
                                          #Simulation time (fs): [1000.0] 
                                          #Simulation timestep (fs): [0.5] 
+                                         #Integrator: [2
                                          #Nsubsteps: [25] 
                                          #Do you want to prematurely terminate trajectories? [False] 
                                          #SHARC dynamics? [True] 
                                          #Coupling number: [3] 
+                                         #GradCorrect: [1]
                                          #EkinCorrect: [2] 
                                          #Reflect frustrated: [1] 
                                          #Decoherence scheme: [2] 
