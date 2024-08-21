@@ -25,3 +25,4 @@ select_directly
 ionization
 n_property2d 1
 write_property2d
+output_format ascii
