@@ -4194,7 +4194,7 @@ def setupWORKDIR_TH(WORKDIR, QMin):
     # mkdir the WORKDIR, or clean it if it exists, then copy all necessary files from pwd and savedir
 
     # write dens_ana.in
-    if os.path.isfile(os.path.join(THEODIR,'bin','theodore')):
+    if os.path.isfile(os.path.join(QMin['theodir'],'bin','theodore')):
         inputstring = '''rtype='orca'
 rfile='ORCA.log'
 mo_file='ORCA.molden.input'
