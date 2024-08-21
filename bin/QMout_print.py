@@ -298,7 +298,10 @@ excitation energies and oscillator strengths.
     qminfile = options.i
     initial = options.S - 1
     target = options.t
-    qmoutfile = args[0]
+    if len(args)<1:
+        qmoutfile = 'QM.out'
+    else:
+        qmoutfile = args[0]
 
     QMin = {'states': 1, 'natom': options.n}
     if qminfile != '':
