@@ -792,7 +792,7 @@ def getcienergy(out, mult, state):
     ilines = 0
     # look for CI program block
     while ilines < len(out):
-        if containsstring('1PROGRAM \\* CI', out[ilines]):
+        if containsstring(r'PROGRAM \* CI', out[ilines]):
             # look for multiplicity
             while ilines < len(out):
                 if containsstring('Reference symmetry', out[ilines]):
@@ -801,7 +801,7 @@ def getcienergy(out, mult, state):
                         while ilines < len(out):
                             # if '********************************************************' in out[ilines]:
                             # break
-                            if containsstring('!(MRCI|CI\\(SD\\)) STATE ?[0-9]+\\.1 Energy', out[ilines]):
+                            if containsstring(r'!(MRCI|CI\(SD\)) STATE ?[0-9]+\.1 Energy', out[ilines]):
                                 kstate = int(out[ilines].replace('.', ' ').replace('E', ' ').split()[2])
                                 if kstate == state:
                                     return float(out[ilines].split()[-1])
@@ -836,21 +836,21 @@ def getcidm(out, mult, state1, state2, pol):
         pol = IToPol[pol]
     ilines = 0
     while ilines < len(out):
-        if containsstring('1PROGRAM \\* CI', out[ilines]):
+        if containsstring(r'PROGRAM \* CI', out[ilines]):
             while ilines < len(out):
                 if containsstring('Reference symmetry', out[ilines]):
                     if containsstring(IToMult[mult], out[ilines]):
                         # expectation values are in the results section, transition moments seperately
                         if state1 == state2:
-                            while not containsstring('\\*\\*\\*', out[ilines]):
-                                if containsstring('!.* STATE ?[0-9]+\\.1 Dipole moment', out[ilines]):
+                            while not containsstring(r'\*\*\*', out[ilines]):
+                                if containsstring(r'!.* STATE ?[0-9]+\.1 Dipole moment', out[ilines]):
                                     kstate = int(out[ilines].replace('.', ' ').replace('E', ' ').split()[2])
                                     if kstate == state1:
                                         return float(out[ilines].split()[-3 + pol])
                                 ilines += 1
                         else:
-                            while not containsstring('\\*\\*\\*', out[ilines]):
-                                if containsstring('MRCI trans.*<.*\\|DM.\\|.*>', out[ilines]):
+                            while not containsstring(r'\*\*\*', out[ilines]):
+                                if containsstring(r'MRCI trans.*<.*\|DM.\|.*>', out[ilines]):
                                     braket = out[ilines].replace('<', ' ').replace('>', ' ').replace('|', ' ').replace('.', ' ').split()
                                     s1 = int(braket[2])
                                     s2 = int(braket[5])
@@ -895,13 +895,13 @@ def getciang(out, mult, state1, state2, pol):
         pol = IToPol[pol]
     ilines = 0
     while ilines < len(out):
-        if containsstring('1PROGRAM \\* CI', out[ilines]):
+        if containsstring(r'PROGRAM \* CI', out[ilines]):
             while ilines < len(out):
                 if containsstring('Reference symmetry', out[ilines]):
                     if containsstring(IToMult[mult], out[ilines]):
 
-                        while not containsstring('\\*\\*\\*', out[ilines]):
-                            if containsstring('MRCI trans.*<.*\\|L.\\|.*>', out[ilines]):
+                        while not containsstring(r'\*\*\*', out[ilines]):
+                            if containsstring(r'MRCI trans.*<.*\|L.\|.*>', out[ilines]):
                                 braket = out[ilines].replace('<', ' ').replace('>', ' ').replace('|', ' ').replace('.', ' ').split()
                                 s1 = int(braket[2])
                                 s2 = int(braket[5])
@@ -1093,16 +1093,16 @@ def getgrad(out, mult, state, natom):
     statefound = False
     # look for FORCE program block
     while ilines < len(out):
-        if containsstring('1PROGRAM \\* FORCE', out[ilines]):
+        if containsstring(r'PROGRAM \* ALASKA', out[ilines]):
             # look for multiplicity and state
             jlines = ilines
-            while not containsstring('\\*\\*\\*', out[jlines]):
+            while not containsstring(r'\*\*\*', out[jlines]):
                 if containsstring(IToMult[mult], out[jlines]):
                     multfound = True
                     break
                 jlines += 1
             jlines = ilines
-            while not containsstring('\\*\\*\\*', out[jlines]):
+            while not containsstring(r'\*\*\*', out[jlines]):
                 if containsstring('SA-MC GRADIENT FOR STATE', out[jlines]):
                     line = out[jlines].replace('E', ' ').replace('.', ' ').split()
                     if state == int(line[5]):
@@ -1156,16 +1156,16 @@ def getnacana(out, mult, state1, state2, natom):
         return grad
     # look for FORCE program block
     while ilines < len(out):
-        if containsstring('1PROGRAM \\* FORCE', out[ilines]):
+        if containsstring(r'PROGRAM \* ALASKA', out[ilines]):
             # look for multiplicity and state
             jlines = ilines
-            while not containsstring('\\*\\*\\*', out[jlines]):
+            while not containsstring(r'\*\*\*', out[jlines]):
                 if containsstring(IToMult[mult], out[jlines]):
                     multfound = True
                     break
                 jlines += 1
             jlines = ilines
-            while not containsstring('\\*\\*\\*', out[jlines]):
+            while not containsstring(r'\*\*\*', out[jlines]):
                 if containsstring('SA-MC NACME FOR STATES', out[jlines]):
                     line = out[jlines].replace('.', ' ').replace('-', ' ').split()
                     # make sure the NACs are antisymmetric
@@ -1219,7 +1219,7 @@ def getmrcioverlap(out, mult, state1, state2):
             if mult == int(line[5]) - 6000:
                 break
         ilines += 1
-    while not containsstring('\\*\\*\\*', out[ilines]):
+    while not containsstring(r'\*\*\*', out[ilines]):
         if containsstring('!MRCI overlap', out[ilines]):
             braket = out[ilines].replace('<', ' ').replace('>', ' ').replace('|', ' ').replace('.', ' ').split()
             s1 = int(braket[2])
@@ -1336,6 +1336,19 @@ def writeQMout(QMin, QMout, QMinfilename):
     if PRINT:
         print('===> Writing output to file %s in SHARC Format\n' % (outfilename))
     string = ''
+
+    # add header info
+    string += '! 0 Basic information\nstates '
+    for i in QMin['states']:
+        string += '%i ' % i
+    string += '\nnmstates %i\n' % QMin['nmstates']
+    string += 'natom %i\n' % QMin['natom']
+    string += 'npc 0\n'
+    string += 'charges '
+    for i in QMin['states']:
+        string += '%i ' % 0
+    string += '\n\n'
+
     if 'h' in QMin or 'soc' in QMin:
         string += writeQMoutsoc(QMin, QMout)
     if 'dm' in QMin:
@@ -2816,7 +2829,7 @@ def writeMOLPROinput(tasks, QMin):
         # gprint ======================================================================================== #
         elif task[0] == 'gprint':
             string += 'gprint,orbitals,civectors;\n'
-            string += 'gthresh,printci=%.10f\n\n' % (task[1])
+            string += 'gthresh,thrprint=0.,printci=%.10f;\n\n' % (task[1])
 
         # gprint ======================================================================================== #
         elif task[0] == 'molden':
@@ -3185,7 +3198,7 @@ def saveFiles(WORKDIR, QMin):
                         n += 1
                     if i + 1 == m:
                         break
-                string = get_CASdet_from_out(out, n, QMin['states'][m - 1])
+                string = get_CASdet_from_out(out, m, QMin['states'][m - 1])
             detfile = os.path.join(QMin['savedir'], 'det_cas.%i' % m)
             writefile(detfile, string)
 
@@ -3296,7 +3309,7 @@ def saveAOovl(WORKDIR, QMin):
 
 def getCPstatus(out):
     for iline, line in enumerate(out):
-        if 'Solving MCSCF z-vector' in line or 'SOLVING CP-MCSCF NACM' in line:
+        if 'for CP-MCSCF' in line:
             break
     else:
         return -1.
@@ -3305,16 +3318,9 @@ def getCPstatus(out):
     while True:
         iline += 1
         line = out[iline]
-        if 'VECTORS REACHED' in line:
-            continue
-        elif 'CONVERGENCE' in line:
-            conv = min(conv, float(line.split()[-1]))
-        else:
-            break
-    if 'Convergence reached' in out[iline + 1]:
-        return 0.
-    else:
-        return conv
+        if 'Convergence reached' in line:
+            return 0.
+    return conv
 
 # ======================================================================= #
 
@@ -3360,13 +3366,13 @@ def get_MO_from_out(out):
     found = 0
     for line in out:
         if 'Number of closed-shell orbitals:' in line:
-            nclosed = int(line.split()[-4])
+            nclosed = int(line.replace('(',' ').replace(')',' ').split()[-2])
             found += 1
         elif 'Number of active  orbitals:' in line:
-            nact = int(line.split()[-4])
+            nact = int(line.replace('(',' ').replace(')',' ').split()[-2])
             found += 1
         elif 'Number of external orbitals:' in line:
-            nex = int(line.split()[-4])
+            nex = int(line.replace('(',' ').replace(')',' ').split()[-2])
             found += 1
             if found == 2:
                 # this means that no closed-shell orbitals are present in output
@@ -3420,16 +3426,16 @@ def get_MO_from_out(out):
 # ======================================================================= #
 
 
-def get_CASdet_from_out(out, isym, nstates):
+def get_CASdet_from_out(out, imult, nstates):
     # extracts the first occurence of determinants from CASSCF and formats them for savedir
     # find number of orbitals
     found = 0
     for line in out:
         if 'Number of closed-shell orbitals:' in line:
-            nclosed = int(line.split()[-4])
+            nclosed = int(line.replace('(',' ').replace(')',' ').split()[-2])
             found += 1
         elif 'Number of active  orbitals:' in line:
-            nact = int(line.split()[-4])
+            nact = int(line.replace('(',' ').replace(')',' ').split()[-2])
             found += 1
             if found == 1:
                 found += 1
@@ -3445,11 +3451,13 @@ def get_CASdet_from_out(out, isym, nstates):
 
     # find the determinants
     for iline, line in enumerate(out):
-        if isym == 0:
-            string = 'CI vector'
+        if imult == 0:
+            string = 'CI Coefficients'
+            multi = ' '
         else:
-            string = 'CI vector for state symmetry %i' % (isym)
-        if string in line:
+            string = 'CI Coefficients of symmetry'
+            multi = IToMult[imult]
+        if string in line and multi in line: 
             break
     iline += 2
 
