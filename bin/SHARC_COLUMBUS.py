@@ -3627,10 +3627,10 @@ def keep_data(job, QMin):
             f = QMin['scratchdir'] + '/JOB/WORK/molcas.env'
             fdest = QMin['scratchdir'] + '/KEEP/molcas.env.%s' % (jobdir)
             shutil.move(f, fdest)
-    elif QMin['integrals'] == 'dalton':
-        f = QMin['scratchdir'] + '/JOB/WORK/aoints'
-        fdest = QMin['scratchdir'] + '/KEEP/aoints.%s' % (jobdir)
-        shutil.move(f, fdest)
+        elif QMin['integrals'] == 'dalton':
+            f = QMin['scratchdir'] + '/JOB/WORK/aoints'
+            fdest = QMin['scratchdir'] + '/KEEP/aoints.%s' % (jobdir)
+            shutil.move(f, fdest)
 
 # ======================================================================= #
 
