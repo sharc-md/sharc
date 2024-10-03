@@ -4792,8 +4792,11 @@ def getenergy(logfile, ijob, QMin):
         if 'TOTAL SCF ENERGY' in line:
             gsenergy = float(f[iline + 3].split()[3])
         if 'Dispersion correction' in line:
-            gsenergy += float(line.split()[-1])
-            break
+            try:
+                gsenergy += float(line.split()[-1])
+                break
+            except ValueError:
+                continue
 
     # figure out the excited state settings
     mults = QMin['jobs'][ijob]['mults']
@@ -4834,13 +4837,14 @@ def getenergy(logfile, ijob, QMin):
                     # if 'TD-DFT/TDA EXCITED STATES' in line or 'TD-DFT EXCITED STATES' in line or 'RPA EXCITED STATES' in line or 'CIS-EXCITED STATES' in line:
                     # if QMin['OrcaVersion']>=(4,1):
                     break
-            finalstring = ['Entering ', '-EXCITATION SPECTRA']
+            finalstring = ['Entering ', '-EXCITATION SPECTRA', 'SPIN-ORBIT COUPLING']
             while True:
                 iline += 1
                 if iline >= len(f):
                     print('Error in parsing excitation energies')
                     sys.exit(102)
                 line = f[iline]
+                print(line)
                 if any([i in line for i in finalstring]):
                     break
                 if 'STATE' in line:
@@ -4853,6 +4857,9 @@ def getenergy(logfile, ijob, QMin):
                             break
                     e = gsenergy+float(s[ikey-1])*rcm_to_Eh
                     i = int(s[1])
+                    if imult == 3 and QMin['OrcaVersion']>=(6,0):
+                        # print('This is a triplet in ORCA 6!')
+                        i -= estates_to_extract[0]
                     if i > nstates:
                         break
                     energies[(imult, i + (gsmult == imult))] = e
@@ -4960,11 +4967,28 @@ def gettdm(logfile, ijob, QMin):
             for iline, line in enumerate(f):
                 if '  ABSORPTION SPECTRUM VIA TRANSITION ELECTRIC DIPOLE MOMENTS' in line:
                     # print line
-                    for istate in range(nstates):
-                        shift = 5 + istate
-                        s = f[iline + shift].split()
-                        dm = [float(i) for i in s[5:8]]
-                        dipoles[(imult, istate + 1 + (gsmult == imult))] = dm
+                    if QMin['OrcaVersion'] < (6, 0):
+                        for istate in range(nstates):
+                            shift = 5 + istate
+                            s = f[iline + shift].split()
+                            dm = [float(i) for i in s[5:8]]
+                            dipoles[(imult, istate + 1 + (gsmult == imult))] = dm
+                    else:
+                        istate = -1
+                        while True:
+                            # 0-1A  ->  1-3A
+                            istate += 1
+                            shift = 5 + istate
+                            if not "->" in f[iline + shift]:
+                                break
+                            s = f[iline + shift].split()
+                            label = s[2]
+                            ss = label.replace('A','').split('-')
+                            n = int(ss[0])
+                            m = int(ss[1])
+                            dm = [float(i) for i in s[8:11]]
+                            print(m,n,gsmult==imult,dm,label)
+                            dipoles[(m, n + (gsmult == imult))] = dm
     # print dipoles
     return dipoles
 
@@ -5054,6 +5078,8 @@ def getdm(logfile, isgs):
     for iline, line in enumerate(f):
         if findstring in line:
             break
+    else:
+        return [0.,0.,0.]
     while True:
         iline += 1
         line = f[iline]
