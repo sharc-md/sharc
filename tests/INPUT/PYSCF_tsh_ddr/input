@@ -1,0 +1,34 @@
+printlevel 1
+
+geomfile "geom"
+veloc external
+velocfile "veloc"
+
+nstates 3
+actstates 3
+state 2 mch
+coeff auto
+rngseed -15157
+
+ezero     -78.0559336700
+tmax 3.000000
+stepsize 0.100000
+nsubsteps 200
+integrator fvv
+
+method tsh
+surf diagonal
+coupling nacdr
+nogradcorrect
+ekincorrect parallel_vel
+reflect_frustrated none
+decoherence_scheme edc
+decoherence_param 0.1
+hopping_procedure sharc
+grad_select
+eselect 0.001000
+select_directly
+nospinorbit
+output_format ascii
+output_dat_steps 1
+nophases_from_interface
