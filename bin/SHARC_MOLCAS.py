@@ -985,6 +985,9 @@ def getcienergy(out, mult, state, version, method, dkh):
         energystring = 'Total MC-PDFT energy for state'
         stateindex = 5
         enindex = 6
+        if version >= 24.06:
+            stateindex += 1
+            enindex += 1
     elif method == 4:
         modulestring = '&MCPDFT'
         spinstring = 'Spin quantum number'
@@ -3334,7 +3337,8 @@ def setupWORKDIR(WORKDIR, tasks, QMin):
             copyfiles.append(('MOLCAS.OrdInt', 'ORDINT'))
 
         if QMin['method'] in [3,4,5]:
-            copyfiles.append(('GRIDFILE','GRIDFILE'))
+            if QMin['version'] < 24.06:
+                copyfiles.append(('GRIDFILE','GRIDFILE'))
             copyfiles.append(('MOLCAS.NqGrid','MOLCAS.NqGrid'))
 
         for ifile in copyfiles:

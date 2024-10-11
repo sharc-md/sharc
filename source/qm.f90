@@ -1458,6 +1458,7 @@ module qm
     integer :: istate, jstate, ixyz
     complex*16:: scalarProd(ctrl%nstates,ctrl%nstates)
     complex*16 :: Utemp(ctrl%nstates,ctrl%nstates), Htemp(ctrl%nstates,ctrl%nstates)
+    logical :: all_unit_norm
 
     ! if phases were not found in the QM output, try to obtain it
     if (traj%phases_found.eqv..false.) then
@@ -1550,6 +1551,16 @@ module qm
       
       endif ! if (ctrl%calc_overlap==1) then
     endif
+
+    ! check if phases have all norm 1
+    ! all_unit_norm = .true.
+    do istate=1,ctrl%nstates
+      if ( (abs(traj%phases_s(istate)) - 1.d0) > 1.d-6  ) traj%phases_s(istate) = dcmplx(1.d0,0.d0)
+    enddo
+    ! if (.not.all_unit_norm) then
+    !   write(u_log,*) 'Not all phases have unit norm. Abort.'
+    !   stop 1
+    ! endif
 
     ! Patch phases for Hamiltonian, DM matrix ,NACs, Overlap
     ! Bra
@@ -2127,6 +2138,7 @@ module qm
         endif
         traj%overlaps_ss(istate,istate)=sqrt(1.d0-overlap_sum)
       enddo
+      call lowdin(ctrl%nstates, traj%overlaps_ss)
 
       if (printlevel>3) then
         call matwrite(ctrl%nstates,traj%overlaps_ss,u_log,'Approximated overlap matrix from TDC (MCH basis)','F12.9')
@@ -2246,13 +2258,18 @@ module qm
     ! 3. projection variables
     real*8 :: NACtmp_MCH(3*ctrl%natom), pNACtmp_MCH(3*ctrl%natom)
     complex*16 :: NACtmp_diag(3*ctrl%natom), pNACtmp_diag(3*ctrl%natom)
-    complex*16 :: ctrans_rot_P(3*ctrl%natom,3*ctrl%natom)
+    complex*16, allocatable :: ctrans_rot_P(:,:)  ! only allocate sometimes
     ! 5. Patch gmatrix
     complex*16 :: Gmatrix_ss(ctrl%nstates,ctrl%nstates)
     ! 6. hopping direction and frustared hop velocity reflection vector variables
     real*8 :: hopping_tmp(3*ctrl%natom), phopping_tmp(3*ctrl%natom)
 
     character(255) :: string
+
+    ! allocate only if needed for projection
+    if (allocated(traj%trans_rot_P)) then 
+      allocate(ctrans_rot_P(3*ctrl%natom,3*ctrl%natom))
+    endif
 
     if (printlevel>3) then
       write(u_log,*) '============================================================='
