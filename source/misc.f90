@@ -170,6 +170,7 @@ character*1024    :: sharcfacts(n_sharcfacts)   !< array containing the fun fact
     integer,intent(in) :: rngseed
     integer :: i
     integer :: seed
+    real :: rand
 
     ! calculate a seed from rngseed
     seed=rngseed+37+17**2
