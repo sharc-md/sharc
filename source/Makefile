@@ -29,13 +29,13 @@
 
 # =======================================
 #true, false     # also implies NETCDF
-USE_PYSHARC := true
+USE_PYSHARC := false
 
 #intel, gnu
 USE_COMPILER := gnu
 
 #mkl,gnu
-USE_LIBS := mkl
+USE_LIBS := gnu
 
 #Static libraries
 COMP_STATIC := false
@@ -85,7 +85,7 @@ ifeq ($(USE_COMPILER), gnu)
 else ifeq ($(USE_COMPILER), intel)
   CC:=icc
   F90:=ifort
-  EXTRAFLAGS :=
+  EXTRAFLAGS := -DIFORT
 endif
 
 

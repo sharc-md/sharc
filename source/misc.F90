@@ -166,21 +166,24 @@ character*1024    :: sharcfacts(n_sharcfacts)   !< array containing the fun fact
 !> sould maybe be replace by other "better" PRNG
 !> \param rngseed a single input seed which is used to generate the actual seed
   subroutine init_random_seed_thermostat(rngseed)
+#ifdef __INTEL_COMPILER
+    use ifport
+#endif
     implicit none
     integer,intent(in) :: rngseed
     integer :: i
-    integer :: seed
+    integer :: myseed
     real :: rand
 
     ! calculate a seed from rngseed
-    seed=rngseed+37+17**2
+    myseed=rngseed+37+17**2
     do i=1,3
     ! initialize with the first seed (low quality)
-      call srand(seed)
+      call srand(myseed)
     ! calculate some with the random number generator and reseed
-      seed=int(65536*(rand()-0.5d0))
+      myseed=int(65536*(rand()-0.5d0))
     enddo
-    call srand(seed)
+    call srand(myseed)
 !     deallocate(seed)
 
   endsubroutine

@@ -287,7 +287,11 @@ module restart
     call vec3write(ctrl%natom, traj%veloc_old_ad, u, 'Velocity Old','ES24.16E3')
     call vec3write(ctrl%natom, traj%veloc_app_ad, u, 'Velocity Old','ES24.16E3')
     call vec3write(ctrl%natom, traj%accel_ad, u, 'Acceleration','ES24.16E3')
-    if (ctrl%nac_projection==1) then
+    if ((ctrl%method==1 .and. ctrl%nac_projection==1) .or. &
+      &(ctrl%method==0 .and. (ctrl%ekincorrect==2 .or. ctrl%ekincorrect==5 .or. ctrl%ekincorrect==6 .or. ctrl%ekincorrect==8)) .or. &
+      &(ctrl%method==0 .and. (ctrl%reflect_frustrated==2 .or. ctrl%reflect_frustrated==5 .or. ctrl%reflect_frustrated==6 .or. &
+      &ctrl%reflect_frustrated==8 .or. ctrl%reflect_frustrated==92 .or. ctrl%reflect_frustrated==95 .or. &
+      &ctrl%reflect_frustrated==96 .or. ctrl%reflect_frustrated==98))) then 
       call matwrite(3*ctrl%natom, traj%trans_rot_P, u, 'trans_rot_P','ES24.16E3')
     endif 
 
@@ -781,6 +785,7 @@ module restart
     ctrl%restart=.true.
 
     call allocate_traj(traj,ctrl)
+    call additional_allocate_traj(traj,ctrl)
 
     if (printlevel>1) then
       write(u_log,'(a,1x,i4,1x,a,1x,i4,1x,a)') 'Allocation with nstates=',ctrl%nstates,'and natom=',ctrl%natom,'successful.'
@@ -865,9 +870,13 @@ module restart
   call vec3read(ctrl%natom, traj%veloc_old_ad, u_traj, string)
   call vec3read(ctrl%natom, traj%veloc_app_ad, u_traj, string)
   call vec3read(ctrl%natom, traj%accel_ad, u_traj, string)
-  if (ctrl%nac_projection==1) then
+  if ((ctrl%method==1 .and. ctrl%nac_projection==1) .or. &
+    &(ctrl%method==0 .and. (ctrl%ekincorrect==2 .or. ctrl%ekincorrect==5 .or. ctrl%ekincorrect==6 .or. ctrl%ekincorrect==8)) .or. &
+    &(ctrl%method==0 .and. (ctrl%reflect_frustrated==2 .or. ctrl%reflect_frustrated==5 .or. ctrl%reflect_frustrated==6 .or. &
+    &ctrl%reflect_frustrated==8 .or. ctrl%reflect_frustrated==92 .or. ctrl%reflect_frustrated==95 .or. &
+    &ctrl%reflect_frustrated==96 .or. ctrl%reflect_frustrated==98))) then
     call matread(3*ctrl%natom, traj%trans_rot_P, u_traj, string)
-  endif
+  endif 
 
   call matread(ctrl%nstates, traj%H_MCH_ss,     u_traj,   string)
   call matread(ctrl%nstates, traj%dH_MCH_ss,    u_traj,   string)

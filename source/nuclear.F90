@@ -917,6 +917,9 @@ endsubroutine
 
 !> returns 3*natoms gaussian distributed random numbers with mean=mu and variance=var
 function gaussian_random(natoms,mu,var)
+#ifdef __INTEL_COMPILER
+  use ifport
+#endif
   use definitions
   implicit none
   integer,intent(in) :: natoms
