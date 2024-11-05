@@ -895,7 +895,7 @@ module input
         case ('npi')
           ctrl%eeom=3
         case default
-          write(0,*) 'Unknown keyword ',trim(line),' to "neom"!'
+          write(0,*) 'Unknown keyword ',trim(line),' to "eeom"!'
           stop 1
       endselect
     else ! set the default nuclear propagators
@@ -1626,12 +1626,14 @@ module input
           case (3)
             write(u_log,'(a)') 'Using norm perserving interpolation of TDC for wavefunction propagation.'
         endselect
-        select case (ctrl%neom)
-          case (0)
-            write(u_log,'(a)') 'Using NAC for nuclear equation of motion.'
-          case (1)
-            write(u_log,'(a)') 'Using effective NAC for nuclear equation of motion.'
-        endselect
+        if (ctrl%method==1) then 
+          select case (ctrl%neom)   ! this should this only be printed if SCP is used
+            case (0)
+              write(u_log,'(a)') 'Using NAC for nuclear equation of motion.'
+            case (1)
+              write(u_log,'(a)') 'Using effective NAC for nuclear equation of motion.'
+          endselect
+        endif
         if (ctrl%gradcorrect==1) then
           write(u_log,'(a)') 'Including non-adiabatic coupling vectors in the gradient transformation.'
         elseif (ctrl%gradcorrect==2) then
@@ -2028,7 +2030,7 @@ module input
       endif
     endif
 
-    if (printlevel>1) then
+    if ( (printlevel>1) .and. (ctrl%method==1)) then   ! should this only be printed if SCP?
       if (ctrl%decotime_method==0) then
         write(u_log,'(a)') 'Decoherence time is computed with CSDM method'
       elseif (ctrl%decotime_method==1) then
