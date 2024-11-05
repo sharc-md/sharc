@@ -926,7 +926,7 @@ function gaussian_random(natoms,mu,var)
   integer :: i
   real*8,intent(in) :: mu, var
   real*8 :: gaussian_random(2*((natoms*3+1)/2))   !note:fortran integer division -> truncation
-  real*8 :: theta,r,rand
+  real*8 :: theta,r
   
   do i=1,(3*natoms+1)/2
     theta=rand()
