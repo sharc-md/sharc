@@ -52,7 +52,7 @@ QMin_new(PyTypeObject * type, PyObject *args, PyObject *kwds)
 {
     QMin * self;
 
-    self = (QMout *)type->tp_alloc(type, 0);
+    self = (QMin *)type->tp_alloc(type, 0);
     if (self != NULL) {
         self->NAtoms = 0;
     }
