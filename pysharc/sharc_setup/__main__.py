@@ -68,7 +68,7 @@ extra_compile_args = ['-std=c99', '-Wall',]
 pysharc_extension = Extension('sharc/sharc',
             [ os.path.join(pysharc_path, fname) for fname in pysharc_cfiles ],
             include_dirs = [ 'include', ],
-            library_dirs = [ 'lib', '$ANACONDA/lib' ],
+            library_dirs = [ 'lib', os.environ.get('ANACONDA', '') + '/lib' ],
             libraries = mkl_libs + basic_libs,
             extra_compile_args = extra_compile_args,
 )
