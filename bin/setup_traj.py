@@ -1233,6 +1233,7 @@ from the initconds.excited files as provided by excite.py.
     INFOS['dtstep'] = dt
     print('\nSimulation will have %i timesteps.' % (num2 // dt + 1))
 
+
     # Integrator
     print('\nPlease choose the integrator you want to use')
     cando = list(Integrator)
@@ -1256,6 +1257,7 @@ from the initconds.excited files as provided by excite.py.
             break
         print('\nConvergence threshold: %f.' % (conv))
         INFOS['convthre']=conv
+
 
     # number of substeps
     print('\nPlease enter the number of substeps for propagation (25 recommended).')
@@ -1299,6 +1301,8 @@ from the initconds.excited files as provided by excite.py.
             INFOS['pointer_basis'] = 'diag'
             INFOS['neom_rep'] = 'MCH'
 
+
+
     # SOC or not
     # recommended=True
     # if len(INFOS['states'])==1:
@@ -1325,6 +1329,8 @@ from the initconds.excited files as provided by excite.py.
     INFOS['soc'] = soc
     if INFOS['soc']:
         INFOS['needed'].extend(Interfaces[INFOS['interface']]['features']['soc'])
+
+
 
     # Coupling
     print('\nPlease choose the quantities to describe non-adiabatic effects between the states:')
@@ -1364,6 +1370,7 @@ from the initconds.excited files as provided by excite.py.
             if INFOS['phases_from_interface']:
                 INFOS['needed'].extend(Interfaces[INFOS['interface']]['features']['phases'])
 
+
     # Gradient correction (only for SHARC)
     if INFOS['surf'] == 'diagonal':
         print('\nFor SHARC dynamics, the evaluation of the mixed gradients necessitates to be corrected from MCH gradients')
@@ -1388,6 +1395,8 @@ from the initconds.excited files as provided by excite.py.
             INFOS['gradcorrect'] = 1
     else:
         INFOS['gradcorrect'] = 1
+
+
 
     #===============================
     # Begin Surface hopping details
@@ -1442,7 +1451,6 @@ from the initconds.excited files as provided by excite.py.
                 INFOS['needed'].extend(Interfaces[INFOS['interface']]['features'][i])
 
 
-
         # decoherence
         print('\nPlease choose a decoherence correction for the %s states:' % (['MCH', 'diagonal'][INFOS['surf'] == 'diagonal']))
         cando = []
@@ -1465,7 +1473,6 @@ from the initconds.excited files as provided by excite.py.
         for i in DecoherencesTSH[decoh]['required']:
             INFOS['needed'].extend(Interfaces[INFOS['interface']]['features'][i])
 
-
         # surface hopping scheme
         print('\nPlease choose a surface hopping scheme for the %s states:' % (['MCH', 'diagonal'][INFOS['surf'] == 'diagonal']))
         cando = list(HoppingSchemes)
@@ -1478,6 +1485,7 @@ from the initconds.excited files as provided by excite.py.
             else:
                 print('Please input one of the following: %s!' % ([i for i in cando]))
         INFOS['hopping'] = HoppingSchemes[hopping]['name']
+
 
         # Forced hops to lowest state
         print('\nDo you want to perform forced hops to the lowest state based on a energy gap criterion?')
@@ -1502,7 +1510,6 @@ from the initconds.excited files as provided by excite.py.
         else:
             INFOS['scaling'] = False
 
-
         # Damping
         print('\nDo you want to damp the dynamics (Kinetic energy is reduced at each timestep by a factor)?')
         damp = question('Damping?', bool, False)
@@ -1516,7 +1523,6 @@ from the initconds.excited files as provided by excite.py.
             INFOS['damping'] = fdamp
         else:
             INFOS['damping'] = False
-
 
         # atommask
         INFOS['atommaskarray'] = []
@@ -1656,6 +1662,8 @@ from the initconds.excited files as provided by excite.py.
     #===========================================
     # End Self-Consistent Potential Methods details 
     #===========================================
+
+
     # Laser file
     print('\n\n' + centerstring('Laser file', 60, '-') + '\n')
     INFOS['laser'] = question('Do you want to include a laser field in the simulation?', bool, False)
