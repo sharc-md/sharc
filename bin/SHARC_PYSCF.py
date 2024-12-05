@@ -765,14 +765,17 @@ at least one task"""
     template_dict = {}
     INTEGERS_KEYS = ["ncas", "nelecas", "roots", "grids-level", "verbose", "max-cycle-macro", "max-cycle-micro", "ah-max-cycle", "ah-start-cycle", "grad-max-cycle"]
     STRING_KEYS = ["basis", "method", "pdft-functional"]
-    FLOAT_KEYS = ["conv-tol", "conv-tol-grad", "max-stepsize", "ah-start-tol", "ah-level-shift", "ah-conv-tol", "ah-lindep"]
+    FLOAT_KEYS = ["conv-tol", "conv-tol-grad", "max-stepsize", "ah-start-tol", "ah-level-shift", "ah-conv-tol", "ah-lindep", "fix-spin-shift"]
     BOOL_KEYS = []
 
     template_dict["roots"] = [0 for _ in range(8)]
 
     template_dict["method"] = "casscf"
     template_dict["verbose"] = 3
-    
+  
+
+    template_dict["fix-spin-shift"] = 0.2
+
     template_dict["pdft-functional"] = "tpbe"
     template_dict["grids-level"] = 4
     
@@ -805,7 +808,7 @@ at least one task"""
         key = line[0]
         line = line[1:]
 
-        if "spin" in key:
+        if key.startswith("spin"):
             template_dict["roots"][int(line[0]) - 1] = int(line[2])
 
         elif "roots" in key:
@@ -1116,15 +1119,20 @@ def gen_solver(mol, qmin):
         else:
             functional = qmin["template"]["pdft-functional"]
             grids_level = qmin["template"]["grids-level"]
-            from pyscf import mcpdft
-            solver = mcpdft.CASSCF(mf, functional, ncas, nelecas, grids_level=grids_level)
+            try:
+                from pyscf import mcpdft
+                solver = mcpdft.CASSCF(mf, functional, ncas, nelecas, grids_level=grids_level)
+
+            except ImportError as e:
+                print("MC-PDFT requested but pyscf-forge not installed")
+                raise e
 
         try:
             from mrh.my_pyscf.fci import csf_solver
             solver.fcisolver = csf_solver(mol, smult=1)
         
         except ImportError:
-            solver.fix_spin_(ss=0)
+            solver.fix_spin_(ss=0, shift=qmin["template"]["fix-spin-shift"])
     
         if qmin["method"] == 1:
             solver = solver.multi_state(weights, method="lin")
@@ -1157,9 +1165,11 @@ def gen_solver(mol, qmin):
     if os.path.isfile(old_chk):
         print(f"Updating solver from chk: {old_chk}", flush=True)
         solver.update(old_chk)
+        # This doesn't work with fix_spin so I remove the old CI vector...
+        solver.ci = None
         solver.mo_coeff = mcscf.project_init_guess(solver, solver.mo_coeff)
 
-    solver.kernel(solver.mo_coeff, solver.ci)
+    solver.kernel(solver.mo_coeff)#, solver.ci)
     return solver
 
 
