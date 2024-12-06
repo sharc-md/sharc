@@ -34,7 +34,7 @@
 #STATIC = -static-intel -qopenmp-link=static
 PROFILE = # -pg
 OMP = -qopenmp
-FC = ifx
+FC = ifort
 DEBUG = #-g #-warn all # -traceback -check bounds
 OPT = -O3 -ipo
 FCFLAGS = $(OPT) $(OMP) $(PROFILE) $(DEBUG) -fpp -i8 -DEXTBLAS   -I"${MKLROOT}/include" -z muldefs
