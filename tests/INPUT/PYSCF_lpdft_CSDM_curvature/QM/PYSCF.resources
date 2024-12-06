@@ -1,0 +1,3 @@
+scratchdir $SCRADIR/WORK
+memory 2000
+ncpu 1

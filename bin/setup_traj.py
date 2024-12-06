@@ -27,7 +27,6 @@
 #
 # usage: python setup_traj.py
 
-import copy
 import math
 import sys
 import re
@@ -223,9 +222,18 @@ Interfaces = {
                       'dyson': ['wfoverlap'],
                       'nacdr': [],
                       'dipolegrad': [],
-                      'phases':  [],
                       'ktdc':    [],
                       'phases': [], },
+         'pysharc': False
+         },
+    11: {'script': 'SHARC_PYSCF.py',
+         'name': 'pyscf',
+         'description': 'PySCF (CASSCF, L-PDFT)',
+         'get_routine': 'get_PYSCF',
+         'prepare_routine': 'prepare_PYSCF',
+         'features': {'ktdc': [],
+                      'nacdr': [],
+         },
          'pysharc': False
          },
 }
@@ -1233,7 +1241,6 @@ from the initconds.excited files as provided by excite.py.
     INFOS['dtstep'] = dt
     print('\nSimulation will have %i timesteps.' % (num2 // dt + 1))
 
-
     # Integrator
     print('\nPlease choose the integrator you want to use')
     cando = list(Integrator)
@@ -1257,7 +1264,6 @@ from the initconds.excited files as provided by excite.py.
             break
         print('\nConvergence threshold: %f.' % (conv))
         INFOS['convthre']=conv
-
 
     # number of substeps
     print('\nPlease enter the number of substeps for propagation (25 recommended).')
@@ -1301,8 +1307,6 @@ from the initconds.excited files as provided by excite.py.
             INFOS['pointer_basis'] = 'diag'
             INFOS['neom_rep'] = 'MCH'
 
-
-
     # SOC or not
     # recommended=True
     # if len(INFOS['states'])==1:
@@ -1329,8 +1333,6 @@ from the initconds.excited files as provided by excite.py.
     INFOS['soc'] = soc
     if INFOS['soc']:
         INFOS['needed'].extend(Interfaces[INFOS['interface']]['features']['soc'])
-
-
 
     # Coupling
     print('\nPlease choose the quantities to describe non-adiabatic effects between the states:')
@@ -1359,7 +1361,7 @@ from the initconds.excited files as provided by excite.py.
                     li.append(i)
             print('Please input one of the following: %s!' % li)
     INFOS['coupling'] = num
-    INFOS['needed'].extend(Interfaces[INFOS['interface']]['features'][Couplings[i]['name']])
+    INFOS['needed'].extend(Interfaces[INFOS['interface']]['features'][Couplings[num]['name']])
 
 
     # Phase tracking
@@ -1369,7 +1371,6 @@ from the initconds.excited files as provided by excite.py.
             INFOS['phases_from_interface'] = question('Do you want to track wavefunction phases through overlaps?', bool, True)
             if INFOS['phases_from_interface']:
                 INFOS['needed'].extend(Interfaces[INFOS['interface']]['features']['phases'])
-
 
     # Gradient correction (only for SHARC)
     if INFOS['surf'] == 'diagonal':
@@ -1395,8 +1396,6 @@ from the initconds.excited files as provided by excite.py.
             INFOS['gradcorrect'] = 1
     else:
         INFOS['gradcorrect'] = 1
-
-
 
     #===============================
     # Begin Surface hopping details
@@ -1451,6 +1450,7 @@ from the initconds.excited files as provided by excite.py.
                 INFOS['needed'].extend(Interfaces[INFOS['interface']]['features'][i])
 
 
+
         # decoherence
         print('\nPlease choose a decoherence correction for the %s states:' % (['MCH', 'diagonal'][INFOS['surf'] == 'diagonal']))
         cando = []
@@ -1473,6 +1473,7 @@ from the initconds.excited files as provided by excite.py.
         for i in DecoherencesTSH[decoh]['required']:
             INFOS['needed'].extend(Interfaces[INFOS['interface']]['features'][i])
 
+
         # surface hopping scheme
         print('\nPlease choose a surface hopping scheme for the %s states:' % (['MCH', 'diagonal'][INFOS['surf'] == 'diagonal']))
         cando = list(HoppingSchemes)
@@ -1485,7 +1486,6 @@ from the initconds.excited files as provided by excite.py.
             else:
                 print('Please input one of the following: %s!' % ([i for i in cando]))
         INFOS['hopping'] = HoppingSchemes[hopping]['name']
-
 
         # Forced hops to lowest state
         print('\nDo you want to perform forced hops to the lowest state based on a energy gap criterion?')
@@ -1510,6 +1510,7 @@ from the initconds.excited files as provided by excite.py.
         else:
             INFOS['scaling'] = False
 
+
         # Damping
         print('\nDo you want to damp the dynamics (Kinetic energy is reduced at each timestep by a factor)?')
         damp = question('Damping?', bool, False)
@@ -1523,6 +1524,7 @@ from the initconds.excited files as provided by excite.py.
             INFOS['damping'] = fdamp
         else:
             INFOS['damping'] = False
+
 
         # atommask
         INFOS['atommaskarray'] = []
@@ -1662,8 +1664,6 @@ from the initconds.excited files as provided by excite.py.
     #===========================================
     # End Self-Consistent Potential Methods details 
     #===========================================
-
-
     # Laser file
     print('\n\n' + centerstring('Laser file', 60, '-') + '\n')
     INFOS['laser'] = question('Do you want to include a laser field in the simulation?', bool, False)
@@ -2642,7 +2642,7 @@ def check_MOLCAS_qmmm(filename):
     data = f.readlines()
     f.close()
     for line in data:
-        if 'qmmm' in re.sub('#.*$', '', line).strip().lower():
+        if 'qmmm' in line.lower():
             return True
     return False
 
@@ -2832,7 +2832,7 @@ The MOLCAS interface will generate the appropriate MOLCAS input automatically.
         INFOS['molcas.guess'] = {}
 
 
-    print(centerstring('MOLCAS Ressource usage', 60, '-') + '\n')
+    print(centerstring('MOLCAS Resource usage', 60, '-') + '\n')
     print('''Please specify the amount of memory available to MOLCAS (in MB). For calculations including moderately-sized CASSCF calculations and less than 150 basis functions, around 2000 MB should be sufficient.
 ''')
     INFOS['molcas.mem'] = abs(question('MOLCAS memory:', int)[0])
@@ -4352,6 +4352,193 @@ exit $err''' % (Interfaces[INFOS['interface']]['script'])
 
     return
 
+
+# =============================================================================
+
+def checktemplate_PYSCF(filename, INFOS):
+    necessary = ['basis', 'ncas', 'nelecas', 'roots']
+    try:
+        with open(filename) as f:
+            data = f.readlines()
+    
+    except IOError:
+        print(f"Could not open template file {filename}")
+        return False
+    
+    valid = []
+    for i in necessary:
+        for line in data:
+            if i in re.sub('#.*$', '', line):
+                valid.append(True)
+            break
+        
+        else:
+            valid.append(False)
+
+    if not all(valid):
+        print(f"The template {filename} seems to be incomplete! It should contain: {str(necessary)}")
+        return False
+
+    roots_there = False
+    for line in data:
+        line = re.sub('#.*$', '', line).lower().split()
+        if len(line) == 0:
+            continue
+
+        if 'roots' in line[0]:
+            roots_there = True
+
+    if not roots_there:
+        for mult, state in enumerate(INFOS['states']):
+            if state <= 0:
+                continue
+
+            valid = []
+            for line in data:
+                if "spin" in re.sub('#.*$', '', line).lower():
+                    f = line.split()
+                    if int(f[1]) == mult + 1 :
+                        valid.append(True)
+                        break
+
+            else:
+                valid.append(False)
+        
+        if not all(valid):
+            string = f"The template {filename} seems to be incomplete! It should contain the keyword 'spin' for "
+            for mult, state in enumerate(INFOS['states']):
+                if state <= 0:
+                    continue
+                
+                string += f"{IToMult[mult+1]}, "
+            
+            string = string[:-2] + '!'
+            print(string)
+            return False
+
+    return True
+
+def get_PYSCF(INFOS):
+    """This routine asks for all questions specific to PySCF:
+        - scratch directory
+        - PYSCF>template
+        - 
+    """
+    string = '\n  ' + '=' * 80 + '\n'
+    string += '||' + centerstring('PySCF Interface setup', 80) + '||\n'
+    string += '  ' + '=' * 80 + '\n\n'
+    print(string)
+
+    print(centerstring('Scratch directory', 60, '-') + '\n')
+    print('Please specify an appropriate scratch directory. This will be used to temporally store the integrals. The scratch directory will be deleted after the calculation. Remember that this script cannot check whether the path is valid, since you may run the calculations on a different machine. The path will not be expanded by this script.')
+    INFOS['scratchdir'] = question('Path to scratch directory:', str)
+    print('')
+
+
+    print(centerstring('PySCF input template file', 60, '-') + '\n')
+    print("""Pleasespecify the path to the PYSCF.template file. This file must contain the following settings:
+
+basis <Basis set>
+ncas <Number of active orbitals>
+nelecas <Number of active electrons>
+roots <Number of roots for state-averaging>
+
+The PySCF interface will generate the appropriate PySCF input/script automatically. 
+""")
+    if os.path.isfile("PYSCF.template"):
+        if checktemplate_PYSCF("PYSCF.template", INFOS):
+            print("Valid file 'PYSCF.template' detected.")
+            usethisone = question("Use this template file?", bool, True)
+            if usethisone:
+                INFOS['pyscf.template'] = 'PYSCF.template'
+
+    if 'pyscf.template' not in INFOS:
+        while True:
+            filename = question("Template filename: ", str)
+            if not os.path.isfile(filename):
+                print(f"File {filename} does not exist!")
+            elif checktemplate_PYSCF(filename, INFOS):
+                break
+
+        INFOS['pyscf.template'] = filename
+
+    print("")
+
+
+    print(centerstring('Initial wave function: chkfile', 60, '-') + '\n')
+    print("Please specify the path to a PySCF chk file containing stuitable starting MOs for the CASSCF calculation. Please note that this script cannot check whether the wave function file and the input template are consistent!")
+
+    string = "Do you have initial wave function files for "
+    for mult, state in enumerate(INFOS['states']):
+        if state <= 0:
+            continue
+        
+        string += f"{IToMult[mult+1]}, "
+
+    string = string[:-2] + "?"
+    if question(string, bool, True):
+        while True:
+            filename = question("PySCF chkfile: ", str)
+            if not os.path.isfile(filename):
+                print(f"File {filename} does not exist!")
+
+            else:
+                INFOS['pyscf.guess'] = filename
+                break
+
+    else:
+        print("WARNING: Remember that CASSCF calculations may run very long and/or yield wrong results without proper starting MOs.")
+        time.sleep(2)
+        INFOS['pyscf.guess'] = None
+
+    print(centerstring("PySCF Resource usage", 60, '-'), '\n')
+    print("Please specify the amount of memory available to PySCF (in MB). For calculations including moderately-sized CASSCF calculations and less than 150 basis functions, around 2000 MB should be sufficient.")
+    INFOS['pyscf.mem'] = abs(question('PySCF memory:', int)[0])
+    print("Please specify the number of CPUs to be used by EACH calculation.")
+    INFOS['pyscf.ncpu'] = abs(question('Number of CPUs:', int)[0])
+    
+
+    if 'wfoverlap' in INFOS['needed']:
+        print('\n' + centerstring("Wfoverlap code setup", 60, '-') + '\n')
+        print('PySCF not currently interfaced to wfoverlap...aborting...')
+        quit(1)
+
+    
+    return INFOS
+
+def prepare_PYSCF(INFOS, iconddir):
+    string = f"""scratchdir {os.path.join(INFOS['scratchdir'], iconddir)}
+savedir {os.path.join(INFOS['copydir'], iconddir, 'restart')}
+memory {INFOS['pyscf.mem']}
+ncpu {INFOS['pyscf.ncpu']}"""
+    try:
+        with open(os.path.join(iconddir, "QM/PYSCF.resources"), 'w') as sh2cas:
+            sh2cas.write(string)
+
+    except IOError:
+        print(f"IOError during prepare_PYSCF, iconddir={iconddir}")
+        quit(1)
+
+    # Copy MOs and template
+    template_source = INFOS['pyscf.template']
+    template_target = os.path.join(iconddir, "QM/PYSCF.template")
+    shutil.copy(template_source, template_target)
+    if INFOS['pyscf.guess'] is not None:
+        chk_source = INFOS['pyscf.guess']
+        chk_target = os.path.join(iconddir, "QM/pyscf.init.chk")
+        shutil.copy(chk_source, chk_target)
+
+    runname = os.path.join(iconddir, "QM/runQM.sh")
+    with open(runname, 'w') as runscript:
+        runscript.write(f"""cd QM
+$SHARC/{Interfaces[INFOS['interface']]['script']} QM.in >> QM.log 2>> QM.err
+err=$?
+
+exit $err""")
+
+    os.chmod(runname, os.stat(runname).st_mode | stat.S_IXUSR)
+    
+    return
 
 # ======================================================================================================================
 # ======================================================================================================================
