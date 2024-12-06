@@ -1,0 +1,9 @@
+basis sto-3g 
+ncas 2
+nelecas 2
+roots 3
+
+method l-pdft
+pdft-functional tpbe
+grids-level 3
+fix-spin-shift 1.0
