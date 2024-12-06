@@ -763,12 +763,13 @@ at least one task"""
         template = f.readlines()
 
     template_dict = {}
-    INTEGERS_KEYS = ["ncas", "nelecas", "roots", "grids-level", "verbose", "max-cycle-macro", "max-cycle-micro", "ah-max-cycle", "ah-start-cycle", "grad-max-cycle"]
+    INTEGERS_KEYS = ["ncas", "nelecas", "roots", "grids-level", "verbose", "max-cycle-macro", "max-cycle-micro", "ah-max-cycle", "ah-start-cycle", "grad-max-cycle", "charge"]
     STRING_KEYS = ["basis", "method", "pdft-functional"]
     FLOAT_KEYS = ["conv-tol", "conv-tol-grad", "max-stepsize", "ah-start-tol", "ah-level-shift", "ah-conv-tol", "ah-lindep", "fix-spin-shift"]
     BOOL_KEYS = []
 
     template_dict["roots"] = [0 for _ in range(8)]
+    template_dict["charge"] = 0
 
     template_dict["method"] = "casscf"
     template_dict["verbose"] = 3
@@ -1091,7 +1092,8 @@ def build_mol(qmin):
             basis=qmin["template"]["basis"],
             output=log_file,
             verbose=verbose,
-            symmetry=False
+            symmetry=False,
+            charge=qmin["template"]["charge"]
         )
         mol.build()
 
