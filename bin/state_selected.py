@@ -31,6 +31,8 @@
 # Based on ANT implementation.
 # usage python state_selected.py [-n <NUMBER>] <MOLDEN-FILE>
 # by Yinan Shu, Aug 27, 2022.
+# Update 2024, Sep 27:
+# Debugged and improved the code
 
 import copy
 import math
@@ -67,8 +69,8 @@ ANG_TO_BOHR = 1./0.529177211    #1.889725989      # conversion from Angstrom to 
 PI = math.pi
 KB = 3.1668154e-6               #Boltzmann in hartee/K
 
-version = '3.0'
-versiondate = datetime.date(2023, 4, 1)
+version = '2.0'
+versiondate = datetime.date(2025, 1, 19)
 
 
 NUMBERS = {'H':1, 'He':2,
@@ -465,7 +467,7 @@ class INITCOND:
     while True:
       line=f.readline()
       #if 'Index     %i' % (index) in line:
-      if re.search('Index\s+%i' % (index),line):
+      if re.search(r'Index\s+%i' % (index),line):
         break
     f.readline()        # skip one line, where "Atoms" stands
     atomlist=[]
@@ -508,11 +510,11 @@ class INITCOND:
     s+='States\n'
     for state in self.statelist:
       s+=str(state)+'\n'
-    s+='Ekin      % 16.12f a.u.\n' % (self.Ekin)
-    s+='Epot_harm % 16.12f a.u.\n' % (self.Epot_harm)
-    s+='Epot      % 16.12f a.u.\n' % (self.Epot)
-    s+='Etot_harm % 16.12f a.u.\n' % (self.Epot_harm+self.Ekin)
-    s+='Etot      % 16.12f a.u.\n' % (self.Epot+self.Ekin)
+    s+='Ekin      % 16.12f a.u.  %16.12f eV\n' % (self.Ekin, self.Ekin*HARTREE_TO_EV)
+    s+='Epot_harm % 16.12f a.u.  %16.12f eV\n' % (self.Epot_harm, self.Epot_harm*HARTREE_TO_EV)
+    s+='Epot      % 16.12f a.u.  %16.12f eV\n' % (self.Epot, self.Epot*HARTREE_TO_EV)
+    s+='Etot_harm % 16.12f a.u.  %16.12f eV\n' % (self.Epot_harm+self.Ekin, (self.Epot_harm+self.Ekin)*HARTREE_TO_EV)
+    s+='Etot      % 16.12f a.u.  %16.12f eV\n' % (self.Epot+self.Ekin, (self.Epot+self.Ekin)*HARTREE_TO_EV)
     s+='\n\n'
     return s
 
@@ -675,6 +677,10 @@ file. Returns molecule and modes as the other function does.
 
   nmodes = len(modes)
   modes = determine_normal_modes_format(modes,molecule,nmodes,flag)
+
+  #compute force constant for each mode 
+  for imode in range(nmodes):
+    modes[imode]['force_constant']=modes[imode]['freq']**2
 
   return molecule, modes
 
@@ -966,7 +972,7 @@ def remove_rotations(ic):
         print('WARNING: moment of inertia tensor is not invertible')
 
 
-def sample_initial_condition(molecule, modes, vibselect, vibdist, vibstate_in, vibene_in, method, template):
+def sample_initial_condition(molecule, modes, vibselect, vibdist, vibstate_in, viblist, vibene_in, method, template):
   """This function samples a single vibrational state selected 
 initial condition from the modes and atomic coordinates."""
 
@@ -1020,80 +1026,113 @@ initial condition from the modes and atomic coordinates."""
       nvib[imode]=vibstate[imode]
       evib[imode]=(0.5+nvib[imode])*modes[imode]['freq']
     elif vibselect==2:
-      rn=1.0-random.random()
-      nvib[imode]=int(-math.log(rn)*kbt0/modes[imode]['freq'])-1
-      if nvib[imode]<0:
-          nvib[imode]=0
+      # the following procedure is an old way of sampling
+      # vibrational quantum numbers according to Boltzmann distribution
+      #rn=1.0-random.random()
+      #nvib[imode]=int(-math.log(rn)*kbt0/modes[imode]['freq'])-1
+      #if nvib[imode]<0:
+      #    nvib[imode]=0
+      #evib[imode]=(0.5+nvib[imode])*modes[imode]['freq']
+      # We do it now in the new way, that creating a table, and sampling according 
+      # to the table. The table going up to a maximum of vibrational quantum number whose probability is less than 10^-5
+      partition_function=math.exp(-modes[imode]['freq']/2/kbt0)/(1.0-math.exp(-modes[imode]['freq']/kbt0))
+      boltzmann_p = []
+      for ivib in range(301):
+        probability=math.exp(-(ivib+0.5)*modes[imode]['freq']/kbt0)/partition_function
+        boltzmann_p.append(probability)
+        if probability<10**-5:
+          break
+      # Cumulative probability
+      cumulative_p = numpy.cumsum(boltzmann_p)
+      # Normalize to ensure the sum is 1 (in case of small numerical inaccuracies, due to up to a limited vibrational quantum number)
+      cumulative_p /= cumulative_p[-1]
+      # Find n_vib such that boltzmann_p[a] < random number < boltzmann_p[b]
+      nvib[imode]=numpy.searchsorted(cumulative_p, random.random())
       evib[imode]=(0.5+nvib[imode])*modes[imode]['freq']
     elif vibselect==4 or vibselect==5:
       evib[imode]=vibene[imode]/HARTREE_TO_EV
       nvib[imode]=evib[imode]/modes[imode]['freq']-0.5
-    elif vibselect==6 or vibselec==7:
+    elif vibselect==6 or vibselect==7:
       evib[imode]=min(vibene[0]/HARTREE_TO_EV,0.5*modes[imode]['freq'])
       nvib[imode]=evib[imode]/modes[imode]['freq']-0.5
-
+    elif vibselect==8:
+      nvib[imode]=0
+      for pair in viblist:
+        if imode==pair[0]-1:
+          nvib[imode]=pair[1]
+      evib[imode]=(0.5+nvib[imode])*modes[imode]['freq']
     # Compute turning point
-    rturn[imode]=math.sqrt(2*evib[imode]/U_TO_AMU)/modes[imode]['freq']
+    # turning point = sqrt(2E/k) 
+    rturn[imode]=math.sqrt(2*evib[imode]/modes[imode]['force_constant'])
 
     # Compute coordinate displacement - dx
-    if vibdist==0: # uniform distribution 
-      ran=random.random()
-      dx[imode]=rturn[imode]*math.cos(2*PI*ran)
-    elif vibdist==1 and nvib[imode]==0: # gaussian distribution 
-      ran1=random.random()
-      ran2=random.random()
-      while ran1==0.0:
-        ran1=random.random()
-      sigmax=math.sqrt(evib[imode]/U_TO_AMU)/modes[imode]['freq']
-      rangauss=math.sqrt(-2.0*math.log(ran1))*math.cos(2.0*PI*ran2)
-      dx[imode]=sigmax*rangauss
-    elif vibdist==1 and nvib[imode]!=0:
-      print("vibdist=1 only works for zero vibrational level")
-      print("change to uniform distribution, vibdist set to 0")
-      ran=random.random()
-      dx[imode]=rturn[imode]*math.cos(2*PI*ran)
-    elif vibdist==2 and nvib[imode]==0: # wigner distribution for both position and velocity
-      ran1=random.random()
-      ran2=random.random()
-      while ran1==0.0:
-        ran1=random.random()
-      sigmax=math.sqrt(evib[imode]/U_TO_AMU)/modes[imode]['freq']
-      sigmap=1.0/(2.0*sigmax)
-      rangauss=math.sqrt(-2.0*math.log(ran1))
-      dx[imode]=sigmax*rangauss*math.cos(2.0*PI*ran2)
-      dp[imode]=sigmap*rangauss*math.sin(2.0*PI*ran2)
-      kin[imode]=0.5*dp[imode]**2/U_TO_AMU
-    elif vibdist==2 and nvib[imode]!=0:
-      print("vibdist=2 only works for zero vibrational level")
-      print("change to uniform distribution, vibdist set to 0")
-      ran=random.random()
-      dx[imode]=rturn[imode]*math.cos(2*PI*ran)
+    if not OSV:
+        if vibdist==0: # uniform distribution 
+            ran=random.random()
+            dx[imode]=rturn[imode]*math.cos(2*PI*ran)
+        elif vibdist==1 and nvib[imode]==0: # gaussian distribution 
+            ran1=1.0-random.random()
+            ran2=random.random()
+            while ran1==0.0:
+                ran1=random.random()
+            sigmax=math.sqrt(evib[imode]/modes[imode]['force_constant'])
+            rangauss=math.sqrt(-2.0*math.log(ran1))*math.cos(2.0*PI*ran2)
+            dx[imode]=sigmax*rangauss
+        elif vibdist==1 and nvib[imode]!=0:
+            print("vibdist=1 (Gaussian distribution) only works for zero vibrational level")
+            print("change to uniform distribution, vibdist set to 0")
+            ran=random.random()
+            dx[imode]=rturn[imode]*math.cos(2*PI*ran)
+        elif vibdist==2 and nvib[imode]==0: # wigner distribution for both position and velocity
+            ran1=1.0-random.random()
+            ran2=random.random()
+            while ran1==0.0:
+                ran1=random.random()
+            sigmax=math.sqrt(evib[imode]/modes[imode]['force_constant'])
+            sigmap=1.0/(2.0*sigmax)
+            rangauss=math.sqrt(-2.0*math.log(ran1))
+            dx[imode]=sigmax*rangauss*math.cos(2.0*PI*ran2)
+            dv[imode]=sigmap*rangauss*math.sin(2.0*PI*ran2)
+            kin[imode]=0.5*dv[imode]**2
+        elif vibdist==2 and nvib[imode]!=0:
+            print("vibdist=2 (Wigner distribution) only works for zero vibrational level")
+            print("change to uniform distribution, vibdist set to 0")
+            ran=random.random()
+            dx[imode]=rturn[imode]*math.cos(2*PI*ran)
+    elif OSV:
+        dx[imode]=0.0
+        # only one exception: in Wigner distribution, we sample velocities as well. 
+        if vibdist==2 and nvib[imode]==0: # wigner distribution for both position and velocity
+            ran1=1.0-random.random()
+            ran2=random.random()
+            while ran1==0.0:
+                ran1=random.random()
+            sigmax=math.sqrt(evib[imode]/modes[imode]['force_constant'])
+            sigmap=1.0/(2.0*sigmax)
+            rangauss=math.sqrt(-2.0*math.log(ran1))
+            dv[imode]=sigmap*rangauss*math.sin(2.0*PI*ran2)
+            kin[imode]=0.5*dv[imode]**2
+
 
     # All initial sampling of dx is finished
     # refinement, and compute dv
     if method==0: # Harmonic approximation of potential 
-      pot[imode]=0.5 * modes[imode]['freq']**2 * dx[imode]**2
-      # compute current velocity vector dot normal mode
-      nv=0.0
-      for i, atom in enumerate(atomlist):
-        for xyz in range(3):
-          nv=nv+atom.mass*atom.veloc[xyz]*(modes[imode]['move'][i][xyz]*math.sqrt(U_TO_AMU/atom.mass))
-      # compute normal mode dot normal mode
-      nn=0.0
-      for i, atom in enumerate(atomlist):
-        for xyz in range(3):
-          nn=nn+0.5*atom.mass*(modes[imode]['move'][i][xyz]*math.sqrt(U_TO_AMU/atom.mass))**2
+      # notice both ways of computing pot[imode] should give you equal results
+      #pot[imode]=evib[imode]*(dx[imode]/rturn[imode])**2
+      pot[imode]=0.5 * modes[imode]['force_constant'] * dx[imode]**2
       if vibdist!=2:
         kin[imode]=evib[imode]-pot[imode]
-        while (nv**2+4*nn*kin[imode])<0.0: # re-sample dx if we do not have enough kinetic energy
+        a_value, b_value, f_value = judge_frustration(atomlist, modes, imode, kin[imode])
+        while f_value<0.0:
           dx[imode]=dx[imode]*0.9
-          pot[imode]=0.5 * modes[imode]['freq']**2 * dx[imode]**2
+          pot[imode]=0.5 * modes[imode]['force_constant'] * dx[imode]**2
           kin[imode]=evib[imode]-pot[imode]
-      sign[imode]=random.random()
-      if sign[imode]>=0.5:
-        dv[imode]=(-nv+math.sqrt(nv**2+4*nn*kin[imode]))/(2*nn)
-      else:
-        dv[imode]=(-nv-math.sqrt(nv**2+4*nn*kin[imode]))/(2*nn)
+          a_value, b_value, f_value = judge_frustration(atomlist, modes, imode, kin[imode])
+        sign[imode]=random.random()
+        if sign[imode]>=0.5:
+          dv[imode]=(-b_value+math.sqrt(f_value))/(2*a_value)
+        else:
+          dv[imode]=(-b_value-math.sqrt(f_value))/(2*a_value)
       # add potential energy of this mode to total potential energy
       Epot += pot[imode]
       for i, atom in enumerate(atomlist): # for each atom
@@ -1101,9 +1140,9 @@ initial condition from the modes and atomic coordinates."""
           # distort geometry according to normal mode movement
           # and unweigh mass-weighted normal modes
           if not UEG:
-            atom.coord[xyz] += dx[imode] * modes[imode]['move'][i][xyz] * math.sqrt(U_TO_AMU/atom.mass)
+            atom.coord[xyz] += dx[imode] * modes[imode]['move'][i][xyz] * math.sqrt(1.0/atom.mass)
           if not UZV:
-            atom.veloc[xyz] += dv[imode] * modes[imode]['move'][i][xyz] * math.sqrt(U_TO_AMU/atom.mass)
+            atom.veloc[xyz] += dv[imode] * modes[imode]['move'][i][xyz] * math.sqrt(1.0/atom.mass)
         atom.EKIN()
     elif method==1: # Ab initio potential
       natom=len(atomlist)
@@ -1117,34 +1156,26 @@ initial condition from the modes and atomic coordinates."""
       # compute pot[imode]
       for i, atom in enumerate(atomlist):
         for xyz in range(3):
-          tmp_xyz[i,xyz]=atom.coord[xyz] + dx[imode] * modes[imode]['move'][i][xyz] * math.sqrt(U_TO_AMU/atom.mass)
+          tmp_xyz[i,xyz]=atom.coord[xyz] + dx[imode] * modes[imode]['move'][i][xyz] * math.sqrt(1.0/atom.mass)
       pot[imode]=compute_potential_energy(tmp_xyz, atomlist, template)
       pot[imode]=pot[imode]-E0
-      # compute current velocity vector dot normal mode
-      nv=0.0
-      for i, atom in enumerate(atomlist):
-        for xyz in range(3):
-          nv=nv+atom.mass*atom.veloc[xyz]*(modes[imode]['move'][i][xyz]*math.sqrt(U_TO_AMU/atom.mass))
-      # compute normal mode dot normal mode
-      nn=0.0
-      for i, atom in enumerate(atomlist):
-        for xyz in range(3):
-          nn=nn+0.5*atom.mass*(modes[imode]['move'][i][xyz]*math.sqrt(U_TO_AMU/atom.mass))**2
       if vibdist!=2:
         kin[imode]=evib[imode]-pot[imode]
-        while (nv**2+4*nn*kin[imode])<0.0:
+        a_value, b_value, f_value = judge_frustration(atomlist, modes, imode, kin[imode])
+        while f_value<0.0:
           dx[imode]=dx[imode]*0.9
           for i, atom in enumerate(atomlist):
             for xyz in range(3):
-              tmp_xyz[i,xyz]=atom.coord[xyz] + dx[imode] * modes[imode]['move'][i][xyz] * math.sqrt(U_TO_AMU/atom.mass)
+              tmp_xyz[i,xyz]=atom.coord[xyz] + dx[imode] * modes[imode]['move'][i][xyz] * math.sqrt(1.0/atom.mass)
           pot[imode]=compute_potential_energy(tmp_xyz, atomlist, template)
           pot[imode]=pot[imode]-E0
           kin[imode]=evib[imode]-pot[imode]
-      sign[imode]=random.random()
-      if sign[imode]>=0.5:
-        dv[imode]=(-nv+math.sqrt(nv**2+4*nn*kin[imode]))/(2*nn)
-      else:
-        dv[imode]=(-nv-math.sqrt(nv**2+4*nn*kin[imode]))/(2*nn)
+          a_value, b_value, f_value = judge_frustration(atomlist, modes, imode, kin[imode])
+        sign[imode]=random.random()
+        if sign[imode]>=0.5:
+          dv[imode]=(-b_value+math.sqrt(f_value))/(2*a_value)
+        else:
+          dv[imode]=(-b_value-math.sqrt(f_value))/(2*a_value)
       # add potential energy of this mode to total potential energy
       Epot += pot[imode]
       for i, atom in enumerate(atomlist): # for each atom
@@ -1152,11 +1183,10 @@ initial condition from the modes and atomic coordinates."""
           # distort geometry according to normal mode movement
           # and unweigh mass-weighted normal modes
           if not UEG:
-            atom.coord[xyz] += dx[imode] * modes[imode]['move'][i][xyz] * math.sqrt(U_TO_AMU/atom.mass)
+            atom.coord[xyz] += dx[imode] * modes[imode]['move'][i][xyz] * math.sqrt(1.0/atom.mass)
           if not UZV:
-            atom.veloc[xyz] += dv[imode] * modes[imode]['move'][i][xyz] * math.sqrt(U_TO_AMU/atom.mass)
+            atom.veloc[xyz] += dv[imode] * modes[imode]['move'][i][xyz] * math.sqrt(1.0/atom.mass)
         atom.EKIN()
-
 
   if not KTR:
     restore_center_of_mass(molecule, atomlist)
@@ -1169,6 +1199,18 @@ initial condition from the modes and atomic coordinates."""
 # ======================================================================================================================
 # ======================================================================================================================
 # ======================================================================================================================
+def judge_frustration(atomlist, modes, imode, kin):
+    nv=0.0
+    for i, atom in enumerate(atomlist):
+      for xyz in range(3):
+        nv=nv+math.sqrt(atom.mass)*atom.veloc[xyz]*modes[imode]['move'][i][xyz]
+    nn=0.0
+    for i, atom in enumerate(atomlist):
+      for xyz in range(3):
+        nn=nn+0.5*(modes[imode]['move'][i][xyz])**2
+    return nn, nv, nv**2+4*nn*kin
+      
+
 def compute_potential_energy(coord, atomlist, template):
 
   energy=0.0 
@@ -1239,7 +1281,7 @@ Equilibrium
 # ======================================================================================================================
 
 
-def create_initial_conditions_list(amount, molecule, modes, vibselect, vibdist, vibstate, vibene, method, template):
+def create_initial_conditions_list(amount, molecule, modes, vibselect, vibdist, vibstate, viblist, vibene, method, template):
     """This function creates 'amount' initial conditions from the
 data given in 'molecule' and 'modes'. Output is returned
 as a list containing all initial condition objects."""
@@ -1249,7 +1291,7 @@ as a list containing all initial condition objects."""
     idone = 0
     for i in range(1,amount+1): # for each requested initial condition
         # sample the initial condition
-        ic = sample_initial_condition(molecule, modes, vibselect, vibdist, vibstate, vibene, method, template)
+        ic = sample_initial_condition(molecule, modes, vibselect, vibdist, vibstate, viblist, vibene, method, template)
         ic_list.append(ic)
         idone += 1
         done = idone*width//(amount)
@@ -1298,9 +1340,9 @@ a program for adiabatic and nonadiabatic trajectories,
 in Donald Truhlar's group at University of Minnesota
 
 [1] http://www.cmbi.ru.nl/molden/molden_format.html
-[2] J. Zheng, Z.-H. Li, A. W. Jasper, D. A. Bonhommeau, R. Valero, 
-    R. Meana-Paneda, S. L. Mielke, L. Zhang, Z. Varga, and D. G. Truhlar, 
-    ANT, version 2020, University of Minnesota, Minneapolis, 2020. 
+[2] Y. Shu, L. Zhang, J. Zheng, Z.-H. Li, A. W. Jasper, D. A. Bonhommeau, 
+    R. Valero, R. Meana-Paneda, S. L. Mielke, Z. Varga, and D. G. Truhlar, 
+    ANT, version 2025, University of Minnesota, Minneapolis, 2025. 
     http://comp.chem.umn.edu/ant
 
 Author: Yinan Shu
@@ -1310,9 +1352,10 @@ Author: Yinan Shu
 
   parser = OptionParser(usage=usage, description=description)
   parser.add_option('-n', dest='n', type=int, nargs=1, default=3, help="Number of geometries to be generated (integer, default=3)")
-  parser.add_option('--vibselect', dest='vibselect', type=int, nargs=1, default=6, help="Method of selection of vibrational mode energy (integer, default=1). 1 The user provides vibrational quantum numbers by the keyword vibstate=(n1,n2,...,n3N-6) for a local minimum and vibstate=(n1,n2,...,n3N-7) for a saddle point. 2 The program assigns vibrational quantum numbers at random, selected out of a Boltzmann distribution at a user-specified temperature that is specified by the keyword -t. 3 The program  generates an initial velocity from a Maxwell thermal distribution at a given temperature by -t keyword. This is an option for canonical ensemble, not an option for state selected ensemble. 4 The amount of energy in each mode is the same for each mode and is E1 by settting keyword --vibene E1. The unit for E1 is eV. 5 The amount of energy in mode m is Em, which can be different for each mode. Set --vibene E1, E2, ..., E3N-6 or --vibene E1, E2, ..., E3N-7. The units for Em are eV. 6 Like vibselect=4 except that Em is calculated by the program as min[0.5hv, input E1]. 7 Like --vibselect 5 except that Em is calculated by the program as  min[0.5hv, input Em].")
+  parser.add_option('--vibselect', dest='vibselect', type=int, nargs=1, default=6, help="Method of selection of vibrational mode energy (integer, default=1). 1 The user provides vibrational quantum numbers by the keyword vibstate=(n1,n2,...,n3N-6) for a local minimum and vibstate=(n1,n2,...,n3N-7) for a saddle point. 2 The program assigns vibrational quantum numbers at random, selected out of a Boltzmann distribution at a user-specified temperature that is specified by the keyword -t. 3 The program  generates an initial velocity from a Maxwell thermal distribution at a given temperature by -t keyword. This is an option for canonical ensemble, not an option for state selected ensemble. 4 The amount of energy in each mode is the same for each mode and is E1 by settting keyword --vibene E1. The unit for E1 is eV. 5 The amount of energy in mode m is Em, which can be different for each mode. Set --vibene E1, E2, ..., E3N-6 or --vibene E1, E2, ..., E3N-7. The units for Em are eV. 6 Like vibselect=4 except that Em is calculated by the program as min[0.5hv, input E1]. 7 Like --vibselect 5 except that Em is calculated by the program as  min[0.5hv, input Em]. 8 The user provides vibrational quantum numbers by keyword viblist=(m1,n1;m2,n2;...,m3N-6,n3N-6), which only specifies the modes with non-zero vibrational quantum numbers, the vibrational quantum number of rest modes not specified in viblist are set to 0")
   parser.add_option('--vibdist', dest='vibdist', type=int, nargs=1, default=0, help="vibdist determines the type of phase space distribution. 0 Default, classical or quasiclassical distribution. Uniform distribution. This distribution is quasiclassical if vibselect = 1 or 2, and it is classical if vibselect>=4. 1 ground-state harmonic oscillator distribution. 2 wigner distribution.")
   parser.add_option('--vibstate', dest='vibstate', nargs=1, default="0", help="vibstate is a list of level of vibrational state for each mode, separated by comma, required by vibselect=1. Example: --vibstate 0,0,0,1,5") 
+  parser.add_option('--viblist', dest='viblist', nargs=1, default="0", help="viblist is a list of modes whose vibrational quantum numbers are non-zero, each pair (index of modes, vibrational quantum number, which are separated by comma) is separated question mark. Notice viblist is only used when set vibselect to 8, the modes that are not provided in viblist will have zero vibrational quantum number. Also notice that if a non-integer vibrational quantum number is provided, it will convert to the lower integer. Example: --viblist 1,1?5,3")
   parser.add_option('--vibene', dest='vibene', nargs=1, default="0.0", help="vibene is a list of energies for each mode, separated by comma, required by vibselect=4,5,6,7. Example: --vibene 1.2,3.1,2.3")
   parser.add_option('--method', dest='method', type=int, nargs=1, default=0, help="method determins the level of energy approximation. 0 use harmonic oscillator. 1 use directly computed potential energy (requires a lot calculations)")
   parser.add_option('--template', dest='template', type=str, nargs=1, default='MOLPRO.template', help="Template filename")
@@ -1329,14 +1372,19 @@ Author: Yinan Shu
   parser.add_option('-f', dest='f', type=int, nargs=1, default='0', help="Define the type of read normal modes. 0 for automatic assignement, 1 for gaussian-type normal modes (Gaussian, Turbomole, Q-Chem, ADF, Orca), 2 for cartesian normal modes (Molcas, Molpro), 3 for Columbus-type (Columbus), or 4 for mass-weighted. (integer, default=0)")
   
   parser.add_option('--keep_trans_rot', dest='KTR', action='store_true',help="Keep translational and rotational components")
-  parser.add_option('--use_eq_geom',    dest='UEG', action='store_true',help="For all samples, use the equilibrium geometry (only sample velocities)")
-  parser.add_option('--use_zero_veloc', dest='UZV', action='store_true',help="For all samples, set velocities to zero")
+  parser.add_option('--use_eq_geom',    dest='UEG', action='store_true',help="For all samples, use the equilibrium geometry (only sampled velocities are used, therefore, the mode energies are not correct)")
+  parser.add_option('--use_zero_veloc', dest='UZV', action='store_true',help="For all samples, set velocities to zero (only sampled geometries are used, therefore, the the mode energies are not correct)")
+
+  parser.add_option('--only_sample_veloc', dest='OSV', action='store_true',help="For all samples, use the equilibrium geometry (only sample velocities, the mode energies are all kinetic energies)")
 
   (options, args) = parser.parse_args()
  
   vibselect=options.vibselect
   vibdist=options.vibdist
   vibstate=[int(i) for i in list(options.vibstate.split(","))]
+  pairs=list(options.viblist.split("?"))
+  viblist=[list(map(lambda x: int(float(x)), pair.split(','))) for pair in pairs]
+  print(viblist)
   vibene=[float(i) for i in list(options.vibene.split(","))]
   options.vibstate=vibstate
   options.vibene=vibene  
@@ -1368,6 +1416,7 @@ potential energy method      = %i (0=harmonic oscillator approximation; 1=ab ini
 template name                = "%s" (Only used when potential energy method=1)''' % (filename, outfile, options.n, options.r,options.vibselect, options.vibdist, options.method, options.template))
   print('''vibene                       =''', vibene, '''(in eV)''')
   print('''vibstate                     =''', vibstate)
+  print('''viblist                      =''', viblist)
   print('''Temperature                  =''', options.t, '''(Only used when vibselect=2)''')
   if nondefmass:
     global MASS_LIST
@@ -1384,6 +1433,13 @@ template name                = "%s" (Only used when potential energy method=1)''
   global UZV
   UZV=options.UZV
 
+  global OSV
+  OSV=options.OSV
+
+  if OSV and method==1:
+      print('When only sample velocites, no extra ab initio electronic structure calculations are required, set method to 0')
+      method=0
+
   global temperature
   temperature=options.t
   if temperature!=0:
@@ -1398,7 +1454,7 @@ template name                = "%s" (Only used when potential energy method=1)''
   global whichatoms
   whichatoms=[]
 
-  molecule, modes = import_from_molden(filename, scaling,flag)
+  molecule, modes = import_from_molden(filename, scaling, flag)
 
   string='\nGeometry:\n'
   for atom in molecule:
@@ -1409,12 +1465,12 @@ template name                = "%s" (Only used when potential energy method=1)''
   string+='\nIsotopes with * are pure isotopes.\n'
   print(string)
 
-  string='Frequencies (cm^-1) used in the calculation:\n'
+  string='Modes  Frequencies (cm^-1) Angular_Frequencies(a.u.) Force_Constant(a.u.):\n'
   for i,mode in enumerate(modes):
-    string+='%4i %12.4f\n' % (i+1,mode['freq']/CM_TO_HARTREE)
+    string+='%4i %12.4f        %12.6f              %12.6f\n' % (i+1,mode['freq']/CM_TO_HARTREE,mode['freq'],mode['force_constant'])
   print(string)
 
-  ic_list = create_initial_conditions_list(amount, molecule, modes, vibselect, vibdist, vibstate, vibene, method, template)
+  ic_list = create_initial_conditions_list(amount, molecule, modes, vibselect, vibdist, vibstate, viblist, vibene, method, template)
   outfile = open(outfile, 'w')
   outstring = create_initial_conditions_string(molecule, modes, ic_list)
   outfile.write(outstring)
@@ -1435,3 +1491,4 @@ template name                = "%s" (Only used when potential energy method=1)''
 if __name__ == '__main__':
     main()
              
+
